@@ -1,6 +1,7 @@
 # NH-7 Real-Time Landslide Risk Backend
 
-> **Corridor**: NH-7 Highway, Uttarakhand, India (Rishikesh ➔ Devprayag ➔ Srinagar ➔ Rudraprayag ➔ Karnaprayag ➔ Nandprayag ➔ Chamoli ➔ Pipalkoti ➔ Joshimath)
+> **Corridor Scope**: NH-7 Highway, Uttarakhand, India (Rishikesh to Joshimath, 247.37 km across 18 road segments)
+> **Route Progression**: Rishikesh ➔ Devprayag ➔ Srinagar ➔ Rudraprayag ➔ Karnaprayag ➔ Nandprayag ➔ Chamoli ➔ Pipalkoti ➔ Joshimath
 
 A production-grade, hackathon-ready FastAPI backend serving real-time landslide risk assessments, route forecasting, subscriber alerts, crowd-sourced field hazard reporting, and historical slope failure records.
 
@@ -188,12 +189,32 @@ Admin endpoint to review and validate or reject a pending field report.
 Returns verified historical landslide incidents along NH-7 (Sirobagarh, Chamoli, Pipalkoti, Tangani, Byasi, Nandprayag, Teen Dhara).
 - **Response**: `{ "total_events": 7, "events": [ ... ] }`
 
+### 8. `GET /model-info`
+Returns complete, verifiable transparency metadata regarding the trained landslide susceptibility model:
+- **Features Used**: Topographic and hydrological DEM features (`dem_slope_deg`, `dem_relief_300m`, `dem_curvature`, etc.)
+- **Coefficients / Importance**: Held-out spatial block permutation importance ($\Delta\text{AUC}$)
+- **Sample Sizes**: 309 observed landslide scars (presence) and 927 sampled road background negatives (absence) across 247.37 km
+- **Out-of-Fold Validation Metrics**: Pooled AUC (`0.767` [95% CI: `0.680` – `0.802`]), Block AUC Mean (`0.664` [95% CI: `0.630` – `0.701`]), Spearman rank correlation ($\rho = 0.653$, $p = 0.0033$)
+- **Heuristic Parameters**: $k_{\text{rain}} = 0.4$, $k_{\text{terrain}} = 0.6$, $\text{DRY\_CAP\_MM} = 25.0\text{ mm}$, categorical risk-level thresholds
+- **Limitations**: Comprehensive operational constraints and data boundaries
+- **Data Sources**: Official citations for the Mey et al. (2024) inventory, Copernicus 30m DEM, and Open-Meteo forecasts
+- **Scope**: Evaluated corridor alignment (`Rishikesh to Joshimath, 247.37 km`)
+
 ---
 
-## 🧠 Model Swapping Architecture
+## ⚠️ Limitations & Scientific Boundaries
 
-The corridor is modeled as 18 human-readable display segments. Underneath each segment, 2–4 km checkpoint coordinates are embedded in `subpoints`. 
+1. **Single-Season Inventory**: The baseline terrain susceptibility model was trained and cross-validated on post-monsoon 2022 survey data (Mey et al., 2024, $N = 309$ road-blocking landslides). It does not capture multi-year, decadal, or extreme epochal recurrence intervals.
+2. **18-Segment Spatial Evaluation**: While the underlying highway alignment features 990 deduplicated evaluation points at 250 m resolution, backend hazard reporting aggregates these into 18 operational segments using the 90th percentile ($p_{90}$) worst-stretch rule. This aggregation may smooth over localized, micro-scale slope cuts.
+3. **Coarse Numerical Weather Forecast Grid**: Precipitation forecasts are obtained from Open-Meteo at ~11 km spatial resolution. While effective for synoptic monsoon fronts, this resolution cannot resolve localized convective cloudburst cells in steep Himalayan tributary valleys.
+4. **Uncalibrated Dynamic Rainfall Term**: The rainfall coupling term weight ($k_{\text{rain}} = 0.4$) and 100 mm saturation reference are demo heuristics rather than empirically calibrated rainfall-duration-intensity thresholds.
+5. **Not an Official Warning System**: All scores and advisories represent physically motivated statistical relative risk indices designed for research, verification, and technical demonstration. They do not constitute official statutory emergency warnings from the Geological Survey of India (GSI) or the National Disaster Management Authority (NDMA).
 
-When the ML team deploys the real model:
-1. In `app/routes/risk.py`, swap `compute_deterministic_score` with your ML model inference function `model.predict(features)`.
-2. The segment risk aggregation (`max(sub_scores)`) and the response shape remain 100% identical, ensuring zero breakage for the mobile app and website.
+---
+
+## 🧠 Model Integration Architecture
+
+The corridor is modeled as 18 human-readable display segments along the 247.37 km Rishikesh to Joshimath highway. Underneath each segment, 2–4 km checkpoint coordinates are embedded in `subpoints`. 
+
+The machine learning pipeline combines the static Copernicus 30m DEM Random Forest susceptibility model with live antecedent precipitation to produce the `risk_index` (0.0 to 1.0 relative risk index), while maintaining legacy `risk_score` fields for 100% backwards compatibility.
+

@@ -40,23 +40,24 @@ from pathlib import Path
 
 import requests
 
+from app.config import (
+    DRY_CAP_MM,
+    K_RAIN,
+    K_TERRAIN,
+    LEVEL_CUTS,
+    RAIN_REF_MM,
+)
+
 log = logging.getLogger("backend")
 
 SCORES_FILE = Path(__file__).with_name("segment_static_scores.json")
-TERRAIN_WEIGHT = 0.6
-RAIN_WEIGHT = 0.4
-RAIN_REF_MM = 100.0                  # 3-day rainfall at which the rain term saturates (demo heuristic)
+TERRAIN_WEIGHT = K_TERRAIN
+RAIN_WEIGHT = K_RAIN
 
-# Uncalibrated heuristic threshold: in dry conditions without significant triggering rainfall
-# (i.e. when rain_status == 'ok' and 3-day rainfall is below 25 mm), slope failure risk is
-# capped at "Moderate". Note: This threshold is an uncalibrated heuristic reflecting that
-# rainfall is the primary trigger for catastrophic slope mass movements in the Garhwal Himalayas.
-DRY_CAP_MM = 25.0
-
-LEVEL_CUTS = [(0.75, "Very High"), (0.50, "High"), (0.25, "Moderate"), (0.0, "Low")]
 CACHE_TTL_S = 1800                   # re-query rainfall at most every 30 minutes
 FAILED_CACHE_TTL_S = 300             # cache a failed fetch for 5 minutes so requests do not keep blocking
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
+
 RAIN_SNAPSHOT_FILE = Path(__file__).resolve().parent.parent / "data" / "rain_snapshot.json"
 
 CORRIDOR_NAME = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
@@ -308,6 +309,7 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
         "subpoints": subpoints,
         "risk_level": risk_lvl,
         "risk_score": round(score, 2),
+        "risk_index": round(score, 2),
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         # additive keys from trained ML model & live rainfall engine:
         "terrain_percentile": round(terrain, 2),

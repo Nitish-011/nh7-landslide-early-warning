@@ -4,10 +4,18 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from app.database import get_db
-from app.models import RiskMapResponse, SegmentResponse, RouteRiskResponse, RouteSegmentRisk
+from app.models import (
+    ModelInfoResponse,
+    RiskMapResponse,
+    RouteRiskResponse,
+    RouteSegmentRisk,
+    SegmentResponse,
+)
+from app.model_info import get_model_info_payload
 from app.logger import logger
 from app.risk_service import get_live_risk_map, get_live_risk_map_with_metadata
 from app.limiter import limiter
+
 
 router = APIRouter(tags=["Risk Assessment"])
 
@@ -59,6 +67,7 @@ def _fallback_risk_map() -> RiskMapResponse:
             subpoints=subpoints,
             risk_level=level,
             risk_score=r["risk_score"],
+            risk_index=r["risk_score"],
             updated_at=r["updated_at"]
         ))
 
@@ -210,6 +219,7 @@ def get_route_risk(
             subpoint_risk_scores=subpoint_scores,
             risk_level=seg_risk_level,
             risk_score=seg_risk_score,
+            risk_index=seg_risk_score,
             terrain_percentile=live_info.get("terrain_percentile") if live_info else None,
             terrain_level=live_info.get("terrain_level") if live_info else None,
             terrain_status=live_info.get("terrain_status") if live_info else None,
@@ -259,6 +269,7 @@ def get_route_risk(
         total_segments=len(route_segments),
         max_risk_level=overall_max_level,
         average_risk_score=avg_score,
+        risk_index=avg_score,
         advisory=advisory,
         segments=route_segments,
         weather_source=meta.get("weather_source"),
@@ -267,3 +278,21 @@ def get_route_risk(
         is_simulated=meta.get("is_simulated", False),
         stale_warning=meta.get("stale_warning"),
     )
+
+@router.get("/model-info", response_model=ModelInfoResponse)
+@limiter.limit("120/minute")
+def get_model_info(request: Request):
+    """
+    Returns transparent, verifiable metadata about the landslide susceptibility model:
+    architecture, features, permutation importance coefficients, training sample counts,
+    rigorous out-of-fold spatial validation metrics parsed from outputs/validation_report.md,
+    uncalibrated demo heuristics (k, dry cap), risk-level thresholds, explicit limitations,
+    and official inventory and DEM data source citations.
+    """
+    try:
+        payload = get_model_info_payload()
+        return ModelInfoResponse(**payload)
+    except Exception as e:
+        logger.exception(f"Failed to generate model info: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate model info: {str(e)}")
+

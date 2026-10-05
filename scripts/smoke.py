@@ -73,6 +73,7 @@ def main():
         }),
         ("GET", "/field-reports", None),
         ("GET", "/history", None),
+        ("GET", "/model-info", None),
     ]
 
     all_passed = True

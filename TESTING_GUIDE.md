@@ -17,7 +17,7 @@ If *everything* were dynamic (including topography), the model would violate the
 |  - 30m Copernicus DEM Topography (Slope, 300m Relief, TPI)  |
 |  - 247.37 km NH-7 Corridor Polyline (OSM Alignment)         |
 |  - 18 Segment Boundaries & Seeded Physical Subpoints         |
-|  - Calibrated Logistic Regression Weights (Mey et al. 2024) |
+|  - Physically Motivated Statistical Model Weights (Mey 2024)|
 +------------------------------+------------------------------+
                                |
                                v
@@ -38,9 +38,9 @@ If *everything* were dynamic (including topography), the model would violate the
    - Slope steepness, 300m local relief, curvature, and topographic position index (TPI) along the NH-7 highway corridor are derived from the 30-meter Copernicus Digital Elevation Model (DEM).
    - Himalayan bedrock formations and valley cliffs do not shift from hour to hour. Having a static, high-precision terrain susceptibility baseline ($P_{\text{terrain}}$) is standard scientific practice in geohazard engineering.
 2. **Highway Route Geometry & 18 Segments:**
-   - The 247.37 km highway alignment (`geojson/nh7_route.geojson`, `nh7_segments.csv`) and the 18 sequence-ordered segments from Rishikesh to Badrinath/Joshimath represent fixed civil road infrastructure.
+   - The 247.37 km highway alignment (`geojson/nh7_route.geojson`, `nh7_segments.csv`) and the 18 sequence-ordered segments from Rishikesh to Joshimath represent fixed civil road infrastructure.
 3. **Machine Learning Model Parameters:**
-   - The spatial logistic regression coefficients (slope weight $+0.1348$, relief weight $+0.0076$, intercept $-6.0963$) and 90th percentile aggregation mappings are pre-fitted and calibrated.
+   - The spatial model feature weights (slope, relief) and 90th percentile aggregation mappings are pre-fitted across spatial blocks.
 
 ### What IS Dynamic (Live, Reactive, & Real-Time)
 1. **Live Meteorology:** Real-time 3-day antecedent rainfall is dynamically requested from the Open-Meteo API across 5 corridor weather stations (`fetch_rainfall`).

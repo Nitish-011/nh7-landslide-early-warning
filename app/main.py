@@ -45,8 +45,8 @@ app = FastAPI(
     version="1.0.0",
     description=(
         "Production-grade backend for monitoring real-time landslide risk along the "
-        "NH-7 corridor in Uttarakhand, India (Rishikesh - Karnaprayag - Joshimath). "
-        "Provides highway risk mapping, deterministic route forecasting, subscriber alerts, "
+        "NH-7 corridor in Uttarakhand, India (Rishikesh to Joshimath, 247.37 km). "
+        "Provides highway risk mapping, route forecasting with relative risk indices, subscriber alerts, "
         "crowd-sourced field report processing, and historical hazard records."
     ),
     lifespan=lifespan

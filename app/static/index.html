@@ -459,7 +459,7 @@
     <div class="map-top-bar">
       <div class="map-stat">
         <span class="status-dot" id="live-dot"></span>
-        <span>Corridor: <strong>NH-7 Uttarakhand (247 km)</strong></span>
+        <span>Corridor: <strong>Rishikesh to Joshimath, 247.37 km</strong></span>
       </div>
       <div class="map-stat">
         <span>Segments: <strong id="hud-total-seg">18</strong></span>
@@ -546,7 +546,7 @@
               <span id="det-badge" class="popup-badge"></span>
             </div>
             <div class="form-grid">
-              <div>Terrain Score: <strong id="det-score">-</strong></div>
+              <div>Relative Risk Index: <strong id="det-score">-</strong></div>
               <div>Percentile: <strong id="det-pctile">-</strong></div>
               <div>Rainfall (3d): <strong id="det-rain">-</strong></div>
               <div>Rain Status: <strong id="det-rain-status">-</strong></div>
@@ -981,9 +981,10 @@
         }).addTo(map);
 
         // Rich Tooltip
+        const riskIdx = (seg.risk_index !== undefined && seg.risk_index !== null) ? seg.risk_index : seg.risk_score;
         const popupContent = `
           <div class="popup-title">${seg.id}: ${seg.name}</div>
-          <span class="popup-badge" style="background:${color}; color:#fff;">${seg.risk_level} (${Math.round(seg.risk_score * 100)}%)</span>
+          <span class="popup-badge" style="background:${color}; color:#fff;">${seg.risk_level} (Risk Index: ${riskIdx.toFixed(2)})</span>
           <div class="popup-metric">Terrain Percentile: <strong>${Math.round((seg.terrain_percentile || 0) * 100)}th</strong> (${seg.terrain_level || 'Normal'})</div>
           <div class="popup-metric">3-Day Rainfall: <strong>${(seg.rain_mm_3d || 0).toFixed(1)} mm</strong> (${seg.rain_status || 'ok'})</div>
           <div class="popup-driver">${seg.main_driver || 'Physical terrain features'}</div>
@@ -1074,12 +1075,13 @@
       badge.style.background = getRiskColor(seg.risk_level);
       badge.style.color = "#fff";
 
-      document.getElementById("det-score").textContent = `${(seg.risk_score * 100).toFixed(1)}%`;
+      const scoreVal = (seg.risk_index !== undefined && seg.risk_index !== null) ? seg.risk_index : seg.risk_score;
+      document.getElementById("det-score").textContent = scoreVal.toFixed(2);
       document.getElementById("det-pctile").textContent = `${Math.round((seg.terrain_percentile || 0) * 100)}th (${seg.terrain_level || 'Normal'})`;
       document.getElementById("det-rain").textContent = `${(seg.rain_mm_3d || 0).toFixed(1)} mm`;
       document.getElementById("det-rain-status").textContent = seg.rain_status || "ok";
       document.getElementById("det-driver").textContent = seg.main_driver || "-";
-      document.getElementById("det-method").textContent = seg.method || "deterministic_ml_v2";
+      document.getElementById("det-method").textContent = seg.method || "physically_motivated_ml_v2";
     }
 
     function zoomToCorridor() {
@@ -1145,12 +1147,18 @@
       badge.style.background = getRiskColor(maxLevel);
       badge.style.color = "#fff";
 
-      document.getElementById("route-seg-count").textContent = `${d.total_segments || 0} segments (Avg: ${((d.average_risk_score || 0) * 100).toFixed(0)}%)`;
+      const avgRisk = (d.risk_index !== undefined && d.risk_index !== null) ? d.risk_index : (d.average_risk_score || 0);
+      document.getElementById("route-seg-count").textContent = `${d.total_segments || 0} segments (Avg Index: ${avgRisk.toFixed(2)})`;
       
       let highestSeg = "-";
       if (d.segments && d.segments.length > 0) {
-        const sorted = [...d.segments].sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
-        highestSeg = `${sorted[0].id}: ${sorted[0].name} (${(sorted[0].risk_score * 100).toFixed(0)}%)`;
+        const sorted = [...d.segments].sort((a, b) => {
+          const scoreA = (a.risk_index !== undefined && a.risk_index !== null) ? a.risk_index : (a.risk_score || 0);
+          const scoreB = (b.risk_index !== undefined && b.risk_index !== null) ? b.risk_index : (b.risk_score || 0);
+          return scoreB - scoreA;
+        });
+        const topScore = (sorted[0].risk_index !== undefined && sorted[0].risk_index !== null) ? sorted[0].risk_index : sorted[0].risk_score;
+        highestSeg = `${sorted[0].id}: ${sorted[0].name} (Index: ${topScore.toFixed(2)})`;
       }
       document.getElementById("route-max-seg").textContent = highestSeg;
       document.getElementById("route-advisory-text").textContent = d.advisory || "Normal road conditions";

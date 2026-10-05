@@ -191,6 +191,7 @@ def get_alerts(
             segment_name=sub["segment_name"],
             severity=risk_level,
             risk_score=risk_score,
+            risk_index=risk_score,
             message=(
                 f"HIGH ALERT on {sub['segment_name']}: Geological instability & active rockfall hazard{rain_text}.{driver_text} "
                 "Road clearance teams deployed. Travel with extreme caution or consider alternate routes."
@@ -208,6 +209,7 @@ def get_alerts(
             segment_name=sub["segment_name"],
             severity="Moderate",
             risk_score=risk_score,
+            risk_index=risk_score,
             message=(
                 f"ADVISORY on {sub['segment_name']}: Moderate slope wetness and slippery road conditions{rain_text}.{driver_text} "
                 "Speed limits enforced near drainage outlets."

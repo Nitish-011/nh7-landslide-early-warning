@@ -1,4 +1,4 @@
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field
 
 # --- Segments & Risk Models ---
@@ -17,7 +17,8 @@ class SegmentResponse(BaseModel):
     end_lng: float
     subpoints: List[List[float]] = []
     risk_level: str
-    risk_score: float
+    risk_score: float = Field(..., description="Legacy relative risk score (0.0 to 1.0)")
+    risk_index: Optional[float] = Field(None, ge=0.0, le=1.0, description="Relative risk index (0.0 to 1.0; 0=lowest relative hazard, 1=highest)")
     updated_at: str
     # Additive fields from trained model & rainfall engine
     terrain_percentile: Optional[float] = None
@@ -51,7 +52,8 @@ class RouteSegmentRisk(BaseModel):
     subpoints: List[List[float]] = []
     subpoint_risk_scores: List[float] = []
     risk_level: str
-    risk_score: float
+    risk_score: float = Field(..., description="Legacy relative risk score (0.0 to 1.0)")
+    risk_index: Optional[float] = Field(None, ge=0.0, le=1.0, description="Relative risk index (0.0 to 1.0; 0=lowest relative hazard, 1=highest)")
     # Additive fields
     terrain_percentile: Optional[float] = None
     terrain_level: Optional[str] = None
@@ -69,7 +71,8 @@ class RouteRiskResponse(BaseModel):
     date: str
     total_segments: int
     max_risk_level: str
-    average_risk_score: float
+    average_risk_score: float = Field(..., description="Legacy average relative risk score (0.0 to 1.0)")
+    risk_index: Optional[float] = Field(None, ge=0.0, le=1.0, description="Corridor journey relative risk index (0.0 to 1.0)")
     advisory: str
     segments: List[RouteSegmentRisk]
     # Task F2 Freshness & Simulation Metadata (additive, optional)
@@ -111,7 +114,8 @@ class AlertItem(BaseModel):
     segment_id: str
     segment_name: str
     severity: str
-    risk_score: float
+    risk_score: float = Field(..., description="Legacy relative risk score (0.0 to 1.0)")
+    risk_index: Optional[float] = Field(None, ge=0.0, le=1.0, description="Relative risk index (0.0 to 1.0)")
     message: str
     channel: str
     issued_at: str
@@ -177,3 +181,46 @@ class HistoryResponse(BaseModel):
     corridor: str = "NH-7 Uttarakhand"
     total_events: int
     events: List[LandslideHistoryItem]
+
+# --- Model Transparency & Info Models (Task F3) ---
+
+class TrainingSampleSizes(BaseModel):
+    presence_count: int = Field(..., description="Observed landslide events from published inventory")
+    absence_count: int = Field(..., description="Sampled highway corridor background negative locations")
+    total_count: int = Field(..., description="Total training and evaluation sample points")
+    sampling_ratio: str = Field(..., description="Ratio of presence to absence samples")
+
+class ValidationMetrics(BaseModel):
+    spearman_rank_correlation: float = Field(..., description="Spearman rank correlation against surveyed landslide density")
+    spearman_p_value: float = Field(..., description="P-value of Spearman rank correlation")
+    pooled_auc: float = Field(..., description="Out-of-fold pooled ROC-AUC across spatial evaluation folds")
+    pooled_auc_ci_95: List[float] = Field(..., description="95% block-bootstrap confidence interval for pooled AUC")
+    block_auc_mean: float = Field(..., description="Mean ROC-AUC across spatial cross-validation blocks")
+    block_auc_ci_95: List[float] = Field(..., description="95% block-bootstrap confidence interval for block AUC mean")
+    average_precision: float = Field(..., description="Precision-Recall Area Under Curve (PR-AUC)")
+    top_20_percent_capture: float = Field(..., description="Percentage of landslides captured in top 20% highest-ranked road length")
+    negative_separation_distance_m: int = Field(..., description="Minimum metric buffer distance between negatives and scars (meters)")
+    spatial_evaluation: str = Field(..., description="Spatial cross-validation grouping and buffer specification")
+
+class ModelKWeights(BaseModel):
+    k_rain: float = Field(..., description="Weight of rainfall term in composite relative risk index (0.0 to 1.0)")
+    k_terrain: float = Field(..., description="Weight of static terrain percentile in composite relative risk index")
+    rain_ref_mm: float = Field(..., description="3-day rainfall (mm) at which rainfall term reaches saturation")
+
+class ThresholdItem(BaseModel):
+    threshold: float = Field(..., description="Minimum relative risk index for this warning tier")
+    level: str = Field(..., description="Categorical warning level label")
+
+class ModelInfoResponse(BaseModel):
+    model_version: str = Field(..., description="Model version tag and architecture")
+    features_used: List[str] = Field(..., description="List of topographic/hydrological features used by model")
+    coefficients: Dict[str, float] = Field(..., description="Permutation importance delta-AUC on held-out spatial blocks")
+    training_sample_sizes: TrainingSampleSizes = Field(..., description="Training and cross-validation sample counts")
+    validation_metrics: ValidationMetrics = Field(..., description="Rigorous out-of-fold spatial validation metrics")
+    thresholds: List[ThresholdItem] = Field(..., description="Risk-level threshold boundaries")
+    k: ModelKWeights = Field(..., description="Weights used in composite relative risk index")
+    dry_cap: float = Field(..., description="Rainfall threshold below which risk is capped at Moderate during dry weather")
+    limitations: List[str] = Field(..., description="Transparent scientific limitations and operational boundaries")
+    data_sources: Dict[str, str] = Field(..., description="Citations and data sources for inventory, DEM, and meteorology")
+    scope: str = Field(..., description="Evaluated geographical corridor scope")
+

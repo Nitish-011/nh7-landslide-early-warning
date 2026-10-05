@@ -1,9 +1,9 @@
 # NH-7 Landslide Early Warning System: Backend Build Status & Model Specifications
 
-> **Project Scope:** NH-7 Highway Corridor (Rishikesh – Devprayag – Srinagar – Rudraprayag – Karnaprayag – Chamoli – Joshimath – Badrinath)  
+> **Project Scope:** NH-7 Highway Corridor (Rishikesh to Joshimath, 247.37 km)  
 > **Corridor Length:** 247.37 km | 18 Sequence-Ordered Road Segments  
 > **Reference Document:** [NH7_Hackathon_Build_Plan.pdf](file:///c:/hackathon%20IBM%20x%20Jigyasa/NH7_Hackathon_Build_Plan.pdf)  
-> **Status:** Backend Core & Predictive Engine **100% Operational** | Model Scientifically Validated
+> **Status:** Backend Core & Predictive Engine **100% Operational** | Model Rigorously Evaluated via Spatial Block Cross-Validation
 
 ---
 
@@ -33,8 +33,8 @@ The backend track (Track 1) is fully stood up, tested, and integrated.
                                                   v
 +----------------------------------------------------------------------------------------------------+
 |                             CORE ENGINE (app/risk_service.py)                                      |
-|  1. Spatial Topographic Baseline: Pre-calibrated out-of-fold Logistic Regression model             |
-|  2. Real-Time Meteorological Coupler: Exponential pore-pressure trigger curve                      |
+|  1. Spatial Topographic Baseline: Out-of-fold physically motivated statistical model               |
+|  2. Real-Time Meteorological Coupler: Antecedent rainfall trigger heuristic                         |
 |  3. Uncalibrated Safety Heuristic: DRY_CAP_MM = 25.0 mm (caps risk at 'Moderate' if dry)           |
 |  4. Simulation Studio: Overrides live weather instantly with arbitrary rainfall (?simulate_rain_mm)|
 |  5. 3-Tier Offline Resilience Layer: 4s timeout -> 5-min memory circuit breaker -> disk snapshot  |
@@ -74,7 +74,7 @@ The backend track (Track 1) is fully stood up, tested, and integrated.
 
 ### 3.2 Road Alignment & Spatial Resolution
 - **Corridor Alignment:** Extracted from OpenStreetMap highway relation (`geojson/nh7_route.geojson`).
-- **Scored Corridor Length:** **247.37 km** (Rishikesh to Joshimath/Badrinath).
+- **Scored Corridor Length:** **247.37 km** (Rishikesh to Joshimath).
 - **Deduplication:** Raw highway trace deduplicated to exactly **1 point every 250 meters** of road (**4.00 evaluation points per kilometer**, totaling 990 road assessment nodes).
 
 ### 3.3 Topographic Feature Extraction (30m Copernicus DEM)
@@ -94,12 +94,12 @@ To avoid optimistic performance bias from spatial autocorrelation, the model was
 | **Spearman Correlation ($\rho$)** | **0.653** ($p = 0.0033$) | **Statistically significant correlation** between out-of-fold segment risk and actual observed landslides per km. |
 | **Cross-Validated ROC-AUC** | **0.767** [95% CI: 0.680 – 0.802] | Strong out-of-sample discriminative ability across spatially held-out highway sectors. |
 | **Block AUC Mean** | **0.665** [95% CI: 0.630 – 0.701] | Verified across 1,000 spatial block-bootstrap iterations. |
-| **Primary Generalizing Driver** | **Slope ($\Delta\text{AUC} = +0.0523$)** | Permutation testing proves slope steepness is the primary physical cause of failure. |
+| **Primary Generalizing Driver** | **Slope ($\Delta\text{AUC} = +0.0523$)** | Permutation testing demonstrates slope steepness has the highest predictive importance. |
 | **Secondary Driver** | **300m Relief ($\Delta\text{AUC} = +0.0216$)** | Large valley-to-ridge relief significantly elevates slope failure risk. |
 | **Spurious Feature Discarded** | **Elevation ($\Delta\text{AUC} = -0.0006$)** | Pure absolute elevation provided zero out-of-sample generalization; suppressed in final scoring. |
 
-### 3.5 Calibrated Model Formulation
-The segment static terrain score ($P_{\text{terrain}}$) is computed via calibrated logistic regression aggregated to the 18 segments using the **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
+### 3.5 Physically Motivated Statistical Model Formulation
+The segment static terrain score ($P_{\text{terrain}}$) is computed via a physically motivated statistical model aggregated to the 18 segments using the **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
 
 $$\text{Logit}(z) = -6.0963 + 0.1348 \times \text{Slope} + 0.0076 \times \text{Relief}_{300\text{m}}$$
 
@@ -116,7 +116,7 @@ $$P_{\text{hazard}} = P_{\text{terrain}} \times \left(1 - e^{-k \cdot R_{\text{3
 ### 3.7 Honest Reporting: The Sirobagarh Discrepancy
 - In the 2022 post-monsoon survey, `seg_08` (Srinagar to Sirobagarh) had only 1 slide polygon mapped (survey rank #17 of 18).
 - However, Sirobagarh is historically one of the most notorious active landslide complexes in Uttarakhand.
-- The out-of-fold spatial model correctly ranks it **#7 of 18 ($p_{90} = 0.600$)** based on its physical steepness and valley relief, demonstrating that the physics-based model avoids overfitting to single-season survey omissions.
+- The out-of-fold spatial model ranks it **#7 of 18 ($p_{90} = 0.600$)** based on its physical steepness and valley relief, demonstrating that the physically motivated statistical model avoids overfitting to single-season survey omissions.
 
 ---
 
@@ -197,7 +197,7 @@ When presenting to judges, follow the proven 3-minute structure from Section 8 o
 - Show **Field Reports**: A driver clicks the map, logs shooting stones near Sirobagarh, and the Admin instantly validates it.
 - **Explain the Flywheel:** *"Every verified ground report feeds back to improve the model."*
 - **Answering the "Why Not Satellite Deep Learning?" Question:**  
-  *"Deep learning on satellite imagery requires cloudless post-disaster photos that aren't available during active monsoon cloudbursts. We trained a spatial Random Forest / Logistic classifier on peer-reviewed 30m DEM topography and live meteorological gauges, achieving a cross-validated ROC-AUC of 0.767 and Spearman $\rho = 0.653$. We use satellite deep learning as our research upgrade track, but for real-time life safety today, deterministic physics + live weather is the only defensible approach."*
+  *"Deep learning on satellite imagery requires cloudless post-disaster photos that aren't available during active monsoon cloudbursts. We trained a spatial Random Forest / Logistic classifier on peer-reviewed 30m DEM topography and live meteorological gauges, achieving a cross-validated ROC-AUC of 0.767 and Spearman $\rho = 0.653$. We use satellite deep learning as our research upgrade track, but for real-time life safety today, a physically motivated statistical model + live weather is the only defensible approach."*
 
 ---
 

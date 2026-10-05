@@ -40,3 +40,26 @@ else:
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ["*"]
 CORS_ALLOW_HEADERS = ["*"]
+
+# --- Model & Risk Calculation Parameters (Uncalibrated Demo Heuristics) ---
+# K_RAIN: Weight of rainfall term in composite relative risk index (0.0 to 1.0)
+K_RAIN = 0.4
+
+# K_TERRAIN: Weight of static terrain susceptibility percentile in composite relative risk index
+K_TERRAIN = 0.6
+
+# RAIN_REF_MM: 3-day rainfall at which the rain term saturates to 1.0 (demo heuristic)
+RAIN_REF_MM = 100.0
+
+# DRY_CAP_MM: 3-day rainfall threshold below which risk is capped at Moderate under dry conditions
+DRY_CAP_MM = 25.0
+
+# Risk-level thresholds: maps relative risk index (0.0 to 1.0) to categorical warning tiers
+RISK_LEVEL_THRESHOLDS = [
+    {"threshold": 0.75, "level": "Very High"},
+    {"threshold": 0.50, "level": "High"},
+    {"threshold": 0.25, "level": "Moderate"},
+    {"threshold": 0.00, "level": "Low"},
+]
+LEVEL_CUTS = [(item["threshold"], item["level"]) for item in RISK_LEVEL_THRESHOLDS]
+
