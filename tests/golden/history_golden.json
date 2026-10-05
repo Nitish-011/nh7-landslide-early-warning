@@ -1,0 +1,76 @@
+{
+  "corridor": "NH-7 Uttarakhand",
+  "total_events": 7,
+  "events": [
+    {
+      "id": 1,
+      "title": "Sirobagarh Chronic Landslide Complex",
+      "location": "NH-7 Between Srinagar and Rudraprayag (Km 114)",
+      "lat": 30.239,
+      "lng": 78.854,
+      "event_date": "July 2023",
+      "description": "One of the most persistent landslide zones in Uttarakhand. Fragile phyllite slopes collapsed during heavy monsoon rain, blocking NH-7 for over 48 hours.",
+      "severity": "Very High"
+    },
+    {
+      "id": 2,
+      "title": "Chamoli Rock Avalanche & Debris Surge",
+      "location": "Rishi Ganga / Alaknanda Valley, Chamoli",
+      "lat": 30.4074,
+      "lng": 79.3524,
+      "event_date": "February 2021",
+      "description": "Massive hanging glacier and rock detachment caused catastrophic flash flooding and riverbank scour, washing away bridges and damaging highway retaining walls along NH-7.",
+      "severity": "Catastrophic"
+    },
+    {
+      "id": 3,
+      "title": "Pipalkoti Highway Boulder Slip",
+      "location": "NH-7 Near Pipalkoti Market Approach",
+      "lat": 30.4297,
+      "lng": 79.4304,
+      "event_date": "August 2022",
+      "description": "Sudden failure of weathered quartzite cliff sent house-sized boulders crashing onto the highway, stranding over 1,200 pilgrimage vehicles.",
+      "severity": "High"
+    },
+    {
+      "id": 4,
+      "title": "Tangani / Gulabkoti Slide Zone",
+      "location": "NH-7 Valley Slope Below Joshimath",
+      "lat": 30.492,
+      "lng": 79.51,
+      "event_date": "July 2023",
+      "description": "Active landslide zone triggered by toe erosion from the Alaknanda River, continuously eroding the mountain slope under the highway.",
+      "severity": "Very High"
+    },
+    {
+      "id": 5,
+      "title": "Byasi Gorge Rockfall",
+      "location": "NH-7 Near Byasi, Tehri Garhwal",
+      "lat": 30.1472,
+      "lng": 78.4839,
+      "event_date": "September 2020",
+      "description": "Steep rocky canyon face failure following intense monsoon precipitation, obstructing traffic between Rishikesh and Devprayag.",
+      "severity": "Moderate"
+    },
+    {
+      "id": 6,
+      "title": "Nandprayag Confluence Highway Slip",
+      "location": "NH-7 Near Nandprayag Sangam",
+      "lat": 30.3308,
+      "lng": 79.3242,
+      "event_date": "August 2019",
+      "description": "Cloudburst-triggered debris flow inundated the highway carriageway with 3 meters of mud and tree trunks.",
+      "severity": "High"
+    },
+    {
+      "id": 7,
+      "title": "Teen Dhara Debris Flow",
+      "location": "NH-7 Between Devprayag and Teen Dhara",
+      "lat": 30.2015,
+      "lng": 78.682,
+      "event_date": "August 2021",
+      "description": "Overnight cloudburst sent tons of loose mountain slurry over roadside dhabas and damaged 150m of tarmac.",
+      "severity": "High"
+    }
+  ]
+}

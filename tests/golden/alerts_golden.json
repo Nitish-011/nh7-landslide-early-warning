@@ -1,0 +1,21 @@
+{
+  "user_id": 7,
+  "subscriber_name": "Ramesh Kumar",
+  "subscribed_segment": "seg_01 (Rishikesh to Shivpuri)",
+  "active_alerts_count": 1,
+  "alerts": [
+    {
+      "alert_id": "ALT-NH7-SEG_01-02",
+      "segment_id": "seg_01",
+      "segment_name": "Rishikesh to Shivpuri",
+      "severity": "Moderate",
+      "risk_score": 0.53,
+      "message": "ADVISORY on Rishikesh to Shivpuri: Moderate slope wetness and slippery road conditions (3-day rain: 18.5 mm). Primary factor: unusual elevation for this road (low, z=-1.2). Speed limits enforced near drainage outlets.",
+      "channel": "SMS",
+      "issued_at": "2026-10-05T16:43:34.354411+00:00",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-1.2)"
+    }
+  ]
+}

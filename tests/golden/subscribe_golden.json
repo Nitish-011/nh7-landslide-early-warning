@@ -1,0 +1,14 @@
+{
+  "subscription_id": 7,
+  "status": "Active",
+  "message": "Successfully subscribed to alerts for 'Rishikesh to Shivpuri' via SMS.",
+  "subscription": {
+    "id": 7,
+    "name": "Ramesh Kumar",
+    "phone_or_email": "+91-9876543210",
+    "segment_id": "seg_01",
+    "segment_name": "Rishikesh to Shivpuri",
+    "channel": "SMS",
+    "created_at": "2026-10-05T16:43:34.327262+00:00"
+  }
+}

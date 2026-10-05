@@ -1,0 +1,74 @@
+[
+  {
+    "id": 6,
+    "lat": 30.12,
+    "lng": 78.32,
+    "description": "Small rockfall near Byasi bend",
+    "photo_url": null,
+    "reporter_name": "Patrol Team 1",
+    "status": "Validated",
+    "decision_notes": "Verified by ground team",
+    "created_at": "2026-10-05T16:43:34.373135+00:00",
+    "updated_at": "2026-10-05T16:43:34.393919+00:00"
+  },
+  {
+    "id": 5,
+    "lat": 30.239,
+    "lng": 78.854,
+    "description": "Shooting stones and active rockfall observed near Sirobagarh bend. Road partially blocked.",
+    "photo_url": null,
+    "reporter_name": "NHAI Patrol Team 4",
+    "status": "Pending",
+    "decision_notes": "",
+    "created_at": "2026-10-05T14:31:39.767715+00:00",
+    "updated_at": "2026-10-05T14:31:39.767715+00:00"
+  },
+  {
+    "id": 4,
+    "lat": 30.2392,
+    "lng": 78.8544,
+    "description": "Continuous rockfall observed near Sirobagarh bend after afternoon showers.",
+    "photo_url": "https://example.com/slide1.jpg",
+    "reporter_name": "Patrol Officer Negi",
+    "status": "Validated",
+    "decision_notes": "Verified by BRO highway clearance team.",
+    "created_at": "2026-10-02T09:30:05.193125+00:00",
+    "updated_at": "2026-10-02T09:30:07.240229+00:00"
+  },
+  {
+    "id": 3,
+    "lat": 30.1465,
+    "lng": 78.599,
+    "description": "Gravel accumulation cleared by earthmovers near Devprayag sangam bend; one lane open.",
+    "photo_url": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80",
+    "reporter_name": "Deepak Joshi (Local Volunteer)",
+    "status": "Validated",
+    "decision_notes": "Cleared and validated by local highway control room.",
+    "created_at": "2026-10-01T18:10:00Z",
+    "updated_at": "2026-10-01T19:00:00Z"
+  },
+  {
+    "id": 2,
+    "lat": 30.493,
+    "lng": 79.512,
+    "description": "Pavement subsidence and longitudinal shear cracks after heavy morning downpour near Tangani slide.",
+    "photo_url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80",
+    "reporter_name": "Vikram Chauhan (NHIDCL Patrol)",
+    "status": "Validated",
+    "decision_notes": "Confirmed by on-site engineer; heavy vehicles restricted to single-file passage.",
+    "created_at": "2026-10-01T14:20:00Z",
+    "updated_at": "2026-10-01T15:00:00Z"
+  },
+  {
+    "id": 1,
+    "lat": 30.2392,
+    "lng": 78.8544,
+    "description": "Continuous rockfall and debris rolling onto uphill lane near milestone 114 (Sirobagarh). Traffic stopped.",
+    "photo_url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80",
+    "reporter_name": "Suresh Negi (Commercial Driver)",
+    "status": "Pending",
+    "decision_notes": "Pending inspection by BRO sector team.",
+    "created_at": "2026-10-02T06:45:00Z",
+    "updated_at": "2026-10-02T06:45:00Z"
+  }
+]

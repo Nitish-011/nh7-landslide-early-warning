@@ -1,0 +1,645 @@
+{
+  "corridor": "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
+  "total_segments": 18,
+  "high_or_very_high_risk_count": 0,
+  "segments": [
+    {
+      "id": "seg_01",
+      "name": "Rishikesh to Shivpuri",
+      "sequence_order": 1,
+      "start_lat": 30.0869,
+      "start_lng": 78.2676,
+      "end_lat": 30.1357,
+      "end_lng": 78.3892,
+      "subpoints": [
+        [
+          30.0869,
+          78.2676
+        ],
+        [
+          30.098,
+          78.305
+        ],
+        [
+          30.115,
+          78.345
+        ],
+        [
+          30.1357,
+          78.3892
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.53,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.76,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-1.2)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_02",
+      "name": "Shivpuri to Byasi",
+      "sequence_order": 2,
+      "start_lat": 30.1357,
+      "start_lng": 78.3892,
+      "end_lat": 30.1472,
+      "end_lng": 78.4839,
+      "subpoints": [
+        [
+          30.1357,
+          78.3892
+        ],
+        [
+          30.141,
+          78.42
+        ],
+        [
+          30.144,
+          78.455
+        ],
+        [
+          30.1472,
+          78.4839
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.64,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.94,
+      "terrain_level": "High",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-1.1)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_03",
+      "name": "Byasi to Kaudiyala",
+      "sequence_order": 3,
+      "start_lat": 30.1472,
+      "start_lng": 78.4839,
+      "end_lat": 30.0765,
+      "end_lng": 78.5028,
+      "subpoints": [
+        [
+          30.1472,
+          78.4839
+        ],
+        [
+          30.12,
+          78.49
+        ],
+        [
+          30.095,
+          78.498
+        ],
+        [
+          30.0765,
+          78.5028
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.6,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.88,
+      "terrain_level": "High",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-1.0)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_04",
+      "name": "Kaudiyala to Devprayag",
+      "sequence_order": 4,
+      "start_lat": 30.0765,
+      "start_lng": 78.5028,
+      "end_lat": 30.1459,
+      "end_lng": 78.5986,
+      "subpoints": [
+        [
+          30.0765,
+          78.5028
+        ],
+        [
+          30.095,
+          78.535
+        ],
+        [
+          30.125,
+          78.57
+        ],
+        [
+          30.1459,
+          78.5986
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.57,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.82,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (low, z=-0.7)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_05",
+      "name": "Devprayag to Teen Dhara",
+      "sequence_order": 5,
+      "start_lat": 30.1459,
+      "start_lng": 78.5986,
+      "end_lat": 30.2015,
+      "end_lng": 78.682,
+      "subpoints": [
+        [
+          30.1459,
+          78.5986
+        ],
+        [
+          30.165,
+          78.625
+        ],
+        [
+          30.185,
+          78.655
+        ],
+        [
+          30.2015,
+          78.682
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.67,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 1.0,
+      "terrain_level": "High",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-0.8)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_06",
+      "name": "Teen Dhara to Kirtinagar",
+      "sequence_order": 6,
+      "start_lat": 30.2015,
+      "start_lng": 78.682,
+      "end_lat": 30.2173,
+      "end_lng": 78.7456,
+      "subpoints": [
+        [
+          30.2015,
+          78.682
+        ],
+        [
+          30.208,
+          78.705
+        ],
+        [
+          30.213,
+          78.725
+        ],
+        [
+          30.2173,
+          78.7456
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.39,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.53,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-0.8)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_07",
+      "name": "Kirtinagar to Srinagar",
+      "sequence_order": 7,
+      "start_lat": 30.2173,
+      "start_lng": 78.7456,
+      "end_lat": 30.2224,
+      "end_lng": 78.7845,
+      "subpoints": [
+        [
+          30.2173,
+          78.7456
+        ],
+        [
+          30.2195,
+          78.76
+        ],
+        [
+          30.2224,
+          78.7845
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.46,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.65,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual local relief for this road (low, z=-1.4)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_08",
+      "name": "Srinagar to Sirobagarh",
+      "sequence_order": 8,
+      "start_lat": 30.2224,
+      "start_lng": 78.7845,
+      "end_lat": 30.239,
+      "end_lng": 78.854,
+      "subpoints": [
+        [
+          30.2224,
+          78.7845
+        ],
+        [
+          30.228,
+          78.81
+        ],
+        [
+          30.234,
+          78.835
+        ],
+        [
+          30.239,
+          78.854
+        ]
+      ],
+      "risk_level": "Low",
+      "risk_score": 0.11,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.06,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope for this road (low, z=-1.0)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_09",
+      "name": "Sirobagarh to Rudraprayag",
+      "sequence_order": 9,
+      "start_lat": 30.239,
+      "start_lng": 78.854,
+      "end_lat": 30.2844,
+      "end_lng": 78.9811,
+      "subpoints": [
+        [
+          30.239,
+          78.854
+        ],
+        [
+          30.252,
+          78.895
+        ],
+        [
+          30.268,
+          78.94
+        ],
+        [
+          30.2844,
+          78.9811
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.32,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.41,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (low, z=-0.5)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_10",
+      "name": "Rudraprayag to Gauchar",
+      "sequence_order": 10,
+      "start_lat": 30.2844,
+      "start_lng": 78.9811,
+      "end_lat": 30.2872,
+      "end_lng": 79.1557,
+      "subpoints": [
+        [
+          30.2844,
+          78.9811
+        ],
+        [
+          30.285,
+          79.04
+        ],
+        [
+          30.286,
+          79.1
+        ],
+        [
+          30.2872,
+          79.1557
+        ]
+      ],
+      "risk_level": "Low",
+      "risk_score": 0.07,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.0,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (high, z=+0.6)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_11",
+      "name": "Gauchar to Karnaprayag",
+      "sequence_order": 11,
+      "start_lat": 30.2872,
+      "start_lng": 79.1557,
+      "end_lat": 30.2587,
+      "end_lng": 79.2173,
+      "subpoints": [
+        [
+          30.2872,
+          79.1557
+        ],
+        [
+          30.278,
+          79.18
+        ],
+        [
+          30.2587,
+          79.2173
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.29,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.35,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (high, z=+0.4)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_12",
+      "name": "Karnaprayag to Langasu",
+      "sequence_order": 12,
+      "start_lat": 30.2587,
+      "start_lng": 79.2173,
+      "end_lat": 30.298,
+      "end_lng": 79.255,
+      "subpoints": [
+        [
+          30.2587,
+          79.2173
+        ],
+        [
+          30.278,
+          79.238
+        ],
+        [
+          30.298,
+          79.255
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.25,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.29,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (high, z=+0.4)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_13",
+      "name": "Langasu to Nandprayag",
+      "sequence_order": 13,
+      "start_lat": 30.298,
+      "start_lng": 79.255,
+      "end_lat": 30.3308,
+      "end_lng": 79.3242,
+      "subpoints": [
+        [
+          30.298,
+          79.255
+        ],
+        [
+          30.312,
+          79.285
+        ],
+        [
+          30.3308,
+          79.3242
+        ]
+      ],
+      "risk_level": "Low",
+      "risk_score": 0.14,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.12,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (high, z=+0.3)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_14",
+      "name": "Nandprayag to Chamoli",
+      "sequence_order": 14,
+      "start_lat": 30.3308,
+      "start_lng": 79.3242,
+      "end_lat": 30.4074,
+      "end_lng": 79.3524,
+      "subpoints": [
+        [
+          30.3308,
+          79.3242
+        ],
+        [
+          30.36,
+          79.335
+        ],
+        [
+          30.385,
+          79.345
+        ],
+        [
+          30.4074,
+          79.3524
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.43,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.59,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope for this road (high, z=+0.4)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_15",
+      "name": "Chamoli to Birahi",
+      "sequence_order": 15,
+      "start_lat": 30.4074,
+      "start_lng": 79.3524,
+      "end_lat": 30.435,
+      "end_lng": 79.39,
+      "subpoints": [
+        [
+          30.4074,
+          79.3524
+        ],
+        [
+          30.42,
+          79.37
+        ],
+        [
+          30.435,
+          79.39
+        ]
+      ],
+      "risk_level": "Low",
+      "risk_score": 0.22,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.24,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual slope aspect (north-south) for this road (high, z=+0.6)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_16",
+      "name": "Birahi to Pipalkoti",
+      "sequence_order": 16,
+      "start_lat": 30.435,
+      "start_lng": 79.39,
+      "end_lat": 30.4297,
+      "end_lng": 79.4304,
+      "subpoints": [
+        [
+          30.435,
+          79.39
+        ],
+        [
+          30.432,
+          79.41
+        ],
+        [
+          30.4297,
+          79.4304
+        ]
+      ],
+      "risk_level": "Low",
+      "risk_score": 0.18,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.18,
+      "terrain_level": "Low",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (high, z=+0.7)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_17",
+      "name": "Pipalkoti to Helang (Tangani)",
+      "sequence_order": 17,
+      "start_lat": 30.4297,
+      "start_lng": 79.4304,
+      "end_lat": 30.528,
+      "end_lng": 79.538,
+      "subpoints": [
+        [
+          30.4297,
+          79.4304
+        ],
+        [
+          30.46,
+          79.47
+        ],
+        [
+          30.495,
+          79.51
+        ],
+        [
+          30.528,
+          79.538
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.5,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.71,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (high, z=+1.3)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    },
+    {
+      "id": "seg_18",
+      "name": "Helang to Joshimath",
+      "sequence_order": 18,
+      "start_lat": 30.528,
+      "start_lng": 79.538,
+      "end_lat": 30.5564,
+      "end_lng": 79.5663,
+      "subpoints": [
+        [
+          30.528,
+          79.538
+        ],
+        [
+          30.54,
+          79.55
+        ],
+        [
+          30.5564,
+          79.5663
+        ]
+      ],
+      "risk_level": "Moderate",
+      "risk_score": 0.36,
+      "updated_at": "2026-10-05T16:43:34Z",
+      "terrain_percentile": 0.47,
+      "terrain_level": "Moderate",
+      "terrain_status": "ok",
+      "rain_mm_3d": 18.5,
+      "rain_status": "ok",
+      "main_driver": "unusual elevation for this road (high, z=+1.8)",
+      "method": "terrain model ranking + live-rainfall heuristic (not calibrated)"
+    }
+  ]
+}
