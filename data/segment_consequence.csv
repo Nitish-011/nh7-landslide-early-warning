@@ -1,0 +1,19 @@
+segment_id,nearest_town,nearest_town_km,nearest_hospital,nearest_hospital_km,lodging_count_5km,has_alternate_route,traffic_index
+seg_01,Simaldhandi,1.93,Ayurveda Center,1.42,119,,3
+seg_02,Kakhil,1.85,Laxman Jhula Governement Hospital,10.2,2,,3
+seg_03,Chaundli,2.21,"Government Hospital, Katghar",13.91,0,,3
+seg_04,Umrasu,3.73,"Government Hospital, Sabdarkhal",8.75,0,,3
+seg_05,Mahar,3.07,"Government Hospital, Sabdarkhal",4.7,0,,3
+seg_06,Janasu,3.14,Chaudhary Hospital,6.39,2,,3
+seg_07,Kirtinagar,1.7,Chaudhary Hospital,1.35,3,,3
+seg_08,Srinagar,2.14,Hemwati Nandan Bahuguna Base Hospital Srinagar,0.89,1,,3
+seg_09,Narkota,1.64,"Government Hospital, Kherakhal",4.89,0,,3
+seg_10,Gholtir,2.63,ITBP Hospital,7.37,0,,3
+seg_11,Siran,1.34,Trauma Centre,2.96,1,,3
+seg_12,Semuwa,2.22,ECHS PolyClinic,1.33,1,,3
+seg_13,Devali Bagar,1.63,Nandprayag Governnment Hospital,3.58,1,,3
+seg_14,Majathi,1.35,Nandprayag Governnment Hospital,4.48,12,,3
+seg_15,Chamoli,0.74,District Hospital Gopeshwar,5.07,7,,3
+seg_16,Jaisau,1.72,Swami Vivekanand Dharmarth Chikitsalay,1.66,1,,3
+seg_17,Langsi,1.68,Pipalkoti SD Ground Hospital,7.22,0,,3
+seg_18,Auli,1.39,Pipalkoti SD Ground Hospital,16.81,7,,3

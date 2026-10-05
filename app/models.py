@@ -35,6 +35,11 @@ class SegmentResponse(BaseModel):
     forecast_72h_mm: Optional[float] = None
     peak_hour_utc: Optional[str] = None
     peak_mm: Optional[float] = None
+    # Task 4: Additive Consequence & Priority fields (indicative, optional)
+    consequence_score: Optional[float] = None
+    nearest_hospital_km: Optional[float] = None
+    nearest_town: Optional[str] = None
+    priority_score: Optional[float] = None
 
 class RiskMapResponse(BaseModel):
     corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
@@ -278,4 +283,41 @@ class ModelInfoResponse(BaseModel):
     limitations: List[str] = Field(..., description="Transparent scientific limitations and operational boundaries")
     data_sources: Dict[str, str] = Field(..., description="Citations and data sources for inventory, DEM, and meteorology")
     scope: str = Field(..., description="Evaluated geographical corridor scope")
+
+
+# --- Task 4: Consequence & BRO Operational Priority Models ---
+
+class PrioritySegmentItem(BaseModel):
+    model_config = {"extra": "ignore"}
+    id: str
+    name: str
+    sequence_order: int
+    risk_level: str
+    risk_score: float = Field(..., description="Legacy relative risk score (0.0 to 1.0)")
+    risk_index: float = Field(..., description="Relative risk index (0.0 to 1.0)")
+    consequence_score: float = Field(..., description="Indicative blockage consequence index (0.0 to 1.0)")
+    priority_score: float = Field(..., description="Indicative BRO operational priority score (risk_index * consequence_score)")
+    nearest_town: Optional[str] = None
+    nearest_town_km: Optional[float] = None
+    nearest_hospital: Optional[str] = None
+    nearest_hospital_km: Optional[float] = None
+    lodging_count_5km: Optional[int] = None
+    has_alternate_route: Optional[bool] = None
+    traffic_index: Optional[int] = None
+    recommended_action: str = Field(..., description="Indicative recommended operational action template")
+    rank: int = Field(..., description="Corridor priority ranking (1 = highest urgency)")
+
+class PriorityListResponse(BaseModel):
+    model_config = {"extra": "ignore"}
+    corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
+    total_segments: int
+    status: str = "indicative"
+    disclaimer: str = (
+        "Indicative BRO / SDRF operational priority list combining landslide hazard "
+        "and blockage consequence metrics. Traffic index and alternate route availability "
+        "are indicative assumptions. Does not replace physical field reconnaissance."
+    )
+    is_simulated: bool = False
+    segments: List[PrioritySegmentItem]
+
 

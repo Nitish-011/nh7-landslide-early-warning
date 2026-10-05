@@ -504,6 +504,7 @@
     <div class="nav-tabs">
       <div class="nav-tab active" onclick="switchTab('tab-corridor')">🗺️ Risk Map</div>
       <div class="nav-tab" onclick="switchTab('tab-router')">🚗 Route Planner</div>
+      <div class="nav-tab" onclick="switchTab('tab-priority')">🚜 BRO Priority</div>
       <div class="nav-tab" onclick="switchTab('tab-weather')">🌧️ Weather Sim</div>
       <div class="nav-tab" onclick="switchTab('tab-alerts')">🔔 Alerts</div>
       <div class="nav-tab" onclick="switchTab('tab-reports')">📢 Field Reports</div>
@@ -575,7 +576,10 @@
               <div>Percentile: <strong id="det-pctile">-</strong></div>
               <div>Rainfall (3d): <strong id="det-rain">-</strong></div>
               <div>Rain Status: <strong id="det-rain-status">-</strong></div>
+              <div>Consequence Score: <strong id="det-cscore">-</strong></div>
+              <div>Priority Score: <strong id="det-pscore" style="color:var(--danger);">-</strong></div>
             </div>
+            <div style="margin-top: 6px;">Nearest Town / Hosp: <strong id="det-poi" style="color:#bae6fd;">-</strong></div>
             <div style="margin-top: 6px;">Primary Driver: <strong id="det-driver" style="color:#bae6fd;">-</strong></div>
             <div>Calculation Method: <span id="det-method" style="font-family:var(--font-mono); font-size:0.7rem;">-</span></div>
           </div>
@@ -644,7 +648,41 @@
         </div>
       </div>
 
-      <!-- TAB 3: RAINFALL & SIMULATION STUDIO -->
+      <!-- TAB 3: BRO OPERATIONAL PRIORITY LIST (Task 4) -->
+      <div id="tab-priority" class="tab-pane">
+        <div class="card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(30, 41, 59, 0.7);">
+          <div class="card-title">
+            <span style="color: #fbbf24;">🚜 BRO Operational Priority List</span>
+            <span class="endpoint-pill" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">GET /priority-list</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+            Ranks corridor segments by <strong>Priority Score = Risk Index &times; Blockage Consequence Score</strong>.
+            Integrates Overpass OSM amenities (hospital distance, lodging shelter count) and traffic importance to prioritize excavator pre-positioning.
+          </p>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label for="priority-rain-sim">Optional Simulated Rain (mm)</label>
+              <input type="number" id="priority-rain-sim" placeholder="e.g. 50 (leave empty for live rain)" min="0" max="500" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" style="background: #d97706;" onclick="loadPriorityList()">
+              <span>⚡ Load BRO Priority List</span>
+            </button>
+            <button onclick="document.getElementById('priority-rain-sim').value=''; loadPriorityList();">🔄 Reset to Live</button>
+          </div>
+        </div>
+
+        <div id="priority-disclaimer" style="display:none; font-size: 0.72rem; color: #fbbf24; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;"></div>
+
+        <div id="priority-list-container" style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 20px;">
+            Click <strong>"Load BRO Priority List"</strong> to fetch ranked operational sectors.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: RAINFALL & SIMULATION STUDIO -->
       <div id="tab-weather" class="tab-pane">
         <div class="card">
           <div class="card-title">
@@ -934,7 +972,7 @@
       document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
       document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
       
-      const idx = ["tab-corridor", "tab-router", "tab-weather", "tab-alerts", "tab-reports"].indexOf(tabId);
+      const idx = ["tab-corridor", "tab-router", "tab-priority", "tab-weather", "tab-alerts", "tab-reports"].indexOf(tabId);
       if (idx !== -1) {
         document.querySelectorAll(".nav-tab")[idx].classList.add("active");
         document.getElementById(tabId).classList.add("active");
@@ -1179,6 +1217,22 @@
       document.getElementById("det-rain-status").textContent = seg.rain_status || "ok";
       document.getElementById("det-driver").textContent = seg.main_driver || "-";
       document.getElementById("det-method").textContent = seg.method || "physically_motivated_ml_v2";
+
+      // Consequence & Priority (Task 4)
+      if (seg.consequence_score !== undefined && seg.consequence_score !== null) {
+        document.getElementById("det-cscore").textContent = seg.consequence_score.toFixed(2);
+      } else {
+        document.getElementById("det-cscore").textContent = "-";
+      }
+      if (seg.priority_score !== undefined && seg.priority_score !== null) {
+        document.getElementById("det-pscore").textContent = seg.priority_score.toFixed(2);
+      } else {
+        document.getElementById("det-pscore").textContent = "-";
+      }
+      const hospPart = seg.nearest_hospital_km ? `Hosp: ${seg.nearest_hospital_km}km` : "";
+      const townPart = seg.nearest_town ? `Town: ${seg.nearest_town}` : "";
+      const poiText = [townPart, hospPart].filter(Boolean).join(" | ") || "-";
+      document.getElementById("det-poi").textContent = poiText;
     }
 
     function zoomToCorridor() {
@@ -1300,7 +1354,76 @@
       }
     }
 
-    // --- Tab 3: Rainfall Simulation Studio ---
+    // --- Tab 3: BRO Operational Priority List (Task 4) ---
+    async function loadPriorityList() {
+      const container = document.getElementById("priority-list-container");
+      const disclaimerBox = document.getElementById("priority-disclaimer");
+      const simInput = document.getElementById("priority-rain-sim");
+      const simVal = simInput ? simInput.value.trim() : "";
+
+      container.innerHTML = '<div style="text-align:center; padding:15px; font-size:0.8rem; color:var(--text-muted);">Fetching BRO priority ranking...</div>';
+
+      let url = "/priority-list";
+      if (simVal && !isNaN(simVal)) {
+        url += `?simulate_rain_mm=${encodeURIComponent(simVal)}`;
+      }
+
+      const res = await apiCall("GET", url);
+      if (!res.ok || !res.data) {
+        container.innerHTML = `<div style="color:var(--danger); font-size:0.75rem; padding:10px;">Failed to load priority list: ${res.data?.detail || res.status}</div>`;
+        return;
+      }
+
+      const data = res.data;
+      if (data.disclaimer) {
+        disclaimerBox.style.display = "block";
+        disclaimerBox.textContent = `⚠️ ${data.disclaimer}`;
+      } else {
+        disclaimerBox.style.display = "none";
+      }
+
+      const segs = data.segments || [];
+      if (segs.length === 0) {
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:15px;">No segments returned.</div>';
+        return;
+      }
+
+      container.innerHTML = segs.map(s => {
+        const pScore = (s.priority_score !== undefined && s.priority_score !== null) ? s.priority_score.toFixed(2) : "-";
+        const cScore = (s.consequence_score !== undefined && s.consequence_score !== null) ? s.consequence_score.toFixed(2) : "-";
+        const rIndex = (s.risk_index !== undefined && s.risk_index !== null) ? s.risk_index.toFixed(2) : "-";
+        const hospStr = s.nearest_hospital ? `${s.nearest_hospital} (${s.nearest_hospital_km || 0} km)` : "Unknown";
+        const townStr = s.nearest_town ? `${s.nearest_town} (${s.nearest_town_km || 0} km)` : "Unknown";
+        const badgeColor = getRiskColor(s.risk_level);
+
+        return `
+          <div class="card" style="margin-bottom:0; padding:12px; border-left: 4px solid ${badgeColor};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div>
+                <span style="font-size:0.8rem; font-weight:700; color:#f8fafc;">#${s.rank} &bull; ${s.id}: ${s.name}</span>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span class="popup-badge" style="background:${badgeColor}; color:#fff; font-size:0.65rem;">${s.risk_level}</span>
+                <span style="font-size:0.78rem; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">
+                  Priority: ${pScore}
+                </span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:4px; font-size:0.7rem; color:#94a3b8; margin-bottom:8px;">
+              <div>Risk Index: <strong style="color:#f1f5f9;">${rIndex}</strong></div>
+              <div>Consequence: <strong style="color:#f1f5f9;">${cScore}</strong></div>
+              <div>Hosp: <span style="color:#cbd5e1;">${hospStr}</span></div>
+              <div>Town: <span style="color:#cbd5e1;">${townStr}</span></div>
+            </div>
+            <div style="font-size:0.72rem; line-height:1.4; background:rgba(15,23,42,0.6); border:1px solid rgba(148,163,184,0.15); border-radius:4px; padding:6px 8px; color:#e2e8f0;">
+              🚜 <strong>Recommended Action:</strong> ${s.recommended_action}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // --- Tab 4: Rainfall Simulation Studio ---
     function updateRainSlider(val) {
       const display = document.getElementById("slider-rain-val");
       const num = parseFloat(val);

@@ -362,6 +362,21 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
     if rain.get("hourly"):
         seg_dict["hourly"] = rain.get("hourly")
 
+    # Task 4: Additive consequence and priority scores (indicative, optional)
+    try:
+        from app.consequence_service import load_consequence_dataset
+        c_map = load_consequence_dataset()
+        c_item = c_map.get(seg["id"])
+        if c_item:
+            c_score = c_item.get("consequence_score")
+            seg_dict["consequence_score"] = c_score
+            seg_dict["nearest_hospital_km"] = c_item.get("nearest_hospital_km")
+            seg_dict["nearest_town"] = c_item.get("nearest_town")
+            if c_score is not None:
+                seg_dict["priority_score"] = round(round(score, 2) * c_score, 2)
+    except Exception:
+        pass
+
     return seg_dict
 
 

@@ -66,14 +66,16 @@ def main():
         }),
         ("GET", "/alerts?user_id=1", None),
         ("POST", "/field-report", {
-            "lat": 30.14,
-            "lng": 78.36,
-            "description": "Smoke test observation near Shivpuri",
+            "lat": round(30.14 + ((int(time.time()) % 100) * 0.005), 4),
+            "lng": round(78.36 + ((int(time.time()) % 100) * 0.005), 4),
+            "description": f"Smoke test observation near Shivpuri - {int(time.time())}",
             "reporter_name": "Automated Smoke Test"
         }),
         ("GET", "/field-reports", None),
         ("GET", "/history", None),
         ("GET", "/model-info", None),
+        ("GET", "/priority-list", None),
+        ("GET", "/priority-list?simulate_rain_mm=40", None),
     ]
 
     all_passed = True

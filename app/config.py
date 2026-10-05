@@ -82,3 +82,17 @@ RISK_LEVEL_THRESHOLDS = [
 ]
 LEVEL_CUTS = [(item["threshold"], item["level"]) for item in RISK_LEVEL_THRESHOLDS]
 
+# --- Task 4: Consequence & BRO Operational Priority Weights (Indicative Heuristic) ---
+# Isolation penalty based on distance to nearest hospital/clinic (normalized to HOSPITAL_REF_KM)
+W_CONSEQUENCE_HOSPITAL = 0.40
+HOSPITAL_REF_KM = 30.0
+
+# Blockage penalty when no alternate route exists (1.0 if no bypass, 0.0 if alternate detour exists)
+W_CONSEQUENCE_ALTERNATE = 0.35
+
+# Highway traffic importance index penalty (traffic_index 1-5, normalized)
+W_CONSEQUENCE_TRAFFIC = 0.25
+
+CONSEQUENCE_CSV_PATH = Path(os.getenv("CONSEQUENCE_CSV_PATH", str(DATA_DIR / "segment_consequence.csv"))).resolve()
+
+

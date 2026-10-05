@@ -10,6 +10,8 @@ from app.models import (
     BacktestSummaryResponse,
     DepartureOption,
     ModelInfoResponse,
+    PriorityListResponse,
+    PrioritySegmentItem,
     RiskMapResponse,
     RouteRiskResponse,
     RouteSegmentRisk,
@@ -448,5 +450,30 @@ def get_backtest_summary(request: Request):
     except Exception as e:
         logger.exception(f"Failed to read backtest summary: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load backtest summary: {e}")
+
+
+@router.get("/priority-list", response_model=PriorityListResponse)
+@limiter.limit("120/minute")
+def get_priority_list(
+    request: Request,
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
+):
+    """
+    Returns highway segments prioritized by operational urgency for Border Roads Organisation (BRO)
+    and State Disaster Response Force (SDRF) clearance operations.
+    
+    Priority Score = Relative Risk Index × Blockage Consequence Index.
+    All consequence metrics, hospital distances, and priority rankings are indicative operational
+    guidance based on OpenStreetMap amenities and assumed parameters. Degrades gracefully if the
+    consequence dataset is missing.
+    """
+    try:
+        from app.consequence_service import get_priority_list_data
+        data = get_priority_list_data(simulate_rain_mm=simulate_rain_mm)
+        return PriorityListResponse(**data)
+    except Exception as e:
+        logger.exception(f"Failed to generate priority list: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate priority list: {e}")
+
 
 
