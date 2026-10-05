@@ -672,6 +672,11 @@
                 <option value="SMS">SMS</option>
                 <option value="Email">Email</option>
               </select>
+            <div class="form-col-full">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+                <input type="checkbox" id="sub-consent" checked style="width:auto;" />
+                <span>I consent to receive automated landslide hazard alerts</span>
+              </label>
             </div>
           </div>
           <button class="btn-primary" onclick="submitSubscription()">Register Subscription</button>
@@ -726,6 +731,20 @@
 
         <div class="card">
           <div class="card-title">
+            <span>Admin Review Authentication</span>
+            <span class="endpoint-pill">POST /admin/validate-report</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+            Validation actions require <code>X-API-Key</code>. In development, localhost requests are auto-allowed if key is unset. Held in volatile memory only (never localStorage).
+          </div>
+          <div>
+            <label>Admin API Key (Session / Memory Only)</label>
+            <input type="password" id="admin-api-key" placeholder="Enter ADMIN_API_KEY if configured..." oninput="adminApiKey = this.value" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
             <span>Active Field Reports</span>
             <span class="endpoint-pill">GET /field-reports</span>
           </div>
@@ -765,6 +784,7 @@
     let activeSimulationRain = null; // null = use live weather
     let mapClickMode = false;
     let clickMarker = null;
+    let adminApiKey = ""; // Held strictly in volatile memory, never persisted to localStorage
 
     // Default Segment definitions for initial setup
     const SEGMENT_NAMES = [
@@ -876,7 +896,7 @@
     }
 
     // --- API Fetch Helper ---
-    async function apiCall(method, url, body = null) {
+    async function apiCall(method, url, body = null, extraHeaders = {}) {
       const start = performance.now();
       const conMethod = document.getElementById("con-method");
       const conUrl = document.getElementById("con-url");
@@ -889,7 +909,8 @@
       conPre.textContent = "// Request in flight...";
 
       try {
-        const opts = { method, headers: { "Content-Type": "application/json" } };
+        const headers = { "Content-Type": "application/json", ...extraHeaders };
+        const opts = { method, headers };
         if (body) opts.body = JSON.stringify(body);
 
         const res = await fetch(url, opts);
@@ -1150,12 +1171,14 @@
       const contact = document.getElementById("sub-contact").value;
       const segId = document.getElementById("sub-segment-select").value;
       const channel = document.getElementById("sub-channel").value;
+      const consent = document.getElementById("sub-consent") ? document.getElementById("sub-consent").checked : true;
 
       const payload = {
         name,
         phone_or_email: contact,
         segment_id: segId,
-        channel
+        channel,
+        consent
       };
 
       const res = await apiCall("POST", "/subscribe", payload);
@@ -1224,7 +1247,11 @@
         decision: decision,
         notes: `Reviewed and marked as ${decision} via workbench`
       };
-      const res = await apiCall("POST", "/admin/validate-report", payload);
+      const extraHeaders = {};
+      if (adminApiKey && adminApiKey.trim().length > 0) {
+        extraHeaders["X-API-Key"] = adminApiKey.trim();
+      }
+      const res = await apiCall("POST", "/admin/validate-report", payload, extraHeaders);
       if (res.ok) {
         fetchFieldReports();
       }

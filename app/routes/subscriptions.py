@@ -1,6 +1,7 @@
+import re
 from datetime import datetime, timezone
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import List, Optional, Tuple
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from app.database import get_db
 from app.models import (
     SubscribeRequest,
@@ -10,15 +11,75 @@ from app.models import (
     AlertItem,
 )
 from app.logger import logger
+from app.limiter import limiter
 
 router = APIRouter(tags=["Subscriptions & Alerts"])
 
+def validate_and_normalize_contact(contact: str) -> Tuple[bool, str, str]:
+    """
+    Validates E.164 phone or email.
+    If phone is 10 digits without country code, defaults to +91.
+    Returns (is_valid, normalized_contact, masked_contact).
+    """
+    contact = contact.strip()
+
+    # Check email
+    if "@" in contact:
+        email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        if re.match(email_pattern, contact):
+            parts = contact.split("@")
+            user, domain = parts[0], parts[1]
+            if len(user) <= 2:
+                masked_user = user[0] + "*"
+            else:
+                masked_user = user[0] + "*" * min(6, len(user) - 2) + user[-1]
+            return True, contact, f"{masked_user}@{domain}"
+        return False, contact, contact
+
+    # Check phone (E.164 or Indian 10 digits)
+    clean_phone = re.sub(r"[\s\-\(\)]", "", contact)
+    if re.match(r"^[6-9]\d{9}$", clean_phone):
+        clean_phone = f"+91{clean_phone}"
+    elif clean_phone.startswith("0") and len(clean_phone) == 11 and re.match(r"^0[6-9]\d{9}$", clean_phone):
+        clean_phone = f"+91{clean_phone[1:]}"
+    elif not clean_phone.startswith("+") and clean_phone.isdigit() and len(clean_phone) >= 10:
+        clean_phone = f"+{clean_phone}"
+
+    # E.164 pattern: + followed by 7 to 15 digits
+    e164_pattern = r"^\+[1-9]\d{6,14}$"
+    if re.match(e164_pattern, clean_phone):
+        if len(clean_phone) >= 7:
+            prefix = clean_phone[:3]
+            suffix = clean_phone[-4:]
+            masked = f"{prefix}******{suffix}"
+        else:
+            masked = clean_phone[:2] + "****" + clean_phone[-2:]
+        return True, clean_phone, masked
+
+    return False, contact, contact
+
+def mask_contact(contact: str) -> str:
+    """Convenience helper to return masked phone or email."""
+    _, _, masked = validate_and_normalize_contact(contact)
+    return masked
+
 @router.post("/subscribe", response_model=SubscribeResponse, status_code=status.HTTP_201_CREATED)
-def create_subscription(req: SubscribeRequest):
+@limiter.limit("5/minute")
+def create_subscription(request: Request, req: SubscribeRequest):
     """
     Subscribes a traveler or resident to real-time alerts for an NH-7 segment.
-    Returns the newly created numeric subscription_id.
+    Validates E.164 phone or email, masks contact in logs, stores consent,
+    and returns the newly created numeric subscription_id.
     """
+    is_valid, normalized_contact, masked_contact = validate_and_normalize_contact(req.phone_or_email)
+    if not is_valid:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid contact: must be a valid E.164 phone number (e.g. +919876543210) or a valid email address."
+        )
+
+    consent_bool = True if req.consent is not False else False
+
     with get_db() as conn:
         cursor = conn.cursor()
         
@@ -33,18 +94,20 @@ def create_subscription(req: SubscribeRequest):
 
         now_str = datetime.now(timezone.utc).isoformat()
         cursor.execute("""
-            INSERT INTO subscriptions (name, phone_or_email, segment_id, channel, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO subscriptions (name, phone_or_email, segment_id, channel, consent, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             req.name.strip(),
-            req.phone_or_email.strip(),
+            normalized_contact,
             req.segment_id,
             req.channel,
+            1 if consent_bool else 0,
             now_str
         ))
         sub_id = cursor.lastrowid
 
-    logger.info(f"New subscription registered: ID {sub_id} for {req.name} ({req.channel}) on {segment['name']}")
+    # Masked logging: NEVER log full phone or email
+    logger.info(f"New subscription registered: ID {sub_id} for {req.name} ({req.channel}) - contact: {masked_contact} on {segment['name']}")
 
     return SubscribeResponse(
         subscription_id=sub_id,
@@ -53,16 +116,19 @@ def create_subscription(req: SubscribeRequest):
         subscription=SubscriptionDetail(
             id=sub_id,
             name=req.name.strip(),
-            phone_or_email=req.phone_or_email.strip(),
+            phone_or_email=normalized_contact,
             segment_id=req.segment_id,
             segment_name=segment["name"],
             channel=req.channel,
+            consent=consent_bool,
             created_at=now_str
         )
     )
 
 @router.get("/alerts", response_model=AlertsResponse)
+@limiter.limit("120/minute")
 def get_alerts(
+    request: Request,
     user_id: int = Query(..., description="Numeric subscription_id returned by /subscribe"),
     simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
 ):

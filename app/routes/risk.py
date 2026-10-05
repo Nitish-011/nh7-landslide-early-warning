@@ -2,11 +2,12 @@ import hashlib
 import json
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from app.database import get_db
 from app.models import RiskMapResponse, SegmentResponse, RouteRiskResponse, RouteSegmentRisk
 from app.logger import logger
 from app.risk_service import get_live_risk_map
+from app.limiter import limiter
 
 router = APIRouter(tags=["Risk Assessment"])
 
@@ -69,7 +70,9 @@ def _fallback_risk_map() -> RiskMapResponse:
     )
 
 @router.get("/risk-map", response_model=RiskMapResponse)
+@limiter.limit("120/minute")
 def get_risk_map(
+    request: Request,
     simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
 ):
     """
@@ -90,7 +93,9 @@ def get_risk_map(
         return _fallback_risk_map()
 
 @router.get("/route-risk", response_model=RouteRiskResponse)
+@limiter.limit("120/minute")
 def get_route_risk(
+    request: Request,
     from_segment: str = Query(..., description="Starting segment ID (e.g. seg_01)"),
     to_segment: str = Query(..., description="Destination segment ID (e.g. seg_09)"),
     date: str = Query(..., description="Target date in YYYY-MM-DD format"),

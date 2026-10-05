@@ -5,7 +5,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
 
+from app import config
 from app.config import (
     CORS_ALLOW_ORIGINS,
     CORS_ALLOW_CREDENTIALS,
@@ -15,6 +17,7 @@ from app.config import (
 from app.database import init_db
 from app.logger import logger
 from app.middleware import RequestResponseLoggingMiddleware
+from app.limiter import limiter
 
 # Import Route Routers
 from app.routes.risk import router as risk_router
@@ -29,6 +32,9 @@ async def lifespan(app: FastAPI):
     verifying all endpoints will return rich mock data immediately.
     """
     logger.info("Starting up NH-7 Landslide Risk Backend...")
+    if config.ENV == "production" and not config.ADMIN_API_KEY:
+        logger.critical("FATAL: ADMIN_API_KEY must be set when ENV=production!")
+        raise RuntimeError("FATAL STARTUP CONFIGURATION ERROR: ADMIN_API_KEY must be set in production mode!")
     init_db()
     logger.info("NH-7 Landslide Risk Backend initialized successfully and ready for incoming traffic.")
     yield
@@ -45,6 +51,16 @@ app = FastAPI(
     ),
     lifespan=lifespan
 )
+
+# Attach slowapi limiter
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded: {exc.detail}"}
+    )
 
 # 1. Add CORS Middleware (Essential for mobile apps & web frontend dev servers)
 app.add_middleware(

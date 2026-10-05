@@ -74,6 +74,7 @@ class SubscribeRequest(BaseModel):
     phone_or_email: str = Field(..., min_length=5, description="Mobile number with country code or email address")
     segment_id: str = Field(..., description="ID of NH-7 segment to monitor (e.g., seg_08)")
     channel: Literal["SMS", "WhatsApp", "Email"] = Field(..., description="Alert channel")
+    consent: Optional[bool] = Field(default=True, description="Consent for emergency alerts and data processing")
 
 class SubscriptionDetail(BaseModel):
     id: int
@@ -82,6 +83,7 @@ class SubscriptionDetail(BaseModel):
     segment_id: str
     segment_name: str
     channel: str
+    consent: Optional[bool] = True
     created_at: str
 
 class SubscribeResponse(BaseModel):
@@ -118,9 +120,9 @@ class AlertsResponse(BaseModel):
 class FieldReportCreate(BaseModel):
     lat: float = Field(..., ge=-90.0, le=90.0, description="Latitude of landslide observation")
     lng: float = Field(..., ge=-180.0, le=180.0, description="Longitude of landslide observation")
-    description: str = Field(..., min_length=5, description="Details of rockfall, debris, road blockage")
-    photo_url: Optional[str] = Field(None, description="Optional photo URL of the slide site")
-    reporter_name: str = Field(..., min_length=2, description="Name of traveler, driver, or official")
+    description: str = Field(..., min_length=5, max_length=500, description="Details of rockfall, debris, road blockage")
+    photo_url: Optional[str] = Field(None, max_length=500, description="Optional photo URL of the slide site")
+    reporter_name: str = Field(..., min_length=2, max_length=100, description="Name of traveler, driver, or official")
 
 class FieldReportResponse(BaseModel):
     report_id: int

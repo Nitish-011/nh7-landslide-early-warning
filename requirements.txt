@@ -8,3 +8,5 @@ scikit-learn==1.9.0
 joblib==1.5.3
 numpy==2.4.6
 scipy==1.18.0
+slowapi==0.1.10
+limits==5.8.0

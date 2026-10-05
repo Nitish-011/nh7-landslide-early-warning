@@ -21,6 +21,8 @@ logs/*.log
 *.log
 data/*.db
 data/*.sqlite3
+*.bak
+data/*.bak
 
 # Large external zip archives (>100MB, exceeds GitHub limits)
 model/nhess-24-3207-2024-supplement_2.zip

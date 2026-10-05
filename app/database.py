@@ -58,6 +58,7 @@ def create_tables(conn: sqlite3.Connection):
             phone_or_email TEXT NOT NULL,
             segment_id TEXT NOT NULL,
             channel TEXT NOT NULL,
+            consent BOOLEAN NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL,
             FOREIGN KEY (segment_id) REFERENCES segments(id)
         )
@@ -72,6 +73,7 @@ def create_tables(conn: sqlite3.Connection):
             description TEXT NOT NULL,
             photo_url TEXT,
             reporter_name TEXT NOT NULL,
+            reporter_ip TEXT DEFAULT '',
             status TEXT NOT NULL DEFAULT 'Pending',
             decision_notes TEXT,
             created_at TEXT NOT NULL,
@@ -92,6 +94,17 @@ def create_tables(conn: sqlite3.Connection):
             severity TEXT NOT NULL
         )
     """)
+
+    # --- Backward-compatible column migrations for existing databases ---
+    cursor.execute("PRAGMA table_info(subscriptions)")
+    sub_cols = [row[1] for row in cursor.fetchall()]
+    if "consent" not in sub_cols:
+        cursor.execute("ALTER TABLE subscriptions ADD COLUMN consent BOOLEAN NOT NULL DEFAULT 1")
+
+    cursor.execute("PRAGMA table_info(field_reports)")
+    fr_cols = [row[1] for row in cursor.fetchall()]
+    if "reporter_ip" not in fr_cols:
+        cursor.execute("ALTER TABLE field_reports ADD COLUMN reporter_ip TEXT DEFAULT ''")
 
 def seed_database(conn: sqlite3.Connection):
     """
