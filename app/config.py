@@ -101,3 +101,13 @@ GROUND_REPORT_HALF_LIFE_HOURS = float(os.getenv("GROUND_REPORT_HALF_LIFE_HOURS",
 GROUND_REPORT_ESCALATE_THRESHOLD = float(os.getenv("GROUND_REPORT_ESCALATE_THRESHOLD", "0.75"))
 GROUND_REPORT_MAX_ESCALATION_STEPS = int(os.getenv("GROUND_REPORT_MAX_ESCALATION_STEPS", "1"))
 VALIDATED_REPORTS_CSV_PATH = Path(os.getenv("VALIDATED_REPORTS_CSV_PATH", str(DATA_DIR / "validated_reports.csv"))).resolve()
+
+# --- Task 6: Real Alert Delivery & Notifier Configuration ---
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM = os.getenv("TWILIO_FROM", "").strip()
+DRY_RUN = os.getenv("DRY_RUN", "true").lower() in ("true", "1", "yes")
+ENABLE_TELEGRAM_BOT = os.getenv("ENABLE_TELEGRAM_BOT", "false").lower() in ("true", "1", "yes")
+ALERT_DISPATCH_INTERVAL_MINUTES = int(os.getenv("ALERT_DISPATCH_INTERVAL_MINUTES", "10"))
+ALERT_COOLDOWN_HOURS = float(os.getenv("ALERT_COOLDOWN_HOURS", "3.0"))

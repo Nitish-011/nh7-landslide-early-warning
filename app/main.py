@@ -27,12 +27,14 @@ from app.routes.subscriptions import router as subscriptions_router
 from app.routes.reports import router as reports_router
 from app.routes.history import router as history_router
 from app.routes.closures import router as closures_router
+from app.routes.webhooks import router as webhooks_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Lifespan events: Seeds the SQLite database on startup if empty,
-    initializes background scheduler (if enabled), and cleans up on shutdown.
+    initializes background scheduler (if enabled), starts Telegram bot polling (if enabled),
+    and cleans up on shutdown.
     """
     logger.info("Starting up NH-7 Landslide Risk Backend...")
     if config.ENV == "production" and not config.ADMIN_API_KEY:
@@ -41,8 +43,20 @@ async def lifespan(app: FastAPI):
     init_db()
     if config.ENABLE_SCHEDULER:
         start_scheduler()
+    if config.ENABLE_TELEGRAM_BOT:
+        try:
+            from app.bot.telegram_bot import start_telegram_bot
+            start_telegram_bot()
+        except Exception as e:
+            logger.warning("Failed starting Telegram bot in lifespan: %s", e)
     logger.info("NH-7 Landslide Risk Backend initialized successfully and ready for incoming traffic.")
     yield
+    if config.ENABLE_TELEGRAM_BOT:
+        try:
+            from app.bot.telegram_bot import stop_telegram_bot
+            stop_telegram_bot()
+        except Exception:
+            pass
     if config.ENABLE_SCHEDULER:
         shutdown_scheduler()
     logger.info("Shutting down NH-7 Landslide Risk Backend.")
@@ -92,6 +106,7 @@ app.include_router(subscriptions_router)
 app.include_router(reports_router)
 app.include_router(history_router)
 app.include_router(closures_router)
+app.include_router(webhooks_router)
 
 # 5. Serve Interactive Test Frontend at Root (/)
 @app.get("/", include_in_schema=False)

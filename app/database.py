@@ -111,6 +111,34 @@ def create_tables(conn: sqlite3.Connection):
         )
     """)
 
+    # 6. Alert state table (Task 6 - tracks cooldown & last sent level per user & segment)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alert_state (
+            subscription_id INTEGER NOT NULL,
+            segment_id TEXT NOT NULL,
+            last_sent_level TEXT NOT NULL,
+            last_sent_at TEXT NOT NULL,
+            PRIMARY KEY (subscription_id, segment_id),
+            FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE
+        )
+    """)
+
+    # 7. Alert log table (Task 6 - audit history of sent notifications)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alert_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subscription_id INTEGER,
+            segment_id TEXT NOT NULL,
+            channel TEXT NOT NULL,
+            contact TEXT NOT NULL,
+            risk_level TEXT NOT NULL,
+            message TEXT NOT NULL,
+            sent_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'sent',
+            FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL
+        )
+    """)
+
     # --- Backward-compatible column migrations for existing databases ---
     cursor.execute("PRAGMA table_info(subscriptions)")
     sub_cols = [row[1] for row in cursor.fetchall()]
@@ -224,6 +252,8 @@ def reset_db():
     """
     with get_db() as conn:
         cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS alert_log")
+        cursor.execute("DROP TABLE IF EXISTS alert_state")
         cursor.execute("DROP TABLE IF EXISTS road_closures")
         cursor.execute("DROP TABLE IF EXISTS landslide_history")
         cursor.execute("DROP TABLE IF EXISTS field_reports")

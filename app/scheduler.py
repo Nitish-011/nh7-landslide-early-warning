@@ -88,6 +88,14 @@ def start_scheduler() -> Optional[BackgroundScheduler]:
         id="weather_poll_batch",
         replace_existing=True,
     )
+    from app.alert_dispatcher import dispatch_alerts
+    _scheduler.add_job(
+        dispatch_alerts,
+        trigger="interval",
+        minutes=config.ALERT_DISPATCH_INTERVAL_MINUTES,
+        id="alert_dispatcher_job",
+        replace_existing=True,
+    )
     _scheduler.start()
     logger.info("scheduler: BackgroundScheduler started successfully.")
     return _scheduler
