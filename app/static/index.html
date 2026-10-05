@@ -580,6 +580,8 @@
               <div>Priority Score: <strong id="det-pscore" style="color:var(--danger);">-</strong></div>
             </div>
             <div style="margin-top: 6px;">Nearest Town / Hosp: <strong id="det-poi" style="color:#bae6fd;">-</strong></div>
+            <div id="det-adjusted" style="display:none; margin-top:6px; font-size:0.75rem; color:#fbbf24;"></div>
+            <div id="det-closure" style="display:none; margin-top:6px; font-size:0.73rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);"></div>
             <div style="margin-top: 6px;">Primary Driver: <strong id="det-driver" style="color:#bae6fd;">-</strong></div>
             <div>Calculation Method: <span id="det-method" style="font-family:var(--font-mono); font-size:0.7rem;">-</span></div>
           </div>
@@ -1053,19 +1055,43 @@
 
         if (latlngs.length === 0) return;
 
-        const color = getRiskColor(seg.risk_level);
+        let polyColor = getRiskColor(seg.risk_level);
+        let polyWeight = 6;
+        let polyDash = undefined;
+        if (seg.closure) {
+          if (seg.closure.status === "closed") {
+            polyColor = "#ef4444";
+            polyWeight = 8;
+            polyDash = "8, 8";
+          } else if (seg.closure.status === "one_way" || seg.closure.status === "restricted") {
+            polyDash = "4, 6";
+          }
+        }
+
         const poly = L.polyline(latlngs, {
-          color: color,
-          weight: 6,
+          color: polyColor,
+          weight: polyWeight,
           opacity: 0.9,
-          lineJoin: "round"
+          lineJoin: "round",
+          dashArray: polyDash
         }).addTo(map);
 
         // Rich Tooltip
         const riskIdx = (seg.risk_index !== undefined && seg.risk_index !== null) ? seg.risk_index : seg.risk_score;
+        let closureBadge = "";
+        if (seg.closure) {
+          closureBadge = `<div style="margin-top:5px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.2); padding:3px 6px; border-radius:4px; font-size:0.72rem;">⛔ CLOSURE: ${seg.closure.status.toUpperCase()} - ${seg.closure.reason}</div>`;
+        }
+        let adjustedBadge = "";
+        if (seg.adjusted_risk_level && seg.adjusted_risk_level !== seg.risk_level) {
+          adjustedBadge = `<div style="margin-top:4px; font-weight:700; color:#fbbf24; font-size:0.72rem;">⚠️ Ground Truth Adjusted: <span class="popup-badge" style="background:${getRiskColor(seg.adjusted_risk_level)}; color:#fff;">${seg.adjusted_risk_level}</span> (${seg.adjustment_reason || 'Verified reports'})</div>`;
+        }
+
         const popupContent = `
           <div class="popup-title">${seg.id}: ${seg.name}</div>
-          <span class="popup-badge" style="background:${color}; color:#fff;">${seg.risk_level} (Risk Index: ${riskIdx.toFixed(2)})</span>
+          <span class="popup-badge" style="background:${getRiskColor(seg.risk_level)}; color:#fff;">${seg.risk_level} (Risk Index: ${riskIdx.toFixed(2)})</span>
+          ${adjustedBadge}
+          ${closureBadge}
           <div class="popup-metric">Terrain Percentile: <strong>${Math.round((seg.terrain_percentile || 0) * 100)}th</strong> (${seg.terrain_level || 'Normal'})</div>
           <div class="popup-metric">3-Day Rainfall: <strong>${(seg.rain_mm_3d || 0).toFixed(1)} mm</strong> (${seg.rain_status || 'ok'})</div>
           <div class="popup-driver">${seg.main_driver || 'Physical terrain features'}</div>
@@ -1233,6 +1259,27 @@
       const townPart = seg.nearest_town ? `Town: ${seg.nearest_town}` : "";
       const poiText = [townPart, hospPart].filter(Boolean).join(" | ") || "-";
       document.getElementById("det-poi").textContent = poiText;
+
+      // Ground Truth Adjustment & Closures (Task 5)
+      const adjEl = document.getElementById("det-adjusted");
+      if (adjEl) {
+        if (seg.adjusted_risk_level && seg.adjusted_risk_level !== seg.risk_level) {
+          adjEl.style.display = "block";
+          adjEl.innerHTML = `⚠️ <strong>Ground Truth Adjusted:</strong> <span class="popup-badge" style="background:${getRiskColor(seg.adjusted_risk_level)}; color:#fff; font-size:0.7rem;">${seg.adjusted_risk_level}</span> (${seg.adjustment_reason || 'Verified reports'})`;
+        } else {
+          adjEl.style.display = "none";
+        }
+      }
+
+      const closureEl = document.getElementById("det-closure");
+      if (closureEl) {
+        if (seg.closure) {
+          closureEl.style.display = "block";
+          closureEl.innerHTML = `⛔ <strong>Official Closure:</strong> <span style="color:#ef4444; font-weight:700;">${seg.closure.status.toUpperCase()}</span> - ${seg.closure.reason} (Authority: ${seg.closure.source})`;
+        } else {
+          closureEl.style.display = "none";
+        }
+      }
     }
 
     function zoomToCorridor() {

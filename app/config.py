@@ -95,4 +95,9 @@ W_CONSEQUENCE_TRAFFIC = 0.25
 
 CONSEQUENCE_CSV_PATH = Path(os.getenv("CONSEQUENCE_CSV_PATH", str(DATA_DIR / "segment_consequence.csv"))).resolve()
 
-
+# --- Task 5: Official Closures & Ground Truth Flywheel Configuration ---
+GROUND_TRUTH_LAYER = os.getenv("GROUND_TRUTH_LAYER", "true").lower() in ("true", "1", "yes")
+GROUND_REPORT_HALF_LIFE_HOURS = float(os.getenv("GROUND_REPORT_HALF_LIFE_HOURS", "48.0"))
+GROUND_REPORT_ESCALATE_THRESHOLD = float(os.getenv("GROUND_REPORT_ESCALATE_THRESHOLD", "0.75"))
+GROUND_REPORT_MAX_ESCALATION_STEPS = int(os.getenv("GROUND_REPORT_MAX_ESCALATION_STEPS", "1"))
+VALIDATED_REPORTS_CSV_PATH = Path(os.getenv("VALIDATED_REPORTS_CSV_PATH", str(DATA_DIR / "validated_reports.csv"))).resolve()

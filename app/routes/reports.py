@@ -51,12 +51,17 @@ def check_within_corridor(lat: float, lng: float, max_dist_km: float = 3.0) -> b
     dist = line.distance(p)
     return dist <= max_dist_km
 
-def verify_admin_key(request: Request, x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
+def verify_admin_key(
+    request: Request,
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key")
+):
     """
-    Validates X-API-Key header against ADMIN_API_KEY using secrets.compare_digest.
+    Validates X-Admin-Key or X-API-Key header against ADMIN_API_KEY using secrets.compare_digest.
     If ADMIN_API_KEY is unset in dev, logs a loud warning and allows only localhost.
     In production, returns 401 if missing or wrong.
     """
+    key = x_admin_key or x_api_key
     client_ip = request.client.host if request.client else "unknown"
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
@@ -64,10 +69,10 @@ def verify_admin_key(request: Request, x_api_key: Optional[str] = Header(None, a
     is_localhost = client_ip in ("127.0.0.1", "localhost", "::1", "testclient")
 
     if config.ADMIN_API_KEY:
-        if not x_api_key or not secrets.compare_digest(x_api_key.strip(), config.ADMIN_API_KEY):
-            logger.warning(f"Unauthorized admin access attempt from IP {client_ip} (missing or invalid X-API-Key)")
-            raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key header")
-        return x_api_key
+        if not key or not secrets.compare_digest(key.strip(), config.ADMIN_API_KEY):
+            logger.warning(f"Unauthorized admin access attempt from IP {client_ip} (missing or invalid admin key)")
+            raise HTTPException(status_code=401, detail="Invalid or missing admin key header")
+        return key
 
     # ADMIN_API_KEY is unset
     if config.ENV == "production":
@@ -143,10 +148,13 @@ def submit_field_report(request: Request, report: FieldReportCreate):
                 detail="Duplicate report from the same IP at these coordinates within 10 minutes."
             )
 
+        from app.flywheel_service import find_nearest_segment
+        assigned_seg = find_nearest_segment(report.lat, report.lng)
+
         cursor.execute("""
             INSERT INTO field_reports (
-                lat, lng, description, photo_url, reporter_name, reporter_ip, status, decision_notes, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'Pending', '', ?, ?)
+                lat, lng, description, photo_url, reporter_name, reporter_ip, status, decision_notes, created_at, updated_at, segment_id
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Pending', '', ?, ?, ?)
         """, (
             report.lat,
             report.lng,
@@ -155,12 +163,13 @@ def submit_field_report(request: Request, report: FieldReportCreate):
             report.reporter_name.strip(),
             client_ip,
             now_str,
-            now_str
+            now_str,
+            assigned_seg
         ))
         report_id = cursor.lastrowid
 
     logger.info(
-        f"Field report #{report_id} submitted by '{report.reporter_name}' (IP: {client_ip}) at ({report.lat}, {report.lng}): "
+        f"Field report #{report_id} submitted by '{report.reporter_name}' (IP: {client_ip}) near {assigned_seg}: "
         f"{clean_desc[:50]}..."
     )
 
@@ -175,13 +184,14 @@ def submit_field_report(request: Request, report: FieldReportCreate):
 def validate_field_report(req: AdminValidateRequest, admin_key: str = Depends(verify_admin_key)):
     """
     Admin endpoint to validate or reject a crowd-sourced field report.
-    Protected by X-API-Key authentication.
+    Protected by X-Admin-Key / X-API-Key authentication.
+    Assigns report to nearest highway segment on validation.
     """
     now_str = datetime.now(timezone.utc).isoformat()
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, status, reporter_name FROM field_reports WHERE id = ?", (req.report_id,))
+        cursor.execute("SELECT id, lat, lng, status, reporter_name, segment_id FROM field_reports WHERE id = ?", (req.report_id,))
         existing = cursor.fetchone()
 
         if not existing:
@@ -190,18 +200,22 @@ def validate_field_report(req: AdminValidateRequest, admin_key: str = Depends(ve
                 detail=f"Field report #{req.report_id} not found."
             )
 
+        from app.flywheel_service import find_nearest_segment
+        assigned_seg = existing["segment_id"] or find_nearest_segment(existing["lat"], existing["lng"])
+
         cursor.execute("""
             UPDATE field_reports
-            SET status = ?, decision_notes = ?, updated_at = ?
+            SET status = ?, decision_notes = ?, updated_at = ?, segment_id = ?
             WHERE id = ?
         """, (
             req.decision,
             req.notes.strip() if req.notes else f"Updated to {req.decision} by Admin",
             now_str,
+            assigned_seg,
             req.report_id
         ))
 
-    logger.info(f"Field report #{req.report_id} status updated from '{existing['status']}' to '{req.decision}' by admin")
+    logger.info(f"Field report #{req.report_id} status updated from '{existing['status']}' to '{req.decision}' (assigned segment: {assigned_seg}) by admin")
 
     return AdminValidateResponse(
         report_id=req.report_id,

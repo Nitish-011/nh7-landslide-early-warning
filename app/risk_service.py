@@ -377,6 +377,22 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
     except Exception:
         pass
 
+    # Task 5: Additive closure and ground truth flywheel fields (optional)
+    try:
+        from app.flywheel_service import get_active_closures_map, compute_segment_ground_truth
+        closures = get_active_closures_map()
+        c_obj = closures.get(seg["id"])
+        if c_obj:
+            seg_dict["closure"] = c_obj
+
+        gt_info = compute_segment_ground_truth(seg["id"], base_risk_level=level)
+        if gt_info.get("adjusted_risk_level") is not None:
+            seg_dict["adjusted_risk_level"] = gt_info["adjusted_risk_level"]
+            seg_dict["ground_report_count_24h"] = gt_info["ground_report_count_24h"]
+            seg_dict["adjustment_reason"] = gt_info["adjustment_reason"]
+    except Exception:
+        pass
+
     return seg_dict
 
 

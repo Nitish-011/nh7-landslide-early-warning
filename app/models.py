@@ -1,6 +1,30 @@
 from typing import List, Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field
 
+# --- Road Closure Models (Task 5) ---
+
+class RoadClosureCreate(BaseModel):
+    model_config = {"extra": "ignore"}
+    segment_id: str = Field(..., description="ID of NH-7 segment affected (e.g. seg_08)")
+    status: Literal["closed", "one_way", "restricted"] = Field(..., description="Closure status")
+    reason: str = Field(..., min_length=3, description="Official cause of closure")
+    source: str = Field(..., min_length=2, description="Issuing agency, e.g. BRO, Uttarakhand Police")
+    starts_at: Optional[str] = Field(None, description="ISO-8601 start timestamp (defaults to current time)")
+    ends_at: Optional[str] = Field(None, description="ISO-8601 end timestamp (nullable)")
+    created_by: Optional[str] = Field("admin", description="Admin username or authority ID")
+
+class RoadClosureResponse(BaseModel):
+    model_config = {"extra": "ignore"}
+    id: int
+    segment_id: str
+    status: str
+    reason: str
+    source: str
+    starts_at: str
+    ends_at: Optional[str] = None
+    created_by: str
+    created_at: str
+
 # --- Segments & Risk Models ---
 
 class SegmentCoords(BaseModel):
@@ -40,6 +64,11 @@ class SegmentResponse(BaseModel):
     nearest_hospital_km: Optional[float] = None
     nearest_town: Optional[str] = None
     priority_score: Optional[float] = None
+    # Task 5: Additive Official Closure & Verified Ground Report Flywheel fields (optional)
+    closure: Optional[RoadClosureResponse] = None
+    adjusted_risk_level: Optional[str] = None
+    ground_report_count_24h: Optional[int] = None
+    adjustment_reason: Optional[str] = None
 
 class RiskMapResponse(BaseModel):
     corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
@@ -118,6 +147,11 @@ class RouteSegmentRisk(BaseModel):
     rain_72h_at_eta_mm: Optional[float] = None
     forecast_rain_6h_around_eta_mm: Optional[float] = None
     risk_level_at_eta: Optional[str] = None
+    # Task 5: Additive Official Closure & Verified Ground Report Flywheel fields (optional)
+    closure: Optional[RoadClosureResponse] = None
+    adjusted_risk_level: Optional[str] = None
+    ground_report_count_24h: Optional[int] = None
+    adjustment_reason: Optional[str] = None
 
 class RouteRiskResponse(BaseModel):
     from_segment: str
@@ -141,6 +175,8 @@ class RouteRiskResponse(BaseModel):
     recommendation: Optional[TripRecommendation] = None
     depart_time: Optional[str] = None
     speed_kmph: Optional[float] = None
+    # Task 5: Additive Route-Level Closure (optional)
+    closure: Optional[RoadClosureResponse] = None
 
 # --- Subscription Models ---
 

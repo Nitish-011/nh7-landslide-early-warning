@@ -26,6 +26,7 @@ from app.routes.risk import router as risk_router
 from app.routes.subscriptions import router as subscriptions_router
 from app.routes.reports import router as reports_router
 from app.routes.history import router as history_router
+from app.routes.closures import router as closures_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -90,6 +91,7 @@ app.include_router(risk_router)
 app.include_router(subscriptions_router)
 app.include_router(reports_router)
 app.include_router(history_router)
+app.include_router(closures_router)
 
 # 5. Serve Interactive Test Frontend at Root (/)
 @app.get("/", include_in_schema=False)

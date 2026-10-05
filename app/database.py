@@ -95,6 +95,22 @@ def create_tables(conn: sqlite3.Connection):
         )
     """)
 
+    # 5. Road closures table (Task 5)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS road_closures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            segment_id TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('closed', 'one_way', 'restricted')),
+            reason TEXT NOT NULL,
+            source TEXT NOT NULL,
+            starts_at TEXT NOT NULL,
+            ends_at TEXT,
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (segment_id) REFERENCES segments(id)
+        )
+    """)
+
     # --- Backward-compatible column migrations for existing databases ---
     cursor.execute("PRAGMA table_info(subscriptions)")
     sub_cols = [row[1] for row in cursor.fetchall()]
@@ -105,6 +121,8 @@ def create_tables(conn: sqlite3.Connection):
     fr_cols = [row[1] for row in cursor.fetchall()]
     if "reporter_ip" not in fr_cols:
         cursor.execute("ALTER TABLE field_reports ADD COLUMN reporter_ip TEXT DEFAULT ''")
+    if "segment_id" not in fr_cols:
+        cursor.execute("ALTER TABLE field_reports ADD COLUMN segment_id TEXT")
 
 def seed_database(conn: sqlite3.Connection):
     """
@@ -206,6 +224,7 @@ def reset_db():
     """
     with get_db() as conn:
         cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS road_closures")
         cursor.execute("DROP TABLE IF EXISTS landslide_history")
         cursor.execute("DROP TABLE IF EXISTS field_reports")
         cursor.execute("DROP TABLE IF EXISTS subscriptions")

@@ -66,8 +66,8 @@ def main():
         }),
         ("GET", "/alerts?user_id=1", None),
         ("POST", "/field-report", {
-            "lat": round(30.14 + ((int(time.time()) % 100) * 0.005), 4),
-            "lng": round(78.36 + ((int(time.time()) % 100) * 0.005), 4),
+            "lat": round(30.14 + ((int(time.time()) % 10) * 0.001), 4),
+            "lng": round(78.36 + ((int(time.time()) % 10) * 0.001), 4),
             "description": f"Smoke test observation near Shivpuri - {int(time.time())}",
             "reporter_name": "Automated Smoke Test"
         }),
@@ -76,6 +76,7 @@ def main():
         ("GET", "/model-info", None),
         ("GET", "/priority-list", None),
         ("GET", "/priority-list?simulate_rain_mm=40", None),
+        ("GET", "/closures", None),
     ]
 
     all_passed = True

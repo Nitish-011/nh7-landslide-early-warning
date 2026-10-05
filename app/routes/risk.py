@@ -353,9 +353,32 @@ def get_route_risk(
             rain_72h_at_eta_mm=eta_info.get("rain_72h_at_eta_mm"),
             forecast_rain_6h_around_eta_mm=eta_info.get("forecast_rain_6h_around_eta_mm"),
             risk_level_at_eta=eta_info.get("risk_level_at_eta"),
+            # Task 5: Additive closure and ground truth fields
+            closure=live_info.get("closure") if live_info else None,
+            adjusted_risk_level=live_info.get("adjusted_risk_level") if live_info else None,
+            ground_report_count_24h=live_info.get("ground_report_count_24h") if live_info else None,
+            adjustment_reason=live_info.get("adjustment_reason") if live_info else None,
         ))
 
     avg_score = round(total_score / len(route_segments), 2) if route_segments else 0.0
+
+    # Task 5: Check for official road closures along route
+    route_closure_top = None
+    closed_segs = [s for s in route_segments if s.closure and s.closure.status == "closed"]
+    if closed_segs:
+        first_closed = closed_segs[0]
+        route_closure_top = first_closed.closure
+        closure_msg = f"Official road closure on {first_closed.id} ({first_closed.name}): {first_closed.closure.reason} (Source: {first_closed.closure.source})"
+        
+        # Override recommendation to AVOID
+        from app.models import TripRecommendation
+        recommendation_payload = TripRecommendation(
+            action="AVOID",
+            action_code="REC_AVOID",
+            reason=closure_msg,
+            params={"closed_segment": first_closed.id, "closure_id": first_closed.closure.id},
+            best_departure_options=[]
+        )
 
     # Contextual Travel Advisory
     if is_beyond_tomorrow:
@@ -366,7 +389,9 @@ def get_route_risk(
     else:
         advisory_prefix = ""
 
-    if overall_max_level == "Very High":
+    if closed_segs:
+        advisory_body = f"OFFICIAL CLOSURE WARNING: Road closure active on {closed_segs[0].name}. Avoid travel across this sector."
+    elif overall_max_level == "Very High":
         advisory_body = (
             f"CRITICAL WARNING for {date}: High susceptibility to slope failure and active shooting stones "
             "detected along route sectors. Night travel and heavy vehicles strongly discouraged. Check BRO updates."
@@ -406,6 +431,7 @@ def get_route_risk(
         recommendation=recommendation_payload,
         depart_time=applied_depart_time,
         speed_kmph=applied_speed,
+        closure=route_closure_top,
     )
 
 @router.get("/model-info", response_model=ModelInfoResponse)
