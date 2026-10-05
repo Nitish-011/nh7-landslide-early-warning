@@ -227,6 +227,12 @@ def get_route_risk(
             rain_status=live_info.get("rain_status") if live_info else None,
             main_driver=live_info.get("main_driver") if live_info else None,
             method=live_info.get("method") if live_info else None,
+            r3d_mm=live_info.get("r3d_mm") if live_info else None,
+            rain_24h_mm=live_info.get("rain_24h_mm") if live_info else None,
+            forecast_24h_mm=live_info.get("forecast_24h_mm") if live_info else None,
+            forecast_72h_mm=live_info.get("forecast_72h_mm") if live_info else None,
+            peak_hour_utc=live_info.get("peak_hour_utc") if live_info else None,
+            peak_mm=live_info.get("peak_mm") if live_info else None,
         ))
 
     avg_score = round(total_score / len(route_segments), 2) if route_segments else 0.0

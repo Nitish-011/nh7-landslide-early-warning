@@ -40,6 +40,13 @@ def poll_weather_job() -> None:
         # Reset cache timestamp and failure cache to force fresh retrieval from live Open-Meteo API
         risk_service._rain_cache["t"] = 0.0
         risk_service._fail_cache.update(t=0.0, data=None, meta=None)
+        if config.PER_SEGMENT_WEATHER:
+            try:
+                from app import weather_service
+                weather_service._rain_cache["t"] = 0.0
+                weather_service._fail_cache.update(t=0.0, data=None, meta=None)
+            except Exception:
+                pass
 
         rain_data, meta = risk_service.fetch_rainfall_with_metadata(segments)
         _scheduler_status["last_run"] = now_iso

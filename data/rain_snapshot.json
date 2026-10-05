@@ -1,76 +1,184 @@
 {
-  "timestamp": "2026-10-05T18:44:03Z",
+  "timestamp": "2026-10-05T18:55:57Z",
   "data": {
     "seg_01": {
-      "rain_mm": 4.7,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_02": {
-      "rain_mm": 5.0,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_03": {
-      "rain_mm": 5.4,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_04": {
-      "rain_mm": 5.4,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_05": {
-      "rain_mm": 3.9,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_06": {
-      "rain_mm": 7.2,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_07": {
-      "rain_mm": 7.2,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_08": {
-      "rain_mm": 4.3999999999999995,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_09": {
-      "rain_mm": 3.7,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_10": {
-      "rain_mm": 2.5,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_11": {
-      "rain_mm": 7.8999999999999995,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_12": {
-      "rain_mm": 7.8999999999999995,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_13": {
-      "rain_mm": 7.6,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_14": {
-      "rain_mm": 4.4,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_15": {
-      "rain_mm": 4.4,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_16": {
-      "rain_mm": 4.8,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_17": {
-      "rain_mm": 3.1999999999999997,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     },
     "seg_18": {
-      "rain_mm": 4.0,
+      "rain_mm": 33.0,
+      "r3d_mm": 33.0,
+      "rain_24h_mm": 12.0,
+      "forecast_24h_mm": 20.0,
+      "forecast_72h_mm": 44.0,
+      "peak_hour_utc": "2026-10-06T06:00Z",
+      "peak_mm": 8.5,
       "status": "ok"
     }
   }

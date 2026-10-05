@@ -28,6 +28,13 @@ class SegmentResponse(BaseModel):
     rain_status: Optional[str] = None
     main_driver: Optional[str] = None
     method: Optional[str] = None
+    # Task 1: Additive Per-Segment Weather & Forecast metrics (optional)
+    r3d_mm: Optional[float] = None
+    rain_24h_mm: Optional[float] = None
+    forecast_24h_mm: Optional[float] = None
+    forecast_72h_mm: Optional[float] = None
+    peak_hour_utc: Optional[str] = None
+    peak_mm: Optional[float] = None
 
 class RiskMapResponse(BaseModel):
     corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
@@ -62,6 +69,13 @@ class RouteSegmentRisk(BaseModel):
     rain_status: Optional[str] = None
     main_driver: Optional[str] = None
     method: Optional[str] = None
+    # Task 1: Additive Per-Segment Weather & Forecast metrics (optional)
+    r3d_mm: Optional[float] = None
+    rain_24h_mm: Optional[float] = None
+    forecast_24h_mm: Optional[float] = None
+    forecast_72h_mm: Optional[float] = None
+    peak_hour_utc: Optional[str] = None
+    peak_mm: Optional[float] = None
 
 class RouteRiskResponse(BaseModel):
     from_segment: str

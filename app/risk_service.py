@@ -41,6 +41,7 @@ from pathlib import Path
 import os
 import requests
 
+from app import config
 from app.config import (
     DRY_CAP_MM,
     K_RAIN,
@@ -130,8 +131,15 @@ def load_snapshot(segments):
         result = {}
         for s in segments:
             item = snap_data.get(s["id"], {})
+            r3d_val = item.get("r3d_mm", item.get("rain_mm"))
             result[s["id"]] = {
-                "rain_mm": item.get("rain_mm"),
+                "rain_mm": r3d_val,
+                "r3d_mm": r3d_val,
+                "rain_24h_mm": item.get("rain_24h_mm"),
+                "forecast_24h_mm": item.get("forecast_24h_mm"),
+                "forecast_72h_mm": item.get("forecast_72h_mm"),
+                "peak_hour_utc": item.get("peak_hour_utc"),
+                "peak_mm": item.get("peak_mm"),
                 "status": f"cached ({snap_time})",
             }
         return result, snap_time
@@ -177,6 +185,11 @@ def fetch_rainfall_with_metadata(segments, session=None, simulate_rain_mm=None) 
       - is_simulated: bool
       - stale_warning: string if age > 6 hours, else None
     """
+    # Task 1: If PER_SEGMENT_WEATHER flag is enabled, delegate to modular weather_service pipeline
+    if config.PER_SEGMENT_WEATHER:
+        from app.weather_service import fetch_weather_pipeline
+        return fetch_weather_pipeline(segments, session=session, simulate_rain_mm=simulate_rain_mm)
+
     if simulate_rain_mm is not None:
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rain = {s["id"]: {"rain_mm": float(simulate_rain_mm), "status": "simulated"} for s in segments}
@@ -305,15 +318,16 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
         score = min(TERRAIN_WEIGHT * terrain, 1.0)
     else:
         rain_status = rain.get("status", "unavailable")
-        is_valid_rain = rain_status in ("ok", "simulated") or str(rain_status).startswith("cached")
-        rain_mm = rain.get("rain_mm") if is_valid_rain else None
+        is_valid_rain = rain_status in ("ok", "simulated", "cached_5station") or str(rain_status).startswith("cached")
+        r3d_val = rain.get("r3d_mm") if rain.get("r3d_mm") is not None else rain.get("rain_mm")
+        rain_mm = r3d_val if is_valid_rain else None
         rain_index = min(rain_mm / RAIN_REF_MM, 1.0) if rain_mm is not None else 0.0
         score = min(TERRAIN_WEIGHT * terrain + RAIN_WEIGHT * rain_index, 1.0)
 
     risk_lvl = level_for(score, rain_status=rain_status, rain_mm=rain_mm)
     subpoints = seg.get("subpoints") or SUBPOINTS_MAP.get(seg["id"], [])
 
-    return {
+    seg_dict = {
         "id": seg["id"],
         "name": seg["name"],
         "sequence_order": seg["sequence_order"],
@@ -335,6 +349,17 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
         "main_driver": seg.get("driver"),
         "method": "terrain model ranking + live-rainfall heuristic (not calibrated)" if not force_terrain_only else "terrain model ranking (forecast beyond 48h)",
     }
+
+    # Task 1: Additive per-segment weather and forecast metrics (behind PER_SEGMENT_WEATHER flag)
+    if config.PER_SEGMENT_WEATHER:
+        seg_dict["r3d_mm"] = rain.get("r3d_mm", round(rain_mm, 1) if rain_mm is not None else None)
+        seg_dict["rain_24h_mm"] = rain.get("rain_24h_mm")
+        seg_dict["forecast_24h_mm"] = rain.get("forecast_24h_mm")
+        seg_dict["forecast_72h_mm"] = rain.get("forecast_72h_mm")
+        seg_dict["peak_hour_utc"] = rain.get("peak_hour_utc")
+        seg_dict["peak_mm"] = rain.get("peak_mm")
+
+    return seg_dict
 
 
 def get_live_risk_map_with_metadata(session=None, simulate_rain_mm=None, force_terrain_only: bool = False) -> tuple[list[dict], dict]:
@@ -368,12 +393,23 @@ def get_live_risk_map(session=None, simulate_rain_mm=None, force_terrain_only: b
 def get_current_weather_source() -> str:
     """
     Returns the current operational weather source:
-    'live' | 'cached' | 'snapshot' | 'unavailable'
+    'live' | 'cached' | 'cached_5station' | 'snapshot' | 'unavailable'
     Used by /health and diagnostic monitoring.
     """
     now = time.time()
-    if _rain_cache.get("data") is not None:
-        age_s = now - _rain_cache.get("t", 0.0)
+    cache = _rain_cache
+    if config.PER_SEGMENT_WEATHER:
+        try:
+            from app import weather_service
+            cache = weather_service._rain_cache
+        except Exception:
+            cache = _rain_cache
+
+    if cache.get("data") is not None:
+        age_s = now - cache.get("t", 0.0)
+        src = cache.get("source")
+        if src:
+            return src
         if age_s < 60:
             return "live"
         return "cached"
