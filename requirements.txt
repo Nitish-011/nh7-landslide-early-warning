@@ -10,3 +10,5 @@ numpy==2.4.6
 scipy==1.18.0
 slowapi==0.1.10
 limits==5.8.0
+apscheduler==3.11.3
+tzlocal==5.4.4

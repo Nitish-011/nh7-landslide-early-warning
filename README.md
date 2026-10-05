@@ -20,19 +20,38 @@ pip install -r requirements.txt
 ```
 
 ### 2. Run the Server
+
+#### Method A: Native Python (Development)
 Launch the server using the companion launcher script:
 
 ```bash
 python run.py
 ```
 
-Or using Uvicorn directly:
+Or using Uvicorn directly (single worker recommended):
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --workers 1
 ```
 
 The server binds to `0.0.0.0:8000`. On startup, `run.py` detects your local network IP (e.g. `http://192.168.1.15:8000`) so you can share it immediately with teammates testing from mobile phones or other laptops.
+
+#### Method B: Docker & Docker Compose (Production Runtime)
+Run with persistent data volume and single worker uvicorn:
+
+```bash
+# Build and run container with docker-compose
+docker-compose up --build -d
+
+# Or build and run directly via Docker CLI
+docker build -t nh7-landslide-backend .
+docker run -p 8000:8000 -v $(pwd)/data:/app/data nh7-landslide-backend
+```
+
+Check container health:
+```bash
+curl http://localhost:8000/health
+```
 
 ---
 
@@ -217,4 +236,16 @@ Returns complete, verifiable transparency metadata regarding the trained landsli
 The corridor is modeled as 18 human-readable display segments along the 247.37 km Rishikesh to Joshimath highway. Underneath each segment, 2–4 km checkpoint coordinates are embedded in `subpoints`. 
 
 The machine learning pipeline combines the static Copernicus 30m DEM Random Forest susceptibility model with live antecedent precipitation to produce the `risk_index` (0.0 to 1.0 relative risk index), while maintaining legacy `risk_score` fields for 100% backwards compatibility.
+
+---
+
+## 🚢 Production Deployment
+
+For complete end-to-end deployment instructions, refer to [docs/DEPLOY.md](docs/DEPLOY.md).
+
+- **Render Blueprint**: Deploy instantly via `render.yaml` with preconfigured health checks and environment settings. *(Note: Render free tier uses ephemeral disks; attach a persistent disk to `/app/data` for persistent SQLite storage).*
+- **Railway**: Deploy via Dockerfile with an attached persistent volume mounted at `/app/data`.
+- **Single Uvicorn Worker**: Production containers must run `uvicorn app.main:app --workers 1` to ensure the in-process `APScheduler` background weather polling routine is not duplicated.
+- **Emergency Demo Tunnel (ngrok)**: Run `ngrok http 8000` to expose the local server over a secure public HTTPS endpoint during live evaluations.
+- **Zero Cold-Start Keep-Warm (UptimeRobot)**: Free cloud instances sleep after 15 minutes of inactivity. Configure a 5-minute HTTP monitor in UptimeRobot targeting `GET /health` to keep the container awake for sub-100 ms responses during judging.
 

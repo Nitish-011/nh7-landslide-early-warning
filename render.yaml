@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: nh7-landslide-risk-api
+    env: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: WEATHER_POLL_MINUTES
+        value: "30"
+      - key: DATA_DIR
+        value: /app/data
+      - key: DB_PATH
+        value: /app/data/landslide_nh7.db
+      - key: SNAPSHOT_PATH
+        value: /app/data/rain_snapshot.json
+    # =========================================================================
+    # PERSISTENT STORAGE NOTICE FOR SQLITE:
+    # Render's free tier provides ephemeral container disks. When an instance
+    # spins down due to inactivity or redeploys, ephemeral disk changes (new
+    # field reports or subscriptions) are discarded.
+    # 
+    # For durable production persistence, uncomment the persistent disk configuration
+    # below (available on Render Starter plans and above) or use Railway / Fly.io / Turso:
+    #
+    # disk:
+    #   name: nh7-data-disk
+    #   mountPath: /app/data
+    #   sizeGB: 1
+    # =========================================================================

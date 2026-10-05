@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  nh7-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nh7-landslide-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-dev_admin_key_replace_in_prod}
+      - ENABLE_SCHEDULER=true
+      - WEATHER_POLL_MINUTES=30
+      - DATA_DIR=/app/data
+      - DB_PATH=/app/data/landslide_nh7.db
+      - SNAPSHOT_PATH=/app/data/rain_snapshot.json
+    volumes:
+      # Persistent volume mount for SQLite database and rain_snapshot.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

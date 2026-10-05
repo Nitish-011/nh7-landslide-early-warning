@@ -1,17 +1,22 @@
 import os
 from pathlib import Path
 
-# Paths
+# Paths (configurable via environment variables)
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
-LOGS_DIR = BASE_DIR / "logs"
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
+LOGS_DIR = Path(os.getenv("LOGS_DIR", str(BASE_DIR / "logs"))).resolve()
 
 # Ensure runtime directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Database
-DB_PATH = DATA_DIR / "landslide_nh7.db"
+# Database & Rain Snapshot paths (configurable via environment variables)
+DB_PATH = Path(os.getenv("DB_PATH", str(DATA_DIR / "landslide_nh7.db"))).resolve()
+SNAPSHOT_PATH = Path(os.getenv("SNAPSHOT_PATH", str(DATA_DIR / "rain_snapshot.json"))).resolve()
+
+# Scheduler configuration (Background periodic weather polling)
+ENABLE_SCHEDULER = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
+WEATHER_POLL_MINUTES = int(os.getenv("WEATHER_POLL_MINUTES", "30"))
 
 # Logging configuration
 LOG_FILE = LOGS_DIR / "backend.log"

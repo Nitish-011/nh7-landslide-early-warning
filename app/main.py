@@ -14,10 +14,12 @@ from app.config import (
     CORS_ALLOW_METHODS,
     CORS_ALLOW_HEADERS,
 )
-from app.database import init_db
+from app.database import init_db, get_db
 from app.logger import logger
 from app.middleware import RequestResponseLoggingMiddleware
 from app.limiter import limiter
+from app.scheduler import start_scheduler, shutdown_scheduler, get_scheduler_last_run
+from app.risk_service import get_current_weather_source
 
 # Import Route Routers
 from app.routes.risk import router as risk_router
@@ -29,15 +31,19 @@ from app.routes.history import router as history_router
 async def lifespan(app: FastAPI):
     """
     Lifespan events: Seeds the SQLite database on startup if empty,
-    verifying all endpoints will return rich mock data immediately.
+    initializes background scheduler (if enabled), and cleans up on shutdown.
     """
     logger.info("Starting up NH-7 Landslide Risk Backend...")
     if config.ENV == "production" and not config.ADMIN_API_KEY:
         logger.critical("FATAL: ADMIN_API_KEY must be set when ENV=production!")
         raise RuntimeError("FATAL STARTUP CONFIGURATION ERROR: ADMIN_API_KEY must be set in production mode!")
     init_db()
+    if config.ENABLE_SCHEDULER:
+        start_scheduler()
     logger.info("NH-7 Landslide Risk Backend initialized successfully and ready for incoming traffic.")
     yield
+    if config.ENABLE_SCHEDULER:
+        shutdown_scheduler()
     logger.info("Shutting down NH-7 Landslide Risk Backend.")
 
 app = FastAPI(
@@ -96,5 +102,27 @@ async def serve_test_ui():
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Health check endpoint for container probes and load balancers."""
-    return {"status": "ok", "system": "NH-7 Landslide Risk Backend", "corridor": "Rishikesh-Joshimath"}
+    """
+    Sub-second health check endpoint for container probes, uptime pingers, and load balancers.
+    Returns operational diagnostics including DB status, weather source, and scheduler run history.
+    """
+    db_ok = False
+    try:
+        with get_db() as conn:
+            conn.execute("SELECT 1")
+        db_ok = True
+    except Exception as e:
+        logger.warning("Health check: DB connectivity probe failed: %s", e)
+
+    weather_source = get_current_weather_source()
+    scheduler_last_run = get_scheduler_last_run()
+
+    return {
+        "status": "ok",
+        "system": "NH-7 Landslide Risk Backend",
+        "corridor": "Rishikesh-Joshimath",
+        "app_version": app.version,
+        "db_ok": db_ok,
+        "weather_source": weather_source,
+        "scheduler_last_run": scheduler_last_run,
+    }

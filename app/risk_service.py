@@ -38,6 +38,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import os
 import requests
 
 from app.config import (
@@ -46,6 +47,7 @@ from app.config import (
     K_TERRAIN,
     LEVEL_CUTS,
     RAIN_REF_MM,
+    SNAPSHOT_PATH,
 )
 
 log = logging.getLogger("backend")
@@ -58,7 +60,25 @@ CACHE_TTL_S = 1800                   # re-query rainfall at most every 30 minute
 FAILED_CACHE_TTL_S = 300             # cache a failed fetch for 5 minutes so requests do not keep blocking
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
 
-RAIN_SNAPSHOT_FILE = Path(__file__).resolve().parent.parent / "data" / "rain_snapshot.json"
+RAIN_SNAPSHOT_FILE = SNAPSHOT_PATH
+
+
+def save_snapshot_atomic(snap_payload: dict, path: Path | None = None) -> bool:
+    """
+    Atomically writes the snapshot JSON dictionary using a temporary file
+    and os.replace to prevent partial/corrupted reads.
+    """
+    target_path = Path(path or RAIN_SNAPSHOT_FILE).resolve()
+    try:
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_file = target_path.with_suffix(".tmp")
+        temp_file.write_text(json.dumps(snap_payload, indent=2), encoding="utf-8")
+        os.replace(temp_file, target_path)
+        log.info("risk_service: atomically saved rain snapshot to %s", target_path)
+        return True
+    except Exception as e:
+        log.warning("risk_service: failed saving rain snapshot atomically: %s", e)
+        return False
 
 CORRIDOR_NAME = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
 
@@ -231,17 +251,12 @@ def fetch_rainfall_with_metadata(segments, session=None, simulate_rain_mm=None) 
             "stale_warning": None,
         }
 
-        # On success also write result to data/rain_snapshot.json
-        try:
-            RAIN_SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
-            snap_payload = {
-                "timestamp": now_iso,
-                "data": result,
-            }
-            RAIN_SNAPSHOT_FILE.write_text(json.dumps(snap_payload, indent=2), encoding="utf-8")
-            log.info("risk_service: saved rain snapshot to %s", RAIN_SNAPSHOT_FILE)
-        except Exception as se:
-            log.warning("risk_service: failed saving rain snapshot: %s", se)
+        # On success also write result atomically to data/rain_snapshot.json
+        snap_payload = {
+            "timestamp": now_iso,
+            "data": result,
+        }
+        save_snapshot_atomic(snap_payload, RAIN_SNAPSHOT_FILE)
 
         return result, meta
 
@@ -348,3 +363,20 @@ def get_live_risk_map(session=None, simulate_rain_mm=None, force_terrain_only: b
     """Backwards-compatible wrapper returning only segment list."""
     segs, _ = get_live_risk_map_with_metadata(session=session, simulate_rain_mm=simulate_rain_mm, force_terrain_only=force_terrain_only)
     return segs
+
+
+def get_current_weather_source() -> str:
+    """
+    Returns the current operational weather source:
+    'live' | 'cached' | 'snapshot' | 'unavailable'
+    Used by /health and diagnostic monitoring.
+    """
+    now = time.time()
+    if _rain_cache.get("data") is not None:
+        age_s = now - _rain_cache.get("t", 0.0)
+        if age_s < 60:
+            return "live"
+        return "cached"
+    if RAIN_SNAPSHOT_FILE.exists():
+        return "snapshot"
+    return "unavailable"
