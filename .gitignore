@@ -1,0 +1,39 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Application Logs & SQLite DB
+logs/*.log
+*.log
+data/*.db
+data/*.sqlite3
+
+# Large external zip archives (>100MB, exceeds GitHub limits)
+model/nhess-24-3207-2024-supplement_2.zip
+*.zip
+
+# DEM Caches
+dem_cache/
+model/dem_cache/
+
+# IDE & System Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

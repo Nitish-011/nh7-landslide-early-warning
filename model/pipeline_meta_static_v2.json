@@ -1,0 +1,35 @@
+{
+  "strategy": "static",
+  "version": 2,
+  "chosen_feature_set": "B  Copernicus 30 m terrain",
+  "model": "RF",
+  "feature_columns": [
+    "dem_elev_m",
+    "dem_slope_deg",
+    "dem_slope_max_210m",
+    "dem_aspect_sin",
+    "dem_aspect_cos",
+    "dem_curvature",
+    "dem_relief_300m",
+    "dem_tpi_300m"
+  ],
+  "feature_config": {
+    "terrain_source": "dem30"
+  },
+  "pooled_auc": 0.7672102303076005,
+  "skill_heuristic": "moderate",
+  "group_column": "block_id",
+  "rows": 1236,
+  "positives": 309,
+  "feature_importance": {
+    "dem_elev_m": 0.19573534946608645,
+    "dem_slope_deg": 0.19536132354014846,
+    "dem_slope_max_210m": 0.09926526100374955,
+    "dem_aspect_sin": 0.07655644131614077,
+    "dem_aspect_cos": 0.15446550432250084,
+    "dem_curvature": 0.06573122476801972,
+    "dem_relief_300m": 0.14286846688998397,
+    "dem_tpi_300m": 0.07001642869337017
+  },
+  "citation": "Mey, J., Guntu, R. K., Plakias, A., Silva de Almeida, I., and Schwanghart, W. (2024). More than one landslide per road kilometer - surveying and modelling mass movements along the Rishikesh-Joshimath (NH-7) highway, Uttarakhand, India. Nat. Hazards Earth Syst. Sci., 24, 3207. https://doi.org/10.5194/nhess-24-3207-2024"
+}

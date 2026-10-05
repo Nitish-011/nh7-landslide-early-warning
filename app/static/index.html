@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NH-7 Landslide Risk API Workbench & Interactive Testbench</title>
+  
+  <!-- Modern Typography (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-panel: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #273549;
+      --border: #334155;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #38bdf8;
+      --risk-low: #10b981;
+      --risk-mod: #f59e0b;
+      --risk-high: #f97316;
+      --risk-vhigh: #ef4444;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: var(--text-main);
+    }
+
+    /* Map Viewport */
+    #map-container {
+      flex: 1;
+      position: relative;
+      height: 100%;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #111827;
+    }
+
+    /* Floating Map Badges */
+    .map-top-bar {
+      position: absolute;
+      top: 16px;
+      left: 60px;
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .map-stat {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+    .map-stat strong {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--risk-low);
+      box-shadow: 0 0 8px var(--risk-low);
+    }
+
+    /* Workbench Side Panel */
+    #workbench {
+      width: 540px;
+      height: 100%;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+    }
+
+    .header {
+      padding: 16px 20px;
+      background: rgba(9, 13, 22, 0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title h1 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.02em;
+    }
+    .header-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .replaceable-badge {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      background: #0a0f1d;
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .nav-tab:hover {
+      color: var(--text-main);
+    }
+    .nav-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Content Area */
+    .tab-content-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* Cards & Controls */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .endpoint-pill {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .form-col-full {
+      grid-column: span 2;
+    }
+    label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    button:hover {
+      background: #475569;
+    }
+    button.btn-primary {
+      background: var(--primary);
+      border-color: #0369a1;
+    }
+    button.btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    button.btn-sm {
+      padding: 4px 8px;
+      font-size: 0.72rem;
+    }
+
+    /* Simulation Presets */
+    .preset-pill {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-pill:hover, .preset-pill.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Advisory Banner */
+    .advisory-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.75rem;
+      color: #fde68a;
+      line-height: 1.4;
+      display: none;
+    }
+
+    /* Console Output Area */
+    #console-pane {
+      background: #050811;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 240px;
+      min-height: 160px;
+    }
+    .console-header {
+      padding: 6px 14px;
+      background: #0a0f1d;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .console-tags {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pill {
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+    .pill-2xx { background: #064e3b; color: #6ee7b7; }
+    .pill-4xx { background: #7f1d1d; color: #fca5a5; }
+    .pill-5xx { background: #881337; color: #fda4af; }
+    pre {
+      flex: 1;
+      overflow: auto;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: #7dd3fc;
+    }
+
+    /* Map Elements */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .leaflet-popup-tip {
+      background: var(--bg-card);
+    }
+    .popup-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+    .popup-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .popup-metric {
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+    }
+    .popup-metric strong {
+      color: var(--text-main);
+    }
+    .popup-driver {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: #93c5fd;
+      font-style: italic;
+    }
+
+    /* Legend */
+    .map-legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .legend-title {
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+    .legend-bar {
+      width: 16px;
+      height: 6px;
+      border-radius: 2px;
+    }
+
+    /* Leaflet Layer Selector Control */
+    .leaflet-control-layers {
+      background: rgba(15, 23, 42, 0.92) !important;
+      color: var(--text-main) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+      font-size: 0.75rem !important;
+      font-family: inherit !important;
+      backdrop-filter: blur(10px);
+      padding: 8px 12px !important;
+    }
+    .leaflet-control-layers-expanded {
+      background: rgba(15, 23, 42, 0.95) !important;
+    }
+    .leaflet-control-layers label {
+      color: var(--text-main) !important;
+      font-size: 0.75rem !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin-bottom: 4px !important;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Map Viewport -->
+  <div id="map-container">
+    <div id="map"></div>
+    
+    <!-- Top HUD Bar -->
+    <div class="map-top-bar">
+      <div class="map-stat">
+        <span class="status-dot" id="live-dot"></span>
+        <span>Corridor: <strong>NH-7 Uttarakhand (247 km)</strong></span>
+      </div>
+      <div class="map-stat">
+        <span>Segments: <strong id="hud-total-seg">18</strong></span>
+      </div>
+      <div class="map-stat">
+        <span>High/Very High: <strong id="hud-high-seg" style="color: var(--risk-high);">-</strong></span>
+      </div>
+      <div class="map-stat">
+        <span>Rain Status: <strong id="hud-rain-status">Live</strong></span>
+      </div>
+    </div>
+
+    <!-- Map Legend -->
+    <div class="map-legend">
+      <div class="legend-title">Landslide Risk Tier</div>
+      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-low);"></div><span>Low Risk (< 0.35)</span></div>
+      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-mod);"></div><span>Moderate Risk (0.35 - 0.65)</span></div>
+      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-high);"></div><span>High Risk (0.65 - 0.85)</span></div>
+      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-vhigh);"></div><span>Very High Risk (≥ 0.85)</span></div>
+      <div class="legend-title" style="margin-top: 4px;">Layers</div>
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.72rem;">
+        <input type="checkbox" id="chk-toggle-scars" onchange="toggleLandslideScars(this.checked)" />
+        <span>Show 309 Surveyed Scars (Mey 2024)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Workbench Panel -->
+  <div id="workbench">
+    <div class="header">
+      <div class="header-title">
+        <h1>⛰️ NH-7 Risk API Workbench</h1>
+        <p>Interactive verification testbench for backend APIs & models</p>
+      </div>
+      <span class="replaceable-badge">Test Client</span>
+    </div>
+
+    <!-- Nav Tabs -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="switchTab('tab-corridor')">🗺️ Risk Map</div>
+      <div class="nav-tab" onclick="switchTab('tab-router')">🚗 Route Planner</div>
+      <div class="nav-tab" onclick="switchTab('tab-weather')">🌧️ Weather Sim</div>
+      <div class="nav-tab" onclick="switchTab('tab-alerts')">🔔 Alerts</div>
+      <div class="nav-tab" onclick="switchTab('tab-reports')">📢 Field Reports</div>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="tab-content-container">
+      
+      <!-- TAB 1: CORRIDOR RISK MAP -->
+      <div id="tab-corridor" class="tab-pane active">
+        <div class="card">
+          <div class="card-title">
+            <span>Corridor Evaluation</span>
+            <span class="endpoint-pill">GET /risk-map</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">
+            Fetches all 18 highway segments with combined 30m DEM terrain baseline + live rainfall aggregation.
+          </p>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="loadCorridorRiskMap()">
+              <span>⚡ Fetch Live Risk Map</span>
+            </button>
+            <button onclick="zoomToCorridor()">🔍 Zoom Corridor</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Segment Inspector</span>
+          </div>
+          <div>
+            <label>Select Segment to Inspect</label>
+            <select id="inspect-segment-select" onchange="onSegmentSelect(this.value)">
+              <option value="">-- Choose Segment (seg_01 to seg_18) --</option>
+            </select>
+          </div>
+          <div id="inspect-details" style="display: none; font-size: 0.75rem; line-height: 1.6;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+              <strong id="det-name" style="color:var(--accent);"></strong>
+              <span id="det-badge" class="popup-badge"></span>
+            </div>
+            <div class="form-grid">
+              <div>Terrain Score: <strong id="det-score">-</strong></div>
+              <div>Percentile: <strong id="det-pctile">-</strong></div>
+              <div>Rainfall (3d): <strong id="det-rain">-</strong></div>
+              <div>Rain Status: <strong id="det-rain-status">-</strong></div>
+            </div>
+            <div style="margin-top: 6px;">Primary Driver: <strong id="det-driver" style="color:#bae6fd;">-</strong></div>
+            <div>Calculation Method: <span id="det-method" style="font-family:var(--font-mono); font-size:0.7rem;">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ROUTE TRIP PLANNER -->
+      <div id="tab-router" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Route Risk Evaluation</span>
+            <span class="endpoint-pill">GET /route-risk</span>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label>Origin Segment</label>
+              <select id="route-start"></select>
+            </div>
+            <div>
+              <label>Destination Segment</label>
+              <select id="route-end"></select>
+            </div>
+            <div class="form-col-full">
+              <label>Travel Date (YYYY-MM-DD)</label>
+              <input type="date" id="route-travel-date" />
+            </div>
+          </div>
+
+          <div id="route-advisory-box" class="advisory-box"></div>
+
+          <div class="btn-row">
+            <button class="btn-primary" onclick="evaluateRouteRisk()">
+              <span>🚗 Evaluate Trip Risk</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="route-results-card" class="card" style="display:none;">
+          <div class="card-title">
+            <span>Trip Hazard Summary</span>
+            <span id="route-risk-badge" class="popup-badge">MODERATE</span>
+          </div>
+          <div style="font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px;">
+            <div>Segments Traversed: <strong id="route-seg-count">0</strong></div>
+            <div>Max Hazard Segment: <strong id="route-max-seg" style="color: var(--risk-vhigh);">-</strong></div>
+            <div>Corridor Advisory: <span id="route-advisory-text" style="color: #cbd5e1;">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: RAINFALL & SIMULATION STUDIO -->
+      <div id="tab-weather" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Rainfall Simulation Override</span>
+            <span class="endpoint-pill">?simulate_rain_mm=...</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">
+            Inject arbitrary 3-day rainfall across all 18 segments to test trigger curves and the <code>DRY_CAP_MM = 25.0</code> heuristic.
+          </p>
+          
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+              <label>Simulated Rainfall</label>
+              <span id="slider-rain-val" style="font-family: var(--font-mono); font-weight:700; color:var(--accent);">Live Weather (No Override)</span>
+            </div>
+            <input type="range" id="rain-slider" min="-1" max="150" value="-1" step="1" oninput="updateRainSlider(this.value)" />
+          </div>
+
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="preset-pill active" onclick="applyPreset(-1, this)">Live API</span>
+            <span class="preset-pill" onclick="applyPreset(0, this)">Dry (0 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(15, this)">Below Dry Cap (15 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(50, this)">Moderate Rain (50 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(100, this)">Monsoon Downpour (100 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(150, this)">Cloudburst (150 mm)</span>
+          </div>
+
+          <div class="btn-row" style="margin-top: 6px;">
+            <button class="btn-primary" onclick="reRunCurrentWithRain()">Apply Simulation to Active Tab</button>
+            <button onclick="resetRainSimulation()">Reset to Live Weather</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Resilience & Cache Status</span>
+          </div>
+          <div style="font-size: 0.75rem; line-height: 1.6; color: var(--text-muted);">
+            <div>Local Snapshot File: <code>data/rain_snapshot.json</code></div>
+            <div>Failure Memory Cache TTL: <strong>300 seconds (5 minutes)</strong></div>
+            <div>Dry Cap Threshold: <code>DRY_CAP_MM = 25.0 mm</code></div>
+            <div>API Down Behavior: Answers in <strong>< 100 ms</strong> from snapshot or cache</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: ALERTS & SUBSCRIPTIONS -->
+      <div id="tab-alerts" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Create Alert Subscription</span>
+            <span class="endpoint-pill">POST /subscribe</span>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label>Subscriber Name</label>
+              <input type="text" id="sub-name" value="Driver Ramesh Kumar" />
+            </div>
+            <div>
+              <label>Phone / Email</label>
+              <input type="text" id="sub-contact" value="+91-9876543210" />
+            </div>
+            <div>
+              <label>Monitored Segment</label>
+              <select id="sub-segment-select"></select>
+            </div>
+            <div>
+              <label>Dispatch Channel</label>
+              <select id="sub-channel">
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="SMS">SMS</option>
+                <option value="Email">Email</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="submitSubscription()">Register Subscription</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Query Active Alerts</span>
+            <span class="endpoint-pill">GET /alerts</span>
+          </div>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label>Subscription ID (from registration)</label>
+              <input type="number" id="alert-sub-id" value="1" />
+            </div>
+          </div>
+          <button class="btn-primary" onclick="checkSubAlerts()">Fetch Active User Alerts</button>
+          <div id="alerts-output-container" style="display:none; font-size: 0.75rem; margin-top: 6px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 5: FIELD REPORTS -->
+      <div id="tab-reports" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Report Landslide Hazard</span>
+            <span class="endpoint-pill">POST /field-report</span>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label>Latitude</label>
+              <input type="number" step="0.0001" id="report-lat" value="30.2390" />
+            </div>
+            <div>
+              <label>Longitude</label>
+              <input type="number" step="0.0001" id="report-lng" value="78.8540" />
+            </div>
+            <div class="form-col-full">
+              <label>Reporter Name</label>
+              <input type="text" id="report-author" value="NHAI Patrol Team 4" />
+            </div>
+            <div class="form-col-full">
+              <label>Hazard Description</label>
+              <textarea id="report-desc">Shooting stones and active rockfall observed near Sirobagarh bend. Road partially blocked.</textarea>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="submitFieldReport()">Submit Incident Report</button>
+            <button onclick="enableMapClickToReport()">📍 Pick Location on Map</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Active Field Reports</span>
+            <span class="endpoint-pill">GET /field-reports</span>
+          </div>
+          <button onclick="fetchFieldReports()">Refresh Field Incident Reports</button>
+          <div id="reports-list-container" style="display:none; font-size: 0.75rem; margin-top: 6px;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live JSON Response Console -->
+    <div id="console-pane">
+      <div class="console-header">
+        <div class="console-tags">
+          <span id="con-method" style="font-weight: 700; color: #38bdf8;">READY</span>
+          <span id="con-url" style="font-family: var(--font-mono); color: #cbd5e1;">/health</span>
+        </div>
+        <div class="console-tags">
+          <span id="con-latency" style="color: var(--text-muted);">0 ms</span>
+          <span id="con-status" class="pill pill-2xx">200 OK</span>
+          <button class="btn-sm" onclick="copyConsoleOutput()" title="Copy JSON">📋</button>
+        </div>
+      </div>
+      <pre id="json-viewer">// NH-7 API response output will stream here...</pre>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // --- Global Application State ---
+    let map = null;
+    let segmentPolylines = [];
+    let scarMarkersLayer = null;
+    let corridorData = null;
+    let activeSimulationRain = null; // null = use live weather
+    let mapClickMode = false;
+    let clickMarker = null;
+
+    // Default Segment definitions for initial setup
+    const SEGMENT_NAMES = [
+      { id: "seg_01", name: "Rishikesh to Shivpuri" },
+      { id: "seg_02", name: "Shivpuri to Byasi" },
+      { id: "seg_03", name: "Byasi to Kaudiyala" },
+      { id: "seg_04", name: "Kaudiyala to Devprayag" },
+      { id: "seg_05", name: "Devprayag to Teen Dhara" },
+      { id: "seg_06", name: "Teen Dhara to Kirtinagar" },
+      { id: "seg_07", name: "Kirtinagar to Srinagar" },
+      { id: "seg_08", name: "Srinagar to Sirobagarh" },
+      { id: "seg_09", name: "Sirobagarh to Rudraprayag" },
+      { id: "seg_10", name: "Rudraprayag to Gauchar" },
+      { id: "seg_11", name: "Gauchar to Karnaprayag" },
+      { id: "seg_12", name: "Karnaprayag to Langasu" },
+      { id: "seg_13", name: "Langasu to Nandprayag" },
+      { id: "seg_14", name: "Nandprayag to Chamoli" },
+      { id: "seg_15", name: "Chamoli to Birahi" },
+      { id: "seg_16", name: "Birahi to Pipalkoti" },
+      { id: "seg_17", name: "Pipalkoti to Helang (Tangani)" },
+      { id: "seg_18", name: "Helang to Joshimath" }
+    ];
+
+    // Initialize Map and UI
+    window.addEventListener("DOMContentLoaded", () => {
+      initMap();
+      populateDropdowns();
+      setDefaultDates();
+      loadCorridorRiskMap();
+    });
+
+    function initMap() {
+      // Centered on NH-7 corridor (Devprayag / Srinagar region)
+      map = L.map("map", { zoomControl: false }).setView([30.27, 78.95], 9);
+      L.control.zoom({ position: "topleft" }).addTo(map);
+
+      // Base Tile Layers (100% Free, No API Key Required)
+      const esriTopo = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
+        attribution: 'Tiles &copy; Esri &mdash; USGS, DeLorme, NAVTEQ',
+        maxZoom: 18
+      });
+
+      const esriSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics',
+        maxZoom: 18
+      });
+
+      const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      });
+
+      // Default to Topographic Map for Mountain Slopes
+      esriTopo.addTo(map);
+
+      const baseLayers = {
+        "⛰️ Mountain Topo": esriTopo,
+        "🛰️ Satellite Imagery": esriSat,
+        "🗺️ Street Map": osm
+      };
+      L.control.layers(baseLayers, null, { position: "topright" }).addTo(map);
+
+      map.on("click", (e) => {
+        if (mapClickMode) {
+          document.getElementById("report-lat").value = e.latlng.lat.toFixed(5);
+          document.getElementById("report-lng").value = e.latlng.lng.toFixed(5);
+          if (clickMarker) map.removeLayer(clickMarker);
+          clickMarker = L.circleMarker(e.latlng, { radius: 8, color: '#ef4444', fill: true, fillOpacity: 0.8 }).addTo(map);
+          mapClickMode = false;
+          alert(`Location pinned: (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`);
+        }
+      });
+    }
+
+    function populateDropdowns() {
+      const inspectSel = document.getElementById("inspect-segment-select");
+      const rStart = document.getElementById("route-start");
+      const rEnd = document.getElementById("route-end");
+      const subSel = document.getElementById("sub-segment-select");
+
+      SEGMENT_NAMES.forEach(s => {
+        const opt = `<option value="${s.id}">${s.id}: ${s.name}</option>`;
+        inspectSel.insertAdjacentHTML("beforeend", opt);
+        rStart.insertAdjacentHTML("beforeend", opt);
+        rEnd.insertAdjacentHTML("beforeend", opt);
+        subSel.insertAdjacentHTML("beforeend", opt);
+      });
+
+      rStart.value = "seg_01";
+      rEnd.value = "seg_18";
+      subSel.value = "seg_08";
+    }
+
+    function setDefaultDates() {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("route-travel-date").value = today;
+    }
+
+    // --- UI Navigation Tabs ---
+    function switchTab(tabId) {
+      document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+      
+      const idx = ["tab-corridor", "tab-router", "tab-weather", "tab-alerts", "tab-reports"].indexOf(tabId);
+      if (idx !== -1) {
+        document.querySelectorAll(".nav-tab")[idx].classList.add("active");
+        document.getElementById(tabId).classList.add("active");
+      }
+    }
+
+    // --- API Fetch Helper ---
+    async function apiCall(method, url, body = null) {
+      const start = performance.now();
+      const conMethod = document.getElementById("con-method");
+      const conUrl = document.getElementById("con-url");
+      const conLat = document.getElementById("con-latency");
+      const conStat = document.getElementById("con-status");
+      const conPre = document.getElementById("json-viewer");
+
+      conMethod.textContent = method;
+      conUrl.textContent = url;
+      conPre.textContent = "// Request in flight...";
+
+      try {
+        const opts = { method, headers: { "Content-Type": "application/json" } };
+        if (body) opts.body = JSON.stringify(body);
+
+        const res = await fetch(url, opts);
+        const duration = Math.round(performance.now() - start);
+        const data = await res.json();
+
+        conLat.textContent = `${duration} ms`;
+        conStat.textContent = `${res.status} ${res.statusText}`;
+        conStat.className = `pill pill-${res.ok ? "2xx" : "4xx"}`;
+        conPre.textContent = JSON.stringify(data, null, 2);
+
+        return { ok: res.ok, status: res.status, data };
+      } catch (err) {
+        const duration = Math.round(performance.now() - start);
+        conLat.textContent = `${duration} ms`;
+        conStat.textContent = "NET ERROR";
+        conStat.className = "pill pill-5xx";
+        conPre.textContent = `// Network or API Error:\n${err.message}`;
+        return { ok: false, status: 0, data: null, error: err.message };
+      }
+    }
+
+    // --- Tab 1: Corridor Risk Map ---
+    async function loadCorridorRiskMap() {
+      let url = "/risk-map";
+      if (activeSimulationRain !== null) {
+        url += `?simulate_rain_mm=${activeSimulationRain}`;
+      }
+
+      const res = await apiCall("GET", url);
+      if (!res.ok) return;
+
+      corridorData = res.data;
+      renderCorridorOnMap(corridorData.segments);
+      updateHUD(corridorData);
+    }
+
+    function renderCorridorOnMap(segments) {
+      // Clear existing polylines
+      segmentPolylines.forEach(p => map.removeLayer(p));
+      segmentPolylines = [];
+
+      segments.forEach(seg => {
+        let latlngs = [];
+        if (Array.isArray(seg.subpoints) && seg.subpoints.length > 0) {
+          latlngs = seg.subpoints.map(pt => {
+            if (Array.isArray(pt)) return [pt[0], pt[1]];
+            if (pt && typeof pt === "object" && "lat" in pt) return [pt.lat, pt.lng];
+            return pt;
+          }).filter(pt => Array.isArray(pt) && !isNaN(pt[0]) && !isNaN(pt[1]));
+        }
+        if (latlngs.length === 0 && seg.start_lat && seg.start_lng && seg.end_lat && seg.end_lng) {
+          latlngs = [[seg.start_lat, seg.start_lng], [seg.end_lat, seg.end_lng]];
+        }
+
+        if (latlngs.length === 0) return;
+
+        const color = getRiskColor(seg.risk_level);
+        const poly = L.polyline(latlngs, {
+          color: color,
+          weight: 6,
+          opacity: 0.9,
+          lineJoin: "round"
+        }).addTo(map);
+
+        // Rich Tooltip
+        const popupContent = `
+          <div class="popup-title">${seg.id}: ${seg.name}</div>
+          <span class="popup-badge" style="background:${color}; color:#fff;">${seg.risk_level} (${Math.round(seg.risk_score * 100)}%)</span>
+          <div class="popup-metric">Terrain Percentile: <strong>${Math.round((seg.terrain_percentile || 0) * 100)}th</strong> (${seg.terrain_level || 'Normal'})</div>
+          <div class="popup-metric">3-Day Rainfall: <strong>${(seg.rain_mm_3d || 0).toFixed(1)} mm</strong> (${seg.rain_status || 'ok'})</div>
+          <div class="popup-driver">${seg.main_driver || 'Physical terrain features'}</div>
+        `;
+        poly.bindPopup(popupContent);
+
+        poly.on("click", () => {
+          document.getElementById("inspect-segment-select").value = seg.id;
+          displaySegmentDetails(seg);
+        });
+
+        poly.segmentData = seg;
+        segmentPolylines.push(poly);
+      });
+
+      // Automatically zoom map to fit all 18 corridor segments
+      if (segmentPolylines.length > 0) {
+        const group = L.featureGroup(segmentPolylines);
+        map.fitBounds(group.getBounds(), { padding: [30, 30] });
+      }
+    }
+
+    function updateHUD(data) {
+      document.getElementById("hud-total-seg").textContent = data.total_segments || 18;
+      document.getElementById("hud-high-seg").textContent = data.high_or_very_high_risk_count !== undefined ? data.high_or_very_high_risk_count : 0;
+      
+      const rainStatusSample = (data.segments && data.segments[0]) ? data.segments[0].rain_status : "ok";
+      document.getElementById("hud-rain-status").textContent = activeSimulationRain !== null 
+        ? `Simulated (${activeSimulationRain}mm)` 
+        : rainStatusSample;
+    }
+
+    function getRiskColor(level) {
+      switch (level) {
+        case "Low": return "#10b981";
+        case "Moderate": return "#f59e0b";
+        case "High": return "#f97316";
+        case "Very High": return "#ef4444";
+        default: return "#38bdf8";
+      }
+    }
+
+    function onSegmentSelect(segId) {
+      if (!segId || !corridorData) return;
+      const seg = corridorData.segments.find(s => s.id === segId);
+      if (seg) {
+        displaySegmentDetails(seg);
+        // Highlight on map
+        const poly = segmentPolylines.find(p => p.segmentData.id === segId);
+        if (poly) {
+          map.fitBounds(poly.getBounds(), { padding: [50, 50] });
+          poly.openPopup();
+        }
+      }
+    }
+
+    function displaySegmentDetails(seg) {
+      document.getElementById("inspect-details").style.display = "block";
+      document.getElementById("det-name").textContent = `${seg.id}: ${seg.name}`;
+      
+      const badge = document.getElementById("det-badge");
+      badge.textContent = seg.risk_level;
+      badge.style.background = getRiskColor(seg.risk_level);
+      badge.style.color = "#fff";
+
+      document.getElementById("det-score").textContent = `${(seg.risk_score * 100).toFixed(1)}%`;
+      document.getElementById("det-pctile").textContent = `${Math.round((seg.terrain_percentile || 0) * 100)}th (${seg.terrain_level || 'Normal'})`;
+      document.getElementById("det-rain").textContent = `${(seg.rain_mm_3d || 0).toFixed(1)} mm`;
+      document.getElementById("det-rain-status").textContent = seg.rain_status || "ok";
+      document.getElementById("det-driver").textContent = seg.main_driver || "-";
+      document.getElementById("det-method").textContent = seg.method || "deterministic_ml_v2";
+    }
+
+    function zoomToCorridor() {
+      if (segmentPolylines.length > 0) {
+        const group = L.featureGroup(segmentPolylines);
+        map.fitBounds(group.getBounds(), { padding: [30, 30] });
+      }
+    }
+
+    // --- 309 Landslide Scars Overlay ---
+    async function toggleLandslideScars(enable) {
+      if (!enable) {
+        if (scarMarkersLayer) map.removeLayer(scarMarkersLayer);
+        return;
+      }
+      
+      if (!scarMarkersLayer) {
+        // Fetch historical landslide data
+        const res = await apiCall("GET", "/history");
+        if (res.ok && res.data.events) {
+          const markers = res.data.events.map(ev => {
+            return L.circleMarker([ev.lat, ev.lng], {
+              radius: 4,
+              color: "#fb7185",
+              fillColor: "#e11d48",
+              fillOpacity: 0.85,
+              weight: 1
+            }).bindPopup(`<strong>${ev.title}</strong><br>${ev.location}<br>Date: ${ev.event_date}<br>${ev.description}`);
+          });
+          scarMarkersLayer = L.layerGroup(markers);
+        }
+      }
+      if (scarMarkersLayer) scarMarkersLayer.addTo(map);
+    }
+
+    // --- Tab 2: Route Planner ---
+    async function evaluateRouteRisk() {
+      const fromSeg = document.getElementById("route-start").value;
+      const toSeg = document.getElementById("route-end").value;
+      const travelDate = document.getElementById("route-travel-date").value;
+
+      let url = `/route-risk?from_segment=${fromSeg}&to_segment=${toSeg}`;
+      if (travelDate) url += `&date=${travelDate}`;
+      if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
+
+      const res = await apiCall("GET", url);
+      if (!res.ok) return;
+
+      const d = res.data;
+      const advBox = document.getElementById("route-advisory-box");
+      if (d.advisory && (d.advisory.includes("terrain-only") || d.advisory.includes("far future") || d.advisory.includes("FORECAST NOTICE"))) {
+        advBox.style.display = "block";
+        advBox.textContent = `ℹ️ ${d.advisory}`;
+      } else {
+        advBox.style.display = "none";
+      }
+
+      document.getElementById("route-results-card").style.display = "flex";
+      const maxLevel = d.max_risk_level || "Low";
+      const badge = document.getElementById("route-risk-badge");
+      badge.textContent = maxLevel;
+      badge.style.background = getRiskColor(maxLevel);
+      badge.style.color = "#fff";
+
+      document.getElementById("route-seg-count").textContent = `${d.total_segments || 0} segments (Avg: ${((d.average_risk_score || 0) * 100).toFixed(0)}%)`;
+      
+      let highestSeg = "-";
+      if (d.segments && d.segments.length > 0) {
+        const sorted = [...d.segments].sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+        highestSeg = `${sorted[0].id}: ${sorted[0].name} (${(sorted[0].risk_score * 100).toFixed(0)}%)`;
+      }
+      document.getElementById("route-max-seg").textContent = highestSeg;
+      document.getElementById("route-advisory-text").textContent = d.advisory || "Normal road conditions";
+
+      // Filter and zoom map to route
+      if (d.segments && d.segments.length > 0) {
+        const segIds = new Set(d.segments.map(s => s.id));
+        const matched = segmentPolylines.filter(p => segIds.has(p.segmentData.id));
+        if (matched.length > 0) {
+          const group = L.featureGroup(matched);
+          map.fitBounds(group.getBounds(), { padding: [40, 40] });
+        }
+      }
+    }
+
+    // --- Tab 3: Rainfall Simulation Studio ---
+    function updateRainSlider(val) {
+      const display = document.getElementById("slider-rain-val");
+      const num = parseFloat(val);
+      if (num < 0) {
+        activeSimulationRain = null;
+        display.textContent = "Live Weather (No Override)";
+      } else {
+        activeSimulationRain = num;
+        display.textContent = `${num.toFixed(0)} mm (3-Day Rainfall Override)`;
+      }
+    }
+
+    function applyPreset(val, elem) {
+      document.querySelectorAll(".preset-pill").forEach(p => p.classList.remove("active"));
+      if (elem) elem.classList.add("active");
+      document.getElementById("rain-slider").value = val;
+      updateRainSlider(val);
+      reRunCurrentWithRain();
+    }
+
+    function reRunCurrentWithRain() {
+      loadCorridorRiskMap();
+    }
+
+    function resetRainSimulation() {
+      applyPreset(-1, document.querySelector(".preset-pill"));
+    }
+
+    // --- Tab 4: Subscriptions & Alerts ---
+    async function submitSubscription() {
+      const name = document.getElementById("sub-name").value;
+      const contact = document.getElementById("sub-contact").value;
+      const segId = document.getElementById("sub-segment-select").value;
+      const channel = document.getElementById("sub-channel").value;
+
+      const payload = {
+        name,
+        phone_or_email: contact,
+        segment_id: segId,
+        channel
+      };
+
+      const res = await apiCall("POST", "/subscribe", payload);
+      if (res.ok && res.data.subscription_id) {
+        document.getElementById("alert-sub-id").value = res.data.subscription_id;
+        alert(`Subscription created successfully! Your Subscription ID is: ${res.data.subscription_id}`);
+      }
+    }
+
+    async function checkSubAlerts() {
+      const subId = document.getElementById("alert-sub-id").value;
+      let url = `/alerts?user_id=${subId}`;
+      if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
+
+      const res = await apiCall("GET", url);
+      const container = document.getElementById("alerts-output-container");
+      if (res.ok && res.data) {
+        container.style.display = "block";
+        const alerts = res.data.alerts || res.data.active_alerts || [];
+        if (alerts.length === 0) {
+          container.innerHTML = `<div style="color:var(--risk-low); padding: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 6px;">✅ No active alerts for this subscription. Risk is Low/Moderate.</div>`;
+        } else {
+          container.innerHTML = alerts.map(a => `
+            <div style="background:#090d16; border:1px solid #475569; border-radius:6px; padding:8px; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${a.segment_name} (${a.segment_id})</strong>
+                <span class="popup-badge" style="background:${getRiskColor(a.severity || a.risk_level)}; color:#fff;">${a.severity || a.risk_level}</span>
+              </div>
+              <div style="font-size:0.75rem; margin-top:4px;">${a.message || a.recommended_action}</div>
+              <div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">Channel: <strong>${a.channel}</strong> &bull; 3-Day Rain: <strong>${(a.rain_mm_3d || 0).toFixed(1)} mm</strong> (${a.rain_status || 'ok'})</div>
+            </div>
+          `).join("");
+        }
+      }
+    }
+
+    // --- Tab 5: Field Reports ---
+    function enableMapClickToReport() {
+      mapClickMode = true;
+      alert("Click anywhere along the highway map to set incident latitude and longitude.");
+    }
+
+    async function submitFieldReport() {
+      const lat = parseFloat(document.getElementById("report-lat").value);
+      const lng = parseFloat(document.getElementById("report-lng").value);
+      const author = document.getElementById("report-author").value;
+      const desc = document.getElementById("report-desc").value;
+
+      const payload = {
+        lat,
+        lng,
+        reporter_name: author,
+        description: desc
+      };
+
+      const res = await apiCall("POST", "/field-report", payload);
+      if (res.ok) {
+        alert("Field report submitted successfully! Queued for review.");
+        fetchFieldReports();
+      }
+    }
+
+    async function adminValidateReport(reportId, decision) {
+      const payload = {
+        report_id: reportId,
+        decision: decision,
+        notes: `Reviewed and marked as ${decision} via workbench`
+      };
+      const res = await apiCall("POST", "/admin/validate-report", payload);
+      if (res.ok) {
+        fetchFieldReports();
+      }
+    }
+
+    async function fetchFieldReports() {
+      const res = await apiCall("GET", "/field-reports");
+      const container = document.getElementById("reports-list-container");
+      if (res.ok && res.data) {
+        container.style.display = "block";
+        const reports = res.data.reports || [];
+        if (reports.length === 0) {
+          container.innerHTML = `<div style="color:var(--text-muted); padding: 8px;">No field reports filed yet.</div>`;
+        } else {
+          container.innerHTML = reports.map(r => `
+            <div style="background:#090d16; border:1px solid #334155; border-radius:6px; padding:8px; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>#${r.id}: ${r.reporter_name}</strong>
+                <span class="popup-badge" style="background:${r.status === 'Validated' ? '#10b981' : (r.status === 'Rejected' ? '#ef4444' : '#334155')}; color:#fff;">${r.status}</span>
+              </div>
+              <div style="color:#cbd5e1; margin-top:2px;">${r.description}</div>
+              <div style="font-size:0.68rem; color:#64748b; margin-top:4px;">(${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}) &bull; ${r.created_at}</div>
+              ${r.status === 'Pending' ? `
+              <div style="display:flex; gap:6px; margin-top:6px;">
+                <button class="btn-sm" style="background:#065f46; border-color:#059669;" onclick="adminValidateReport(${r.id}, 'Validated')">✓ Validate</button>
+                <button class="btn-sm" style="background:#991b1b; border-color:#dc2626;" onclick="adminValidateReport(${r.id}, 'Rejected')">✗ Reject</button>
+              </div>` : `<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">Notes: ${r.decision_notes || 'None'}</div>`}
+            </div>
+          `).join("");
+        }
+      }
+    }
+
+    function copyConsoleOutput() {
+      const text = document.getElementById("json-viewer").textContent;
+      navigator.clipboard.writeText(text).then(() => alert("JSON copied to clipboard!"));
+    }
+  </script>
+</body>
+</html>

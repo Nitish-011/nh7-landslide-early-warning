@@ -1,0 +1,84 @@
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.config import (
+    CORS_ALLOW_ORIGINS,
+    CORS_ALLOW_CREDENTIALS,
+    CORS_ALLOW_METHODS,
+    CORS_ALLOW_HEADERS,
+)
+from app.database import init_db
+from app.logger import logger
+from app.middleware import RequestResponseLoggingMiddleware
+
+# Import Route Routers
+from app.routes.risk import router as risk_router
+from app.routes.subscriptions import router as subscriptions_router
+from app.routes.reports import router as reports_router
+from app.routes.history import router as history_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan events: Seeds the SQLite database on startup if empty,
+    verifying all endpoints will return rich mock data immediately.
+    """
+    logger.info("Starting up NH-7 Landslide Risk Backend...")
+    init_db()
+    logger.info("NH-7 Landslide Risk Backend initialized successfully and ready for incoming traffic.")
+    yield
+    logger.info("Shutting down NH-7 Landslide Risk Backend.")
+
+app = FastAPI(
+    title="NH-7 Uttarakhand Real-Time Landslide Risk API",
+    version="1.0.0",
+    description=(
+        "Production-grade backend for monitoring real-time landslide risk along the "
+        "NH-7 corridor in Uttarakhand, India (Rishikesh - Karnaprayag - Joshimath). "
+        "Provides highway risk mapping, deterministic route forecasting, subscriber alerts, "
+        "crowd-sourced field report processing, and historical hazard records."
+    ),
+    lifespan=lifespan
+)
+
+# 1. Add CORS Middleware (Essential for mobile apps & web frontend dev servers)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=CORS_ALLOW_CREDENTIALS,
+    allow_methods=CORS_ALLOW_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
+)
+
+# 2. Add Request/Response Audit Logging Middleware
+app.add_middleware(RequestResponseLoggingMiddleware)
+
+# 3. Mount Static Directory
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# 4. Include Routers
+app.include_router(risk_router)
+app.include_router(subscriptions_router)
+app.include_router(reports_router)
+app.include_router(history_router)
+
+# 5. Serve Interactive Test Frontend at Root (/)
+@app.get("/", include_in_schema=False)
+async def serve_test_ui():
+    """Serves the Leaflet.js interactive map and testing workbench."""
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    return JSONResponse({"status": "healthy", "service": "NH-7 Landslide Risk API"})
+
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Health check endpoint for container probes and load balancers."""
+    return {"status": "ok", "system": "NH-7 Landslide Risk Backend", "corridor": "Rishikesh-Joshimath"}

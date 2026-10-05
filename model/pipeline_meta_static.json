@@ -1,0 +1,61 @@
+{
+  "strategy": "static",
+  "mode": "A",
+  "feature_columns": [
+    "elevation_m",
+    "slope_deg",
+    "aspect_sin",
+    "aspect_cos",
+    "local_relief_m"
+  ],
+  "label_column": "label",
+  "group_column": "block_id",
+  "spatial_axis_column": "along_km",
+  "positives": 309,
+  "negatives": 927,
+  "neg_ratio_requested": 3.0,
+  "min_neg_sep_m": 250.0,
+  "n_blocks": 6,
+  "buffer_km": 2.0,
+  "osm": {
+    "source": "cache nh7_road_osm_cache.json",
+    "positives_within_300m_share": 1.0,
+    "median_dist_m": 9.517647745042265,
+    "p90_dist_m": 18.981547875104862
+  },
+  "elevation_check": {
+    "n": 309,
+    "median_abs_diff_m": 30.901122999999984,
+    "pearson_r": 0.9915655679090973,
+    "verdict": "OK"
+  },
+  "terrain_failures": 0,
+  "leak_test_passed": true,
+  "leak_test": {
+    "dist_ref_km": {
+      "auc": 0.48623984527462705,
+      "ci95": [
+        0.45004947349547614,
+        0.5225302621254084
+      ]
+    }
+  },
+  "coarse_distance_info": {
+    "auc": 0.5273230625290197,
+    "ci95": [
+      0.48876193528498735,
+      0.5639097323493784
+    ]
+  },
+  "best_model": "terrain (LR)",
+  "best_pooled_auc": 0.7287802459826214,
+  "skill_heuristic": "moderate",
+  "citation": "Mey, J., Guntu, R. K., Plakias, A., Silva de Almeida, I., and Schwanghart, W. (2024). More than one landslide per road kilometer - surveying and modelling mass movements along the Rishikesh-Joshimath (NH-7) highway, Uttarakhand, India. Nat. Hazards Earth Syst. Sci., 24, 3207. https://doi.org/10.5194/nhess-24-3207-2024",
+  "limitations": [
+    "Positives are road-blocking landslides, mostly from one rainfall episode (Sept-Oct 2022); points, not polygons.",
+    "Negatives are background points, not confirmed stable ground.",
+    "Terrain from a 90 m DEM with a 150 m finite-difference stencil: coarse for road-cut slopes.",
+    "No lithology or road-widening feature, which Mey et al. identify as main controls.",
+    "No rainfall feature: apply live rainfall at serving time as an explicit, explainable factor."
+  ]
+}

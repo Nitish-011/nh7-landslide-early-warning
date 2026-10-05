@@ -1,0 +1,20 @@
+{
+  "strategy": "static",
+  "feature_columns": [
+    "elevation_m",
+    "slope_deg",
+    "aspect_deg"
+  ],
+  "label_column": "label",
+  "spatial_split_column": "nearest_segment_id",
+  "nasa_raw_yield_in_bbox": 0,
+  "nasa_usable_dated_events": 0,
+  "ngdr_point_count": 28,
+  "negative_count": 150,
+  "final_row_count": 96,
+  "rows_dropped_missing_data": 82,
+  "class_balance": {
+    "0": 78,
+    "1": 18
+  }
+}

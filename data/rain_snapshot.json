@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-10-05T15:51:45Z",
+  "data": {
+    "seg_01": {
+      "rain_mm": 8.8,
+      "status": "ok"
+    },
+    "seg_02": {
+      "rain_mm": 14.4,
+      "status": "ok"
+    },
+    "seg_03": {
+      "rain_mm": 9.600000000000001,
+      "status": "ok"
+    },
+    "seg_04": {
+      "rain_mm": 9.600000000000001,
+      "status": "ok"
+    },
+    "seg_05": {
+      "rain_mm": 6.1,
+      "status": "ok"
+    },
+    "seg_06": {
+      "rain_mm": 6.0,
+      "status": "ok"
+    },
+    "seg_07": {
+      "rain_mm": 6.0,
+      "status": "ok"
+    },
+    "seg_08": {
+      "rain_mm": 6.300000000000001,
+      "status": "ok"
+    },
+    "seg_09": {
+      "rain_mm": 4.7,
+      "status": "ok"
+    },
+    "seg_10": {
+      "rain_mm": 4.5,
+      "status": "ok"
+    },
+    "seg_11": {
+      "rain_mm": 5.4,
+      "status": "ok"
+    },
+    "seg_12": {
+      "rain_mm": 5.4,
+      "status": "ok"
+    },
+    "seg_13": {
+      "rain_mm": 6.8,
+      "status": "ok"
+    },
+    "seg_14": {
+      "rain_mm": 6.0,
+      "status": "ok"
+    },
+    "seg_15": {
+      "rain_mm": 6.0,
+      "status": "ok"
+    },
+    "seg_16": {
+      "rain_mm": 7.1000000000000005,
+      "status": "ok"
+    },
+    "seg_17": {
+      "rain_mm": 3.8,
+      "status": "ok"
+    },
+    "seg_18": {
+      "rain_mm": 4.699999999999999,
+      "status": "ok"
+    }
+  }
+}

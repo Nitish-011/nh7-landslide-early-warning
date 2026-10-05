@@ -1,0 +1,9 @@
+numpy
+pandas
+requests
+scipy
+scikit-learn
+matplotlib
+joblib
+rasterio      # step 2 (30 m DEM); skip if it will not install - step 1's model still works
+# geopandas   # only if you use the Mey lithology / faults / road-widening layers (--litho, --faults, --widened)

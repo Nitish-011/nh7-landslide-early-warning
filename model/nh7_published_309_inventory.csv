@@ -1,0 +1,310 @@
+landslide_id,latitude,longitude,elevation_m_study,mapping_timestamp,occurrence_class,occurrence_period,before_sep_2022_code,reactivated_code,source,source_file,source_crs
+1,30.539387,79.527431,1867.472412,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+2,30.538842,79.525324,1761.007324,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+3,30.533514,79.525481,1723.756592,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+4,30.529401,79.521524,1656.945557,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+5,30.525095,79.505656,1363.505127,2022-10-21T09:52:03Z,11,2021-12-31 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+6,30.524325,79.502725,1376.002441,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+7,30.523589,79.499044,1390.902588,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+8,30.521282,79.497805,1397.391602,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+9,30.517567,79.495358,1415.656494,2022-10-21T09:52:03Z,11,2021-12-31 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+10,30.508486,79.491584,1422.145264,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+11,30.503857,79.485292,1386.095947,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+12,30.500341,79.485778,1414.695068,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+13,30.498378,79.48471,1432.239014,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+14,30.485487,79.488406,1447.860352,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+15,30.486629,79.476928,1500.492188,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+16,30.487091,79.474594,1503.856689,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+17,30.485846,79.473618,1509.624512,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+18,30.484672,79.472808,1504.818115,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+19,30.480639,79.468136,1468.28833,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+20,30.477909,79.46744,1456.03125,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+21,30.47516,79.459238,1511.066406,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+22,30.473363,79.459383,1518.276367,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+23,30.472517,79.459106,1523.082764,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+24,30.46598,79.45061,1514.431152,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+25,30.462413,79.446189,1428.874512,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+26,30.46299,79.446914,1401.957764,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+27,30.466923,79.445403,1382.250732,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+28,30.464432,79.4345,1359.659912,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+29,30.461785,79.432669,1378.88623,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+30,30.455152,79.429564,1391.86377,2022-10-21T09:52:03Z,12,2022-02-08 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+31,30.453098,79.428677,1385.855713,2022-10-21T09:52:03Z,10,2022-08-13 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+32,30.451644,79.429271,1376.963623,2022-10-21T09:52:03Z,10,2022-08-13 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+33,30.450942,79.429173,1367.831299,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+34,30.443753,79.428546,1348.60498,2022-10-21T09:52:03Z,10,2022-08-13 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+35,30.443167,79.428736,1345.720947,2022-10-21T09:52:03Z,11,2021-12-31 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+36,30.416911,79.422088,1242.86084,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+37,30.416515,79.420664,1235.891113,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+38,30.412661,79.40401,1165.715576,2022-10-21T09:52:03Z,10,2022-08-13 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+39,30.412436,79.402344,1153.45874,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+40,30.392509,79.323527,1040.985352,2022-10-21T09:52:03Z,10,2022-08-13 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+41,30.388101,79.323535,1018.394775,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+42,30.387315,79.323208,1020.317383,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+43,30.385207,79.323095,1010.463623,2022-10-21T09:52:03Z,5,before 2022,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+44,30.376302,79.319549,1015.991455,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+45,30.375797,79.318576,1018.394775,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+46,30.375306,79.317477,1019.355957,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+47,30.367339,79.312205,998.207031,2022-10-21T09:52:03Z,9,2021-12-25 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+48,30.338096,79.31864,963.119141,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+49,30.29559,79.301957,907.603516,2022-10-21T09:52:03Z,9,2021-12-25 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+50,30.290866,79.295915,930.915283,2022-10-21T09:52:03Z,9,2021-12-25 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+51,30.284195,79.249305,829.49707,2022-10-21T09:52:03Z,9,2021-12-25 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+52,30.275397,79.235981,861.700928,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+53,30.272994,79.227456,877.802734,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+54,30.268785,79.224218,866.507568,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+55,30.266744,79.172738,817.961182,2022-10-21T09:52:03Z,8,2021-10-27 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+56,30.27291,79.167128,827.09375,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+57,30.275675,79.166553,824.450195,2022-10-21T09:52:03Z,8,2021-10-27 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+58,30.285164,79.131429,776.384521,2022-10-21T09:52:03Z,8,2021-10-27 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+59,30.295563,79.086711,749.948486,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+60,30.297805,79.018961,707.170166,2022-10-21T09:52:03Z,0,in shadow / occurrence period unresolved,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+61,30.288807,78.986905,671.601563,2022-10-21T09:52:03Z,5,before 2022,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+62,30.273746,78.964907,687.703613,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+63,30.254937,78.931462,715.581543,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+64,30.250242,78.925107,717.50415,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+65,30.251017,78.922957,710.294434,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+66,30.252132,78.923109,708.612061,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+67,30.253918,78.922097,710.534668,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+68,30.254452,78.918676,734.086914,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+69,30.242398,78.907217,704.286377,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+70,30.241293,78.901932,672.082275,2022-10-21T09:52:03Z,7,2022-05-31 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+71,30.241634,78.899505,666.074219,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+72,30.250351,78.87709,675.92749,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+73,30.242712,78.865615,688.184082,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+74,30.242114,78.863867,677.609863,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+75,30.241566,78.862806,668.477539,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+76,30.240451,78.862119,662.229004,2022-10-21T09:52:03Z,5,before 2022,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+77,30.241523,78.860161,675.687256,2022-10-21T09:52:03Z,5,before 2022,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+78,30.241241,78.858894,681.455078,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+79,30.232016,78.82315,589.169189,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+80,30.213802,78.759101,563.454102,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+81,30.212824,78.751044,581.238525,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+82,30.212459,78.747811,568.260742,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+83,30.21248,78.747313,565.857666,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+84,30.217789,78.743429,559.368408,2022-10-21T09:52:03Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+85,30.236139,78.701851,557.205566,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+86,30.23749,78.699587,565.136475,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+87,30.239757,78.686855,555.763672,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+88,30.239732,78.685764,557.686279,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+89,30.239624,78.684745,558.407227,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+90,30.213061,78.678469,557.205566,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+91,30.210871,78.67843,561.531494,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+92,30.211401,78.677407,562.012207,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+93,30.208495,78.650578,563.213623,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+94,30.208847,78.64902,561.050781,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+95,30.208477,78.646575,568.501221,2022-10-21T09:52:03Z,5,before 2022,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+96,30.208375,78.645469,572.58667,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+97,30.207094,78.642232,584.843262,2022-10-21T09:52:03Z,5,before 2022,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+98,30.206308,78.641331,591.812744,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+99,30.205355,78.640465,596.859863,2022-10-21T09:52:03Z,6,2021-11-17 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+100,30.197761,78.638548,607.193848,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+101,30.196929,78.638222,611.76001,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+102,30.196368,78.638263,614.403564,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+103,30.195414,78.640391,617.287598,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+104,30.195018,78.641628,616.56665,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+105,30.193771,78.640982,615.845703,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+106,30.192773,78.640192,607.193848,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+107,30.192229,78.63961,608.155273,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+108,30.190412,78.63712,588.688477,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+109,30.18751,78.634159,571.625244,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+110,30.185074,78.631382,566.818848,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+111,30.183944,78.628858,561.771729,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+112,30.18081,78.621492,562.492676,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+113,30.179253,78.618326,562.733154,2022-10-21T09:52:03Z,5,before 2022,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+114,30.175154,78.619627,569.462402,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+115,30.173788,78.61978,573.548096,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+116,30.167727,78.619251,583.88208,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+117,30.167172,78.619181,585.564209,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+118,30.166645,78.618652,585.804688,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+119,30.165433,78.617682,586.765869,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+120,30.164273,78.617047,586.044922,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+121,30.162986,78.617033,586.285156,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+122,30.16023,78.617721,583.641602,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+123,30.159599,78.617932,582.68042,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+124,30.158619,78.618366,583.401367,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+125,30.157743,78.61848,582.199707,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+126,30.155838,78.618016,582.68042,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+127,30.155235,78.617764,583.160889,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+128,30.154789,78.617345,583.401367,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+129,30.154622,78.617182,582.68042,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+130,30.154328,78.616928,582.199707,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+131,30.15423,78.61681,582.920654,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+132,30.151105,78.609261,569.462402,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+133,30.151098,78.608469,570.904297,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+134,30.147908,78.605598,565.617188,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+135,30.147644,78.598747,541.10376,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+136,30.148855,78.59872,532.211548,2022-10-21T09:52:03Z,5,before 2022,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+137,30.14984,78.59897,525.242065,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+138,30.141744,78.595072,551.918457,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+139,30.141304,78.59493,554.562012,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+140,30.136497,78.594247,575.951172,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+141,30.133821,78.592345,591.332031,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+142,30.132768,78.592789,593.495117,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+143,30.131555,78.593532,590.851318,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+144,30.13068,78.593895,588.688477,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+145,30.129841,78.594057,587.727295,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+146,30.129471,78.594213,586.285156,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+147,30.127647,78.596708,581.959473,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+148,30.125635,78.597702,572.826904,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+149,30.125094,78.595563,562.492676,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+150,30.124841,78.59492,560.089355,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+151,30.122422,78.585842,525.001831,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+152,30.121691,78.585451,520.916138,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+153,30.120819,78.584272,522.838745,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+154,30.12014,78.584879,523.800049,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+155,30.118897,78.58462,528.847046,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+156,30.117085,78.584321,538.940674,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+157,30.11395,78.583711,544.228027,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+158,30.11389,78.583139,540.863403,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+159,30.112818,78.580301,540.863403,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+160,30.112354,78.578107,528.366333,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+161,30.111793,78.579741,531.971191,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+162,30.112128,78.581459,540.382813,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+163,30.112267,78.581786,543.266602,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+164,30.112225,78.583619,551.918457,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+165,30.112286,78.584261,555.523193,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+166,30.111923,78.585092,562.973389,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+167,30.109892,78.585994,585.804688,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+168,30.108793,78.584424,610.55835,2022-10-21T09:52:03Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+169,30.107814,78.582432,626.419922,2022-10-21T09:52:03Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+170,30.107661,78.580426,638.196045,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+171,30.107649,78.5795,643.002686,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+172,30.107552,78.578072,651.173828,2022-10-21T09:52:03Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+173,30.10674,78.576506,661.98877,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+174,30.104357,78.574366,678.811523,2022-10-21T09:52:04Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+175,30.101626,78.575145,697.557129,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+176,30.10085,78.574686,703.084717,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+177,30.096923,78.575054,746.583984,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+178,30.096585,78.574747,749.467773,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+179,30.095196,78.575952,768.453857,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+180,30.093774,78.578883,786.718506,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+181,30.093505,78.57905,787.920166,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+182,30.091395,78.579967,802.580322,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+183,30.086176,78.580531,860.259033,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+184,30.086297,78.579017,868.910645,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+185,30.086362,78.578277,875.15918,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+186,30.087011,78.575834,882.609375,2022-10-21T09:52:04Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+187,30.086104,78.574134,888.136963,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+188,30.081275,78.572254,921.302246,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+189,30.080903,78.571886,923.224854,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+190,30.078837,78.568164,942.931641,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+191,30.077965,78.565744,953.746582,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+192,30.080484,78.563131,954.467529,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+193,30.081058,78.556422,958.552979,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+194,30.080873,78.555454,956.630371,2022-10-21T09:52:04Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+195,30.080954,78.554753,958.793457,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+196,30.08204,78.554495,962.878906,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+197,30.08516,78.55292,979.942139,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+198,30.086687,78.551955,995.803711,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+199,30.087466,78.55083,1002.052246,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+200,30.089072,78.5492,1008.060547,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+201,30.08766,78.549439,1014.549561,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+202,30.0868,78.549283,1017.193115,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+203,30.086341,78.548799,1024.162598,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+204,30.086085,78.548287,1027.046387,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+205,30.088101,78.546917,1020.797852,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+206,30.088609,78.546659,1017.673584,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+207,30.088998,78.54606,1015.270508,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+208,30.093119,78.541998,970.088623,2022-10-21T09:52:04Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+209,30.087433,78.538413,908.084229,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+210,30.08187,78.530102,831.659912,2022-10-21T09:52:04Z,5,before 2022,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+211,30.081683,78.5276,810.991699,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+212,30.081584,78.524776,787.679932,2022-10-21T09:52:04Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+213,30.081222,78.524406,786.237793,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+214,30.077719,78.521669,760.282715,2022-10-21T09:52:04Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+215,30.076822,78.521095,754.514648,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+216,30.070394,78.517244,713.178223,2022-10-21T09:52:04Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+217,30.069769,78.516706,712.217041,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+218,30.067787,78.510859,673.524414,2022-10-21T09:52:04Z,5,before 2022,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+219,30.067343,78.510492,670.159668,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+220,30.064391,78.510286,643.002686,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+221,30.063828,78.51046,639.638184,2022-10-21T09:52:04Z,5,before 2022,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+222,30.058462,78.509588,586.765869,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+223,30.059002,78.508614,578.114258,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+224,30.05918,78.507695,573.78833,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+225,30.061451,78.503376,540.623047,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+226,30.06256,78.50198,524.761475,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+227,30.064545,78.500147,504.573853,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+228,30.065193,78.500396,500.247925,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+229,30.067692,78.499954,476.936279,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+230,30.069092,78.50055,471.648926,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+231,30.076645,78.49682,444.011353,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+232,30.075264,78.493746,452.663086,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+233,30.072741,78.491631,471.408569,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+234,30.064815,78.48842,483.184692,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+235,30.064078,78.487538,488.712158,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+236,30.060351,78.481993,532.692261,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+237,30.061441,78.481788,533.413208,2022-10-21T09:52:04Z,5,before 2022,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+238,30.064948,78.481274,540.382813,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+239,30.066133,78.480239,542.30542,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+240,30.06741,78.47889,534.374512,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+241,30.069215,78.475967,513.466064,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+242,30.069563,78.474303,502.170532,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+243,30.068618,78.462661,466.602051,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+244,30.068421,78.461237,471.648926,2022-10-21T09:52:04Z,4,2022-03-14 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+245,30.068593,78.458979,482.704102,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+246,30.069762,78.455797,477.657227,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+247,30.070527,78.452476,449.538818,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+248,30.078059,78.441304,468.044067,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+249,30.078051,78.441077,469.005371,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+250,30.078332,78.440612,471.648926,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+251,30.079311,78.440117,477.176514,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+252,30.079989,78.436989,472.610229,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+253,30.081465,78.436203,459.872803,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+254,30.082058,78.435853,455.546997,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+255,30.08394,78.435991,439.204712,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+256,30.085064,78.435291,430.552979,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+257,30.085602,78.435079,426.707642,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+258,30.091611,78.434877,419.497803,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+259,30.09703,78.434515,428.870728,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+260,30.101186,78.435691,423.102783,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+261,30.105413,78.437135,421.42041,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+262,30.105716,78.437169,421.901123,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+263,30.106313,78.437692,422.62207,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+264,30.109757,78.440407,432.715942,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+265,30.111406,78.439991,434.878784,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+266,30.112878,78.438793,435.599731,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+267,30.113519,78.437758,435.840088,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+268,30.113759,78.437049,435.359497,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+269,30.114689,78.431377,450.980713,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+270,30.11474,78.430466,456.508301,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+271,30.121709,78.423802,491.596069,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+272,30.122879,78.423545,494.480103,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+273,30.123359,78.422674,495.681763,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+274,30.123965,78.42219,494.960815,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+275,30.124769,78.421994,491.596069,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+276,30.128971,78.420768,480.541138,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+277,30.130595,78.41943,469.966675,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+278,30.130824,78.419107,469.485962,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+279,30.131706,78.418169,463.958496,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+280,30.132504,78.416934,458.671143,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+281,30.132912,78.416522,456.508301,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+282,30.133548,78.415547,452.182373,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+283,30.133932,78.415171,450.500122,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+284,30.134426,78.414379,449.058105,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+285,30.13697,78.40993,433.677124,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+286,30.137894,78.406676,420.459106,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+287,30.137383,78.389965,410.605591,2022-10-21T09:52:04Z,3,2022-03-14 to 2022-05-05,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+288,30.13582,78.387665,411.086304,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+289,30.13529,78.387305,415.652588,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+290,30.134806,78.387974,423.82373,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+291,30.133265,78.386163,437.282104,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+292,30.128633,78.388456,464.679443,2022-10-21T09:52:04Z,3,2022-03-14 to 2022-05-05,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+293,30.128275,78.389083,466.602051,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+294,30.123685,78.390094,467.803711,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,2,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+295,30.122712,78.382677,457.950195,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+296,30.122565,78.38003,457.709961,2022-10-21T09:52:04Z,2,2021-04-11 to 2022-03-14,1,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+297,30.121849,78.379623,457.469604,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+298,30.120977,78.378385,455.306641,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+299,30.12081,78.378033,455.306641,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+300,30.11919,78.376439,456.027588,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+301,30.118827,78.375181,448.337158,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+302,30.118694,78.373761,438.003052,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,1,1,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+303,30.118176,78.373162,433.91748,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+304,30.119253,78.369072,409.884644,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+305,30.122372,78.363527,406.279785,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+306,30.122633,78.363086,406.520142,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+307,30.123285,78.362437,407.481445,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+308,30.131628,78.34955,410.605591,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644
+309,30.135725,78.342823,412.047729,2022-10-21T09:52:04Z,1,2022-05-05 to 2022-10-18,0,0,Mey et al. 2024 NH-7 supplementary landslide inventory,landslides_utm44n.shp,EPSG:32644

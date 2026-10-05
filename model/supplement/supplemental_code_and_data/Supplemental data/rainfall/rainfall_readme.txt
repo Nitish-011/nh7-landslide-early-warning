@@ -1,0 +1,5 @@
+IMD1: Only gauge observations (Ref: https://doi.org/10.54302/mausam.v65i1.851)
+IMD2: Merges Gauge and Satellite (GPM) (ref: https://doi.org/10.2151/jmsj.87A.265)
+MSWEP: Merges Gauge, Satellite and Reanalysis (ref: https://doi.org/10.5194/hess-21-6201-2017)
+CHIRPS v2: Merges Gauge and satellite imagery from NASA and NOAA (Ref:  https://doi.org/10.1038/sdata.2015.66) 
+IMERG late run: Satellite data only (Ref: https://doi.org/10.5067/GPM/IMERGDL/DAY/06) 
