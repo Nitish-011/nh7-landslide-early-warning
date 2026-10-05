@@ -1,0 +1,79 @@
+{
+  "status": "completed",
+  "generated_at": "2026-10-05T19:05:11.856263+00:00",
+  "events_count": 12,
+  "negatives_count": 36,
+  "synthetic_mode": true,
+  "metrics": {
+    "rain_only": {
+      "auc": 0.549,
+      "ci_95": [
+        0.354,
+        0.723
+      ]
+    },
+    "terrain_only": {
+      "auc": 0.578,
+      "ci_95": [
+        0.372,
+        0.762
+      ]
+    },
+    "combined_production": {
+      "auc": 0.618,
+      "ci_95": [
+        0.401,
+        0.815
+      ],
+      "tiers": {
+        "Very High": {
+          "threshold": 0.75,
+          "predicted_count": 1,
+          "true_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "High": {
+          "threshold": 0.5,
+          "predicted_count": 14,
+          "true_positives": 5,
+          "precision": 0.357,
+          "recall": 0.417
+        },
+        "Moderate": {
+          "threshold": 0.25,
+          "predicted_count": 38,
+          "true_positives": 10,
+          "precision": 0.263,
+          "recall": 0.833
+        },
+        "Low": {
+          "threshold": 0.0,
+          "predicted_count": 48,
+          "true_positives": 12,
+          "precision": 0.25,
+          "recall": 1.0
+        }
+      }
+    }
+  },
+  "k_rain_production": 0.4,
+  "k_rain_optimal": 0.2,
+  "k_rain_cv_curve": {
+    "0.1": 0.5972,
+    "0.2": 0.6227,
+    "0.3": 0.6227,
+    "0.4": 0.6065,
+    "0.5": 0.5625,
+    "0.6": 0.5394,
+    "0.7": 0.4954,
+    "0.8": 0.4861,
+    "0.9": 0.5116
+  },
+  "caveats": [
+    "Reanalysis grid is coarse (~10-25 km, ERA5-Land/Open-Meteo) and understates localized convective cloudbursts in steep Himalayan tributary valleys.",
+    "Sample size is limited (n=12 demonstration events in synthetic smoke mode); formal calibration requires >= 50 verified slope failures from official road closure records.",
+    "Historical landslide reporting dates often reflect highway clearance/reopening timestamps rather than initial initiation trigger moments, introducing temporal uncertainty.",
+    "Production K_RAIN = 0.4 is strictly preserved to maintain system stability and API contract guarantees."
+  ]
+}

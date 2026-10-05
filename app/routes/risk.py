@@ -1,10 +1,13 @@
 import hashlib
 import json
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
+from app import config
 from app.database import get_db
 from app.models import (
+    BacktestSummaryResponse,
     ModelInfoResponse,
     RiskMapResponse,
     RouteRiskResponse,
@@ -13,7 +16,11 @@ from app.models import (
 )
 from app.model_info import get_model_info_payload
 from app.logger import logger
-from app.risk_service import get_live_risk_map, get_live_risk_map_with_metadata
+from app.risk_service import (
+    get_live_risk_map,
+    get_live_risk_map_with_metadata,
+    get_archive_replay_risk_map,
+)
 from app.limiter import limiter
 
 
@@ -82,12 +89,47 @@ def _fallback_risk_map() -> RiskMapResponse:
 @limiter.limit("120/minute")
 def get_risk_map(
     request: Request,
-    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing"),
+    as_of: Optional[str] = Query(None, description="Historical replay date (YYYY-MM-DD) for backtest time machine")
 ):
     """
     Returns all 18 NH-7 road segments between Rishikesh and Joshimath
     with current risk_level and risk_score from the trained ML pipeline and live weather.
+    If 'as_of' date is provided, runs historical Time Machine replay using archived rainfall.
     """
+    if as_of:
+        if not getattr(config, "BACKTEST_ENABLED", False):
+            raise HTTPException(
+                status_code=400,
+                detail="Historical replay is disabled. Set BACKTEST_ENABLED=true to enable the Time Machine feature."
+            )
+        try:
+            datetime.strptime(as_of, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date format for as_of. Expected YYYY-MM-DD."
+            )
+        try:
+            live_segments, meta = get_archive_replay_risk_map(as_of=as_of)
+            high_risk_count = sum(s["risk_level"] in ("High", "Very High") for s in live_segments)
+            return RiskMapResponse(
+                corridor="NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
+                total_segments=len(live_segments),
+                high_or_very_high_risk_count=high_risk_count,
+                segments=[SegmentResponse(**s) for s in live_segments],
+                weather_source=meta.get("weather_source", "archive_replay"),
+                weather_fetched_at=meta.get("weather_fetched_at"),
+                weather_age_minutes=meta.get("weather_age_minutes"),
+                is_simulated=meta.get("is_simulated", False),
+                stale_warning=meta.get("stale_warning"),
+                mode=meta.get("mode", "replay"),
+                as_of=meta.get("as_of", as_of),
+            )
+        except Exception as e:
+            logger.exception(f"get_archive_replay_risk_map failed for {as_of} ({e})")
+            raise HTTPException(status_code=500, detail=f"Failed to generate historical replay for {as_of}: {e}")
+
     try:
         live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
         high_risk_count = sum(s["risk_level"] in ("High", "Very High") for s in live_segments)
@@ -101,6 +143,8 @@ def get_risk_map(
             weather_age_minutes=meta.get("weather_age_minutes"),
             is_simulated=meta.get("is_simulated", False),
             stale_warning=meta.get("stale_warning"),
+            mode="live" if simulate_rain_mm is None else "simulated",
+            as_of=None,
         )
     except Exception as e:
         logger.exception(f"get_live_risk_map failed ({e}); serving seeded mock fallback")
@@ -301,4 +345,31 @@ def get_model_info(request: Request):
     except Exception as e:
         logger.exception(f"Failed to generate model info: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate model info: {str(e)}")
+
+
+@router.get("/backtest-summary", response_model=BacktestSummaryResponse)
+@limiter.limit("120/minute")
+def get_backtest_summary(request: Request):
+    """
+    Returns the latest backtest evaluation metrics, optimal K_RAIN grid search results,
+    and methodological caveats. Feature-flagged under BACKTEST_ENABLED.
+    """
+    if not getattr(config, "BACKTEST_ENABLED", False):
+        raise HTTPException(
+            status_code=400,
+            detail="Backtest summary is disabled. Set BACKTEST_ENABLED=true to access."
+        )
+    summary_path = getattr(config, "OUTPUTS_DIR", config.BASE_DIR / "outputs") / "backtest_summary.json"
+    if not summary_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Backtest summary not found. Run scripts/backtest.py first to generate results."
+        )
+    try:
+        data = json.loads(summary_path.read_text(encoding="utf-8"))
+        return BacktestSummaryResponse(**data)
+    except Exception as e:
+        logger.exception(f"Failed to read backtest summary: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load backtest summary: {e}")
+
 

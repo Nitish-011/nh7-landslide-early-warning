@@ -530,6 +530,31 @@
           </div>
         </div>
 
+        <!-- Time Machine Replay Card (Task 2) -->
+        <div class="card" style="border-color: rgba(99, 102, 241, 0.4); background: rgba(30, 41, 59, 0.7);">
+          <div class="card-title">
+            <span style="color: #a5b4fc;">⏳ Time Machine Replay</span>
+            <span class="endpoint-pill" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">GET /risk-map?as_of=...</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">
+            Replay corridor landslide risk for any historical date using ERA5-Land/Open-Meteo archive precipitation.
+          </p>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label for="time-machine-date">Select Historical Date</label>
+              <input type="date" id="time-machine-date" value="2023-08-14" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" style="background: #4f46e5;" onclick="replayHistoricalDate()">
+              <span>⏪ Replay Archive Date</span>
+            </button>
+            <button onclick="fetchBacktestSummary()">📊 Backtest Metrics</button>
+            <button onclick="resetToLiveRiskMap()">🔄 Reset to Live</button>
+          </div>
+          <div id="backtest-metrics-box" style="display:none; font-size:0.73rem; background:rgba(15,23,42,0.8); border:1px solid #4338ca; border-radius:6px; padding:10px; line-height:1.5;"></div>
+        </div>
+
         <div class="card">
           <div class="card-title">
             <span>Segment Inspector</span>
@@ -1011,7 +1036,12 @@
       const banner = document.getElementById("freshness-banner");
       if (!banner || !data) return;
 
-      if (data.is_simulated) {
+      if (data.mode === "replay" || data.as_of) {
+        banner.style.display = "block";
+        banner.style.background = "#6366f1"; // Indigo
+        banner.style.color = "#ffffff";
+        banner.textContent = `⏳ TIME MACHINE REPLAY: Historical Archive (${data.as_of || 'Historical'})`;
+      } else if (data.is_simulated) {
         banner.style.display = "block";
         banner.style.background = "#ea580c"; // Orange
         banner.style.color = "#ffffff";
@@ -1031,7 +1061,9 @@
       document.getElementById("hud-total-seg").textContent = data.total_segments || 18;
       document.getElementById("hud-high-seg").textContent = data.high_or_very_high_risk_count !== undefined ? data.high_or_very_high_risk_count : 0;
       
-      if (data.weather_source) {
+      if (data.mode === "replay") {
+        document.getElementById("hud-rain-status").textContent = `Replay (${data.as_of || 'Archive'})`;
+      } else if (data.weather_source) {
         document.getElementById("hud-rain-status").textContent = 
           data.is_simulated ? "Simulated" : (data.weather_source.charAt(0).toUpperCase() + data.weather_source.slice(1));
       } else {
@@ -1040,6 +1072,53 @@
           ? `Simulated (${activeSimulationRain}mm)` 
           : rainStatusSample;
       }
+    }
+
+    async function replayHistoricalDate() {
+      const dateInput = document.getElementById("time-machine-date").value;
+      if (!dateInput) {
+        alert("Please select a date for historical replay.");
+        return;
+      }
+      activeSimulationRain = null; // Clear override
+      const url = `/risk-map?as_of=${encodeURIComponent(dateInput)}`;
+      const res = await apiCall("GET", url);
+      if (!res.ok) {
+        alert(`Historical replay failed: ${res.data && res.data.detail ? res.data.detail : 'Check if BACKTEST_ENABLED=true'}`);
+        return;
+      }
+      corridorData = res.data;
+      updateFreshnessBanner(corridorData);
+      renderCorridorOnMap(corridorData.segments);
+      updateHUD(corridorData);
+    }
+
+    async function resetToLiveRiskMap() {
+      activeSimulationRain = null;
+      loadCorridorRiskMap();
+    }
+
+    async function fetchBacktestSummary() {
+      const box = document.getElementById("backtest-metrics-box");
+      box.style.display = "block";
+      box.innerHTML = "<em>Loading backtest summary...</em>";
+      const res = await apiCall("GET", "/backtest-summary");
+      if (!res.ok) {
+        box.innerHTML = `<span style="color:#ef4444;">Failed to load: ${res.data && res.data.detail ? res.data.detail : 'Check BACKTEST_ENABLED'}</span>`;
+        return;
+      }
+      const d = res.data;
+      const m = d.metrics || {};
+      const comb = m.combined_production || {};
+      const rain = m.rain_only || {};
+      const terr = m.terrain_only || {};
+      box.innerHTML = `
+        <div style="font-weight:700; color:#a5b4fc; margin-bottom:4px;">Backtest Benchmark (LOYO Cross-Validation)</div>
+        <div>Mode: <strong>${d.synthetic_mode ? 'Synthetic Smoke Test' : 'Verified Events'}</strong> (${d.events_count} events)</div>
+        <div style="margin-top:4px;">AUC Combined: <strong>${(comb.auc || 0).toFixed(3)}</strong> [95% CI: ${(comb.ci_95 && comb.ci_95[0] !== undefined ? comb.ci_95[0] : 0).toFixed(3)} - ${(comb.ci_95 && comb.ci_95[1] !== undefined ? comb.ci_95[1] : 0).toFixed(3)}]</div>
+        <div>AUC Terrain-Only: <strong>${(terr.auc || 0).toFixed(3)}</strong> | Rain-Only: <strong>${(rain.auc || 0).toFixed(3)}</strong></div>
+        <div style="margin-top:4px;">Optimal k_rain: <strong>${d.k_rain_optimal}</strong> (Production: <strong>${d.k_rain_production}</strong>)</div>
+      `;
     }
 
     function getRiskColor(level) {

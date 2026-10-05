@@ -5,10 +5,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
 LOGS_DIR = Path(os.getenv("LOGS_DIR", str(BASE_DIR / "logs"))).resolve()
+OUTPUTS_DIR = Path(os.getenv("OUTPUTS_DIR", str(BASE_DIR / "outputs"))).resolve()
 
 # Ensure runtime directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Database & Rain Snapshot paths (configurable via environment variables)
 DB_PATH = Path(os.getenv("DB_PATH", str(DATA_DIR / "landslide_nh7.db"))).resolve()
@@ -20,6 +22,11 @@ WEATHER_POLL_MINUTES = int(os.getenv("WEATHER_POLL_MINUTES", "30"))
 
 # Task 1: Per-segment hourly rainfall and forecast engine feature flag (default false)
 PER_SEGMENT_WEATHER = os.getenv("PER_SEGMENT_WEATHER", "false").lower() in ("true", "1", "yes")
+
+# Task 2: Backtest harness and historical Time Machine replay feature flag (default false)
+BACKTEST_ENABLED = os.getenv("BACKTEST_ENABLED", "false").lower() in ("true", "1", "yes")
+BACKTEST_CACHE_DIR = Path(os.getenv("BACKTEST_CACHE_DIR", str(DATA_DIR / "backtest_cache"))).resolve()
+BACKTEST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Logging configuration
 LOG_FILE = LOGS_DIR / "backend.log"

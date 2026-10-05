@@ -47,6 +47,22 @@ class RiskMapResponse(BaseModel):
     weather_age_minutes: Optional[float] = None
     is_simulated: Optional[bool] = False
     stale_warning: Optional[str] = None
+    # Task 2 Time Machine & Historical Replay Metadata (additive, optional)
+    mode: Optional[str] = None
+    as_of: Optional[str] = None
+
+class BacktestSummaryResponse(BaseModel):
+    model_config = {"extra": "ignore"}
+    status: str
+    events_count: int
+    synthetic_mode: bool
+    metrics: Dict[str, Any]
+    k_rain_optimal: float
+    k_rain_production: float
+    caveats: List[str]
+    generated_at: Optional[str] = None
+    negatives_count: Optional[int] = None
+    k_rain_cv_curve: Optional[Dict[str, float]] = None
 
 class RouteSegmentRisk(BaseModel):
     id: str
