@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from app.database import get_db
 from app.models import RiskMapResponse, SegmentResponse, RouteRiskResponse, RouteSegmentRisk
 from app.logger import logger
-from app.risk_service import get_live_risk_map
+from app.risk_service import get_live_risk_map, get_live_risk_map_with_metadata
 from app.limiter import limiter
 
 router = APIRouter(tags=["Risk Assessment"])
@@ -80,13 +80,18 @@ def get_risk_map(
     with current risk_level and risk_score from the trained ML pipeline and live weather.
     """
     try:
-        live_segments = get_live_risk_map(simulate_rain_mm=simulate_rain_mm)
+        live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
         high_risk_count = sum(s["risk_level"] in ("High", "Very High") for s in live_segments)
         return RiskMapResponse(
             corridor="NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
             total_segments=len(live_segments),
             high_or_very_high_risk_count=high_risk_count,
-            segments=[SegmentResponse(**s) for s in live_segments]
+            segments=[SegmentResponse(**s) for s in live_segments],
+            weather_source=meta.get("weather_source"),
+            weather_fetched_at=meta.get("weather_fetched_at"),
+            weather_age_minutes=meta.get("weather_age_minutes"),
+            is_simulated=meta.get("is_simulated", False),
+            stale_warning=meta.get("stale_warning"),
         )
     except Exception as e:
         logger.exception(f"get_live_risk_map failed ({e}); serving seeded mock fallback")
@@ -151,11 +156,12 @@ def get_route_risk(
         pass
 
     try:
-        live_segments = get_live_risk_map(simulate_rain_mm=simulate_rain_mm, force_terrain_only=is_beyond_tomorrow)
+        live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm, force_terrain_only=is_beyond_tomorrow)
         live_map = {s["id"]: s for s in live_segments}
     except Exception as e:
         logger.exception(f"get_live_risk_map in route-risk failed ({e}); falling back to local DB")
         live_map = {}
+        meta = {}
 
     route_segments: List[RouteSegmentRisk] = []
     total_score = 0.0
@@ -254,5 +260,10 @@ def get_route_risk(
         max_risk_level=overall_max_level,
         average_risk_score=avg_score,
         advisory=advisory,
-        segments=route_segments
+        segments=route_segments,
+        weather_source=meta.get("weather_source"),
+        weather_fetched_at=meta.get("weather_fetched_at"),
+        weather_age_minutes=meta.get("weather_age_minutes"),
+        is_simulated=meta.get("is_simulated", False),
+        stale_warning=meta.get("stale_warning"),
     )

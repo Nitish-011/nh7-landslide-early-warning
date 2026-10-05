@@ -497,6 +497,9 @@
       <span class="replaceable-badge">Test Client</span>
     </div>
 
+    <!-- Freshness & Simulation Status Banner (Task F2) -->
+    <div id="freshness-banner" style="display:none; padding:10px 16px; font-size:0.8rem; font-weight:700; text-align:center; letter-spacing:0.02em;"></div>
+
     <!-- Nav Tabs -->
     <div class="nav-tabs">
       <div class="nav-tab active" onclick="switchTab('tab-corridor')">🗺️ Risk Map</div>
@@ -944,6 +947,7 @@
       if (!res.ok) return;
 
       corridorData = res.data;
+      updateFreshnessBanner(corridorData);
       renderCorridorOnMap(corridorData.segments);
       updateHUD(corridorData);
     }
@@ -1002,14 +1006,39 @@
       }
     }
 
+    function updateFreshnessBanner(data) {
+      const banner = document.getElementById("freshness-banner");
+      if (!banner || !data) return;
+
+      if (data.is_simulated) {
+        banner.style.display = "block";
+        banner.style.background = "#ea580c"; // Orange
+        banner.style.color = "#ffffff";
+        banner.textContent = "SIMULATION: not real conditions";
+      } else if (data.stale_warning) {
+        const hours = data.weather_age_minutes ? Math.round(data.weather_age_minutes / 60) : 6;
+        banner.style.display = "block";
+        banner.style.background = "#eab308"; // Yellow
+        banner.style.color = "#0f172a";
+        banner.textContent = `Weather data ${hours} h old`;
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
     function updateHUD(data) {
       document.getElementById("hud-total-seg").textContent = data.total_segments || 18;
       document.getElementById("hud-high-seg").textContent = data.high_or_very_high_risk_count !== undefined ? data.high_or_very_high_risk_count : 0;
       
-      const rainStatusSample = (data.segments && data.segments[0]) ? data.segments[0].rain_status : "ok";
-      document.getElementById("hud-rain-status").textContent = activeSimulationRain !== null 
-        ? `Simulated (${activeSimulationRain}mm)` 
-        : rainStatusSample;
+      if (data.weather_source) {
+        document.getElementById("hud-rain-status").textContent = 
+          data.is_simulated ? "Simulated" : (data.weather_source.charAt(0).toUpperCase() + data.weather_source.slice(1));
+      } else {
+        const rainStatusSample = (data.segments && data.segments[0]) ? data.segments[0].rain_status : "ok";
+        document.getElementById("hud-rain-status").textContent = activeSimulationRain !== null 
+          ? `Simulated (${activeSimulationRain}mm)` 
+          : rainStatusSample;
+      }
     }
 
     function getRiskColor(level) {
@@ -1100,6 +1129,7 @@
       if (!res.ok) return;
 
       const d = res.data;
+      updateFreshnessBanner(d);
       const advBox = document.getElementById("route-advisory-box");
       if (d.advisory && (d.advisory.includes("terrain-only") || d.advisory.includes("far future") || d.advisory.includes("FORECAST NOTICE"))) {
         advBox.style.display = "block";
@@ -1196,6 +1226,7 @@
       const res = await apiCall("GET", url);
       const container = document.getElementById("alerts-output-container");
       if (res.ok && res.data) {
+        updateFreshnessBanner(res.data);
         container.style.display = "block";
         const alerts = res.data.alerts || res.data.active_alerts || [];
         if (alerts.length === 0) {

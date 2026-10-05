@@ -33,6 +33,12 @@ class RiskMapResponse(BaseModel):
     total_segments: int
     high_or_very_high_risk_count: int
     segments: List[SegmentResponse]
+    # Task F2 Freshness & Simulation Metadata (additive, optional)
+    weather_source: Optional[str] = None
+    weather_fetched_at: Optional[str] = None
+    weather_age_minutes: Optional[float] = None
+    is_simulated: Optional[bool] = False
+    stale_warning: Optional[str] = None
 
 class RouteSegmentRisk(BaseModel):
     id: str
@@ -66,6 +72,12 @@ class RouteRiskResponse(BaseModel):
     average_risk_score: float
     advisory: str
     segments: List[RouteSegmentRisk]
+    # Task F2 Freshness & Simulation Metadata (additive, optional)
+    weather_source: Optional[str] = None
+    weather_fetched_at: Optional[str] = None
+    weather_age_minutes: Optional[float] = None
+    is_simulated: Optional[bool] = False
+    stale_warning: Optional[str] = None
 
 # --- Subscription Models ---
 
@@ -114,6 +126,12 @@ class AlertsResponse(BaseModel):
     subscribed_segment: str
     active_alerts_count: int
     alerts: List[AlertItem]
+    # Task F2 Freshness & Simulation Metadata (additive, optional)
+    weather_source: Optional[str] = None
+    weather_fetched_at: Optional[str] = None
+    weather_age_minutes: Optional[float] = None
+    is_simulated: Optional[bool] = False
+    stale_warning: Optional[str] = None
 
 # --- Field Reports Models ---
 

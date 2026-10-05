@@ -68,8 +68,8 @@ except Exception:
     SUBPOINTS_MAP = {}
 
 _segments_cache = None
-_rain_cache = {"t": 0.0, "data": None}
-_fail_cache = {"t": 0.0, "data": None}
+_rain_cache = {"t": 0.0, "data": None, "fetched_at": None}
+_fail_cache = {"t": 0.0, "data": None, "meta": None}
 
 
 def level_for(score: float, rain_status: str = "unavailable", rain_mm: float | None = None) -> str:
@@ -96,9 +96,12 @@ def load_segments(path=None):
 
 
 def load_snapshot(segments):
-    """Loads snapshot from data/rain_snapshot.json if available; returns formatted segment map or None."""
+    """
+    Loads snapshot from data/rain_snapshot.json if available;
+    returns (formatted_segment_map, timestamp_iso) or (None, None).
+    """
     if not RAIN_SNAPSHOT_FILE.exists():
-        return None
+        return None, None
     try:
         raw = json.loads(RAIN_SNAPSHOT_FILE.read_text(encoding="utf-8"))
         snap_time = raw.get("timestamp") or "unknown"
@@ -110,26 +113,87 @@ def load_snapshot(segments):
                 "rain_mm": item.get("rain_mm"),
                 "status": f"cached ({snap_time})",
             }
-        return result
+        return result, snap_time
     except Exception as e:
         log.warning("risk_service: failed reading %s: %s", RAIN_SNAPSHOT_FILE, e)
-        return None
+        return None, None
 
 
-def fetch_rainfall(segments, session=None, simulate_rain_mm=None):
-    """Returns {segment_id: {"rain_mm": float | None, "status": "ok" | "unavailable" | "simulated" | "cached (...)"}}."""
+def _calc_snapshot_meta(snap_time: str | None) -> dict:
+    age_min = 0.0
+    stale_warning = None
+    if snap_time and snap_time != "unknown":
+        try:
+            clean_iso = snap_time.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(clean_iso)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            age_s = (datetime.now(timezone.utc) - dt).total_seconds()
+            age_min = round(max(0.0, age_s / 60.0), 1)
+        except Exception:
+            age_min = 0.0
+
+    if age_min > 360.0:  # > 6 hours
+        hours = round(age_min / 60.0, 1)
+        stale_warning = f"Weather data is {hours}h old (using snapshot from {snap_time})."
+
+    return {
+        "weather_source": "snapshot",
+        "weather_fetched_at": snap_time,
+        "weather_age_minutes": age_min,
+        "is_simulated": False,
+        "stale_warning": stale_warning,
+    }
+
+
+def fetch_rainfall_with_metadata(segments, session=None, simulate_rain_mm=None) -> tuple[dict, dict]:
+    """
+    Returns (rain_dict, weather_meta).
+    weather_meta tracks:
+      - weather_source: 'live' | 'cached' | 'snapshot' | 'simulated' | 'unavailable'
+      - weather_fetched_at: ISO UTC string
+      - weather_age_minutes: float
+      - is_simulated: bool
+      - stale_warning: string if age > 6 hours, else None
+    """
     if simulate_rain_mm is not None:
-        return {s["id"]: {"rain_mm": float(simulate_rain_mm), "status": "simulated"} for s in segments}
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rain = {s["id"]: {"rain_mm": float(simulate_rain_mm), "status": "simulated"} for s in segments}
+        meta = {
+            "weather_source": "simulated",
+            "weather_fetched_at": now_iso,
+            "weather_age_minutes": 0.0,
+            "is_simulated": True,
+            "stale_warning": None,
+        }
+        return rain, meta
 
     now = time.time()
 
     # 1. Fresh in-memory cache check (30 minutes)
-    if _rain_cache["data"] is not None and now - _rain_cache["t"] < CACHE_TTL_S:
-        return _rain_cache["data"]
+    if _rain_cache.get("data") is not None and now - _rain_cache.get("t", 0.0) < CACHE_TTL_S:
+        age_min = round(max(0.0, (now - _rain_cache.get("t", now)) / 60.0), 1)
+        meta = {
+            "weather_source": "cached",
+            "weather_fetched_at": _rain_cache.get("fetched_at") or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "weather_age_minutes": age_min,
+            "is_simulated": False,
+            "stale_warning": None,
+        }
+        return _rain_cache["data"], meta
 
     # 2. Check if a recent failure occurred within 5 minutes so requests do not keep blocking
-    if now - _fail_cache["t"] < FAILED_CACHE_TTL_S and _fail_cache["data"] is not None:
-        return _fail_cache["data"]
+    if now - _fail_cache.get("t", 0.0) < FAILED_CACHE_TTL_S and _fail_cache.get("data") is not None:
+        meta = _fail_cache.get("meta")
+        if not meta:
+            meta = {
+                "weather_source": "snapshot" if "cached" in str(_fail_cache["data"]) else "unavailable",
+                "weather_fetched_at": None,
+                "weather_age_minutes": None,
+                "is_simulated": False,
+                "stale_warning": None,
+            }
+        return _fail_cache["data"], meta
 
     # 3. Attempt live fetch with 4 second timeout
     session = session or requests.Session()
@@ -153,15 +217,24 @@ def fetch_rainfall(segments, session=None, simulate_rain_mm=None):
             else:
                 result[s["id"]] = {"rain_mm": None, "status": "unavailable"}
 
-        _rain_cache.update(t=now, data=result)
-        _fail_cache.update(t=0.0, data=None)
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        _rain_cache.update(t=now, data=result, fetched_at=now_iso)
+        _fail_cache.update(t=0.0, data=None, meta=None)
         log.info("risk_service: rainfall refreshed for %d segments", len(segments))
+
+        meta = {
+            "weather_source": "live",
+            "weather_fetched_at": now_iso,
+            "weather_age_minutes": 0.0,
+            "is_simulated": False,
+            "stale_warning": None,
+        }
 
         # On success also write result to data/rain_snapshot.json
         try:
             RAIN_SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
             snap_payload = {
-                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "timestamp": now_iso,
                 "data": result,
             }
             RAIN_SNAPSHOT_FILE.write_text(json.dumps(snap_payload, indent=2), encoding="utf-8")
@@ -169,24 +242,39 @@ def fetch_rainfall(segments, session=None, simulate_rain_mm=None):
         except Exception as se:
             log.warning("risk_service: failed saving rain snapshot: %s", se)
 
-        return result
+        return result, meta
 
     except Exception as e:
         log.warning("risk_service: rainfall fetch failed (%s: %s); caching failure for 5m", type(e).__name__, e)
-        # Cache failure timestamp so subsequent requests within 5 min do not block
         _fail_cache["t"] = now
 
         # If live call fails and snapshot exists, use it and set rain_status to "cached" with snapshot time
-        snap = load_snapshot(segments)
+        snap, snap_time = load_snapshot(segments)
         if snap is not None:
             log.info("risk_service: using cached rain snapshot from %s", RAIN_SNAPSHOT_FILE)
+            meta = _calc_snapshot_meta(snap_time)
             _fail_cache["data"] = snap
-            return snap
+            _fail_cache["meta"] = meta
+            return snap, meta
 
         # Only fall back to terrain-only when there is neither
         fallback_data = {s["id"]: {"rain_mm": None, "status": "unavailable"} for s in segments}
+        meta = {
+            "weather_source": "unavailable",
+            "weather_fetched_at": None,
+            "weather_age_minutes": None,
+            "is_simulated": False,
+            "stale_warning": "Weather data unavailable; using terrain-only risk assessment.",
+        }
         _fail_cache["data"] = fallback_data
-        return fallback_data
+        _fail_cache["meta"] = meta
+        return fallback_data, meta
+
+
+def fetch_rainfall(segments, session=None, simulate_rain_mm=None):
+    """Backwards-compatible wrapper returning dict of segment rain info."""
+    data, _ = fetch_rainfall_with_metadata(segments, session=session, simulate_rain_mm=simulate_rain_mm)
+    return data
 
 
 def compute_segment(seg, rain, force_terrain_only: bool = False):
@@ -232,10 +320,29 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
     }
 
 
-def get_live_risk_map(session=None, simulate_rain_mm=None, force_terrain_only: bool = False):
+def get_live_risk_map_with_metadata(session=None, simulate_rain_mm=None, force_terrain_only: bool = False) -> tuple[list[dict], dict]:
+    """Returns (segment_list, weather_meta)."""
     segments = load_segments()
     if force_terrain_only:
         rain = {s["id"]: {"rain_mm": None, "status": "not_factored_future_date"} for s in segments}
+        meta = {
+            "weather_source": "terrain_only",
+            "weather_fetched_at": None,
+            "weather_age_minutes": None,
+            "is_simulated": False,
+            "stale_warning": None,
+        }
     else:
-        rain = fetch_rainfall(segments, session, simulate_rain_mm)
-    return [compute_segment(s, rain.get(s["id"], {"rain_mm": None, "status": "unavailable"}), force_terrain_only=force_terrain_only) for s in segments]
+        rain, meta = fetch_rainfall_with_metadata(segments, session, simulate_rain_mm)
+    
+    seg_list = [
+        compute_segment(s, rain.get(s["id"], {"rain_mm": None, "status": "unavailable"}), force_terrain_only=force_terrain_only)
+        for s in segments
+    ]
+    return seg_list, meta
+
+
+def get_live_risk_map(session=None, simulate_rain_mm=None, force_terrain_only: bool = False):
+    """Backwards-compatible wrapper returning only segment list."""
+    segs, _ = get_live_risk_map_with_metadata(session=session, simulate_rain_mm=simulate_rain_mm, force_terrain_only=force_terrain_only)
+    return segs

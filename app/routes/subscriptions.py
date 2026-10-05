@@ -163,9 +163,10 @@ def get_alerts(
     rain_status = "unavailable"
     main_driver = None
 
+    meta = {}
     try:
-        from app.risk_service import get_live_risk_map
-        live_segments = get_live_risk_map(simulate_rain_mm=simulate_rain_mm)
+        from app.risk_service import get_live_risk_map_with_metadata
+        live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
         live_map = {s["id"]: s for s in live_segments}
         seg_live = live_map.get(sub["segment_id"])
         if seg_live:
@@ -224,5 +225,10 @@ def get_alerts(
         subscriber_name=sub["name"],
         subscribed_segment=f"{sub['segment_id']} ({sub['segment_name']})",
         active_alerts_count=len(alerts),
-        alerts=alerts
+        alerts=alerts,
+        weather_source=meta.get("weather_source"),
+        weather_fetched_at=meta.get("weather_fetched_at"),
+        weather_age_minutes=meta.get("weather_age_minutes"),
+        is_simulated=meta.get("is_simulated", False),
+        stale_warning=meta.get("stale_warning"),
     )
