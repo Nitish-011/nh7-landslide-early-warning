@@ -64,6 +64,22 @@ class BacktestSummaryResponse(BaseModel):
     negatives_count: Optional[int] = None
     k_rain_cv_curve: Optional[Dict[str, float]] = None
 
+# Task 3: Time-Aware Trip Planning Models
+class DepartureOption(BaseModel):
+    model_config = {"extra": "ignore"}
+    depart_time: str
+    max_risk_level: str
+    summary: str
+    total_risk_score: Optional[float] = None
+
+class TripRecommendation(BaseModel):
+    model_config = {"extra": "ignore"}
+    action: str  # GO, CAUTION, DELAY, AVOID
+    action_code: str  # REC_GO, REC_CAUTION, REC_DELAY, REC_AVOID
+    reason: str
+    params: Dict[str, Any] = {}
+    best_departure_options: List[DepartureOption] = []
+
 class RouteSegmentRisk(BaseModel):
     id: str
     name: str
@@ -92,6 +108,11 @@ class RouteSegmentRisk(BaseModel):
     forecast_72h_mm: Optional[float] = None
     peak_hour_utc: Optional[str] = None
     peak_mm: Optional[float] = None
+    # Task 3: Additive Time-Aware Forecast metrics (optional)
+    eta_ist: Optional[str] = None
+    rain_72h_at_eta_mm: Optional[float] = None
+    forecast_rain_6h_around_eta_mm: Optional[float] = None
+    risk_level_at_eta: Optional[str] = None
 
 class RouteRiskResponse(BaseModel):
     from_segment: str
@@ -111,6 +132,10 @@ class RouteRiskResponse(BaseModel):
     weather_age_minutes: Optional[float] = None
     is_simulated: Optional[bool] = False
     stale_warning: Optional[str] = None
+    # Task 3: Additive Time-Aware Recommendation & Trip metadata (optional)
+    recommendation: Optional[TripRecommendation] = None
+    depart_time: Optional[str] = None
+    speed_kmph: Optional[float] = None
 
 # --- Subscription Models ---
 

@@ -8,11 +8,13 @@ from app import config
 from app.database import get_db
 from app.models import (
     BacktestSummaryResponse,
+    DepartureOption,
     ModelInfoResponse,
     RiskMapResponse,
     RouteRiskResponse,
     RouteSegmentRisk,
     SegmentResponse,
+    TripRecommendation,
 )
 from app.model_info import get_model_info_payload
 from app.logger import logger
@@ -21,6 +23,7 @@ from app.risk_service import (
     get_live_risk_map_with_metadata,
     get_archive_replay_risk_map,
 )
+from app.trip_planner import evaluate_trip_plan, parse_departure_time
 from app.limiter import limiter
 
 
@@ -157,13 +160,52 @@ def get_route_risk(
     from_segment: str = Query(..., description="Starting segment ID (e.g. seg_01)"),
     to_segment: str = Query(..., description="Destination segment ID (e.g. seg_09)"),
     date: str = Query(..., description="Target date in YYYY-MM-DD format"),
-    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing"),
+    depart_time: Optional[str] = Query(
+        None,
+        description="Departure time in ISO format (e.g. 2026-10-06T08:00:00). Interpreted as Indian Standard Time (IST, UTC+05:30) if timezone is omitted. Assumptions: constant transit speed, no stops/traffic delays, forecast uncertainty increases beyond 24-48h."
+    ),
+    speed_kmph: Optional[float] = Query(
+        None,
+        description="Average transit speed along the corridor in km/h (default 30.0 km/h). Assumes constant speed without intermediate halts."
+    )
 ):
     """
     Evaluates landslide risk for segments between two points on NH-7 for a given date.
     Reads from the unified ML risk service (get_live_risk_map).
     For dates later than tomorrow, uses the static terrain-only susceptibility score and notes this in the advisory.
+
+    Time-Aware Trip Planning (Task 3):
+      When depart_time is supplied and TIME_AWARE_PLANNER=true, calculates segment-by-segment
+      entry ETAs, dynamic antecedent rainfall at that exact arrival time, and optimal 48h
+      departure recommendations (GO | CAUTION | DELAY | AVOID).
+
+    Assumptions & Methodological Constraints:
+      - Constant Travel Speed: assumes uniform driving speed across all gradients (default 30 km/h).
+      - Continuous Journey: does not model fuel, refreshment halts, or traffic bottlenecks.
+      - Forecast Attenuation: NWP precipitation forecasts exhibit diminishing skill past 24-48h.
+      - Advisory Scope: guidance system only; does not override local police or BRO road status bulletins.
     """
+    # Gating and parameter validation for Task 3
+    if depart_time is not None:
+        if not getattr(config, "TIME_AWARE_PLANNER", False):
+            raise HTTPException(
+                status_code=400,
+                detail="Time-aware route planning is disabled. Set TIME_AWARE_PLANNER=true to enable."
+            )
+        try:
+            parse_departure_time(depart_time)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid depart_time format: {e}. Expected ISO timestamp (e.g. 2026-10-06T08:00:00)."
+            )
+        if speed_kmph is not None and speed_kmph <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="speed_kmph must be greater than 0."
+            )
+
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM segments WHERE id = ?", (from_segment,))
@@ -216,6 +258,31 @@ def get_route_risk(
         live_map = {}
         meta = {}
 
+    # Task 3: Time-Aware Trip Planning Evaluation
+    recommendation_payload = None
+    applied_depart_time = None
+    applied_speed = None
+    eta_map = {}
+
+    if depart_time is not None and getattr(config, "TIME_AWARE_PLANNER", False):
+        ordered_segs_for_planner = []
+        for row in route_rows:
+            live_info = live_map.get(row["id"]) or {}
+            ordered_segs_for_planner.append({
+                "id": row["id"],
+                "name": row["name"],
+                "terrain_percentile": live_info.get("terrain_percentile"),
+            })
+
+        eta_results, rec_dict, applied_depart_time, applied_speed = evaluate_trip_plan(
+            ordered_segments=ordered_segs_for_planner,
+            weather_map=live_map,
+            depart_time_str=depart_time,
+            speed_kmph=speed_kmph
+        )
+        recommendation_payload = rec_dict
+        eta_map = {res["id"]: res for res in eta_results}
+
     route_segments: List[RouteSegmentRisk] = []
     total_score = 0.0
     max_score = 0.0
@@ -251,6 +318,8 @@ def get_route_risk(
             highest_rank = current_rank
             overall_max_level = seg_risk_level
 
+        eta_info = eta_map.get(row["id"]) if eta_map else {}
+
         route_segments.append(RouteSegmentRisk(
             id=row["id"],
             name=row["name"],
@@ -277,6 +346,11 @@ def get_route_risk(
             forecast_72h_mm=live_info.get("forecast_72h_mm") if live_info else None,
             peak_hour_utc=live_info.get("peak_hour_utc") if live_info else None,
             peak_mm=live_info.get("peak_mm") if live_info else None,
+            # Task 3: Time-aware fields at ETA
+            eta_ist=eta_info.get("eta_ist"),
+            rain_72h_at_eta_mm=eta_info.get("rain_72h_at_eta_mm"),
+            forecast_rain_6h_around_eta_mm=eta_info.get("forecast_rain_6h_around_eta_mm"),
+            risk_level_at_eta=eta_info.get("risk_level_at_eta"),
         ))
 
     avg_score = round(total_score / len(route_segments), 2) if route_segments else 0.0
@@ -327,6 +401,9 @@ def get_route_risk(
         weather_age_minutes=meta.get("weather_age_minutes"),
         is_simulated=meta.get("is_simulated", False),
         stale_warning=meta.get("stale_warning"),
+        recommendation=recommendation_payload,
+        depart_time=applied_depart_time,
+        speed_kmph=applied_speed,
     )
 
 @router.get("/model-info", response_model=ModelInfoResponse)

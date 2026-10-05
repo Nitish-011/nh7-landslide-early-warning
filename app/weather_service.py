@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
@@ -171,6 +171,7 @@ def load_snapshot_data(segments: list, snapshot_path: Optional[Path] = None) -> 
                 "peak_hour_utc": item.get("peak_hour_utc"),
                 "peak_mm": item.get("peak_mm"),
                 "status": f"cached ({snap_time})",
+                "hourly": item.get("hourly"),
             }
         return result, snap_time
     except Exception as e:
@@ -213,6 +214,7 @@ def fetch_tier1_per_segment_hourly(segments: list, session: requests.Session) ->
             "peak_hour_utc": metrics["peak_hour_utc"],
             "peak_mm": metrics["peak_mm"],
             "status": "ok" if r3d is not None else "unavailable",
+            "hourly": item.get("hourly", {}),
         }
     return result
 
@@ -285,6 +287,11 @@ def fetch_weather_pipeline(
     # 1. Simulation Mode
     if simulate_rain_mm is not None:
         rain_val = float(simulate_rain_mm)
+        now_dt = datetime.now(timezone.utc)
+        sim_times = [(now_dt - timedelta(hours=72-h)).strftime("%Y-%m-%dT%H:00") for h in range(144)]
+        sim_rate = round(rain_val / 72.0, 3)
+        sim_precip = [sim_rate if h <= 72 else 0.0 for h in range(144)]
+        sim_hourly = {"time": sim_times, "precipitation": sim_precip}
         sim_data = {
             s["id"]: {
                 "rain_mm": rain_val,
@@ -295,6 +302,7 @@ def fetch_weather_pipeline(
                 "peak_hour_utc": now_iso,
                 "peak_mm": round(rain_val * 0.15, 1),
                 "status": "simulated",
+                "hourly": sim_hourly,
             }
             for s in segments
         }

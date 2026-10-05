@@ -598,9 +598,17 @@
               <label>Destination Segment</label>
               <select id="route-end"></select>
             </div>
-            <div class="form-col-full">
+            <div>
               <label>Travel Date (YYYY-MM-DD)</label>
               <input type="date" id="route-travel-date" />
+            </div>
+            <div>
+              <label>Speed (km/h)</label>
+              <input type="number" id="route-speed" value="30" min="5" max="100" />
+            </div>
+            <div class="form-col-full">
+              <label>Planned Departure Time (Optional - Task 3 Time Machine)</label>
+              <input type="datetime-local" id="route-depart-time" />
             </div>
           </div>
 
@@ -622,6 +630,16 @@
             <div>Segments Traversed: <strong id="route-seg-count">0</strong></div>
             <div>Max Hazard Segment: <strong id="route-max-seg" style="color: var(--risk-vhigh);">-</strong></div>
             <div>Corridor Advisory: <span id="route-advisory-text" style="color: #cbd5e1;">-</span></div>
+          </div>
+
+          <!-- Task 3 Recommendation Display -->
+          <div id="route-recommendation-box" style="display:none; margin-top:8px; padding:10px; background:rgba(15,23,42,0.9); border:1px solid #4338ca; border-radius:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="color:#a5b4fc; font-size:0.75rem;">🧭 TIME-AWARE RECOMMENDATION</strong>
+              <span id="route-action-badge" class="popup-badge" style="font-size:0.72rem;">GO</span>
+            </div>
+            <div id="route-rec-reason" style="color:#f8fafc; font-size:0.75rem; margin-bottom:6px;"></div>
+            <div id="route-rec-options" style="font-size:0.72rem; color:#94a3b8; line-height:1.5;"></div>
           </div>
         </div>
       </div>
@@ -1201,9 +1219,15 @@
       const fromSeg = document.getElementById("route-start").value;
       const toSeg = document.getElementById("route-end").value;
       const travelDate = document.getElementById("route-travel-date").value;
+      const departTime = document.getElementById("route-depart-time").value;
+      const speed = document.getElementById("route-speed").value;
 
       let url = `/route-risk?from_segment=${fromSeg}&to_segment=${toSeg}`;
       if (travelDate) url += `&date=${travelDate}`;
+      if (departTime) {
+        url += `&depart_time=${encodeURIComponent(departTime)}`;
+        if (speed) url += `&speed_kmph=${encodeURIComponent(speed)}`;
+      }
       if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
 
       const res = await apiCall("GET", url);
@@ -1225,6 +1249,29 @@
       badge.textContent = maxLevel;
       badge.style.background = getRiskColor(maxLevel);
       badge.style.color = "#fff";
+
+      // Task 3: Render Time-Aware Recommendation if present
+      const recBox = document.getElementById("route-recommendation-box");
+      if (d.recommendation) {
+        recBox.style.display = "block";
+        const actBadge = document.getElementById("route-action-badge");
+        actBadge.textContent = d.recommendation.action;
+        if (d.recommendation.action === "GO") actBadge.style.background = "#10b981";
+        else if (d.recommendation.action === "CAUTION") actBadge.style.background = "#f59e0b";
+        else if (d.recommendation.action === "DELAY") actBadge.style.background = "#ea580c";
+        else actBadge.style.background = "#ef4444";
+        actBadge.style.color = "#fff";
+
+        document.getElementById("route-rec-reason").textContent = d.recommendation.reason;
+        const optsList = (d.recommendation.best_departure_options || [])
+          .map(opt => `<li><strong>${opt.summary}</strong></li>`)
+          .join("");
+        document.getElementById("route-rec-options").innerHTML = optsList 
+          ? `<div style="margin-top:6px; font-weight:600; color:#cbd5e1;">Alternative Departure Windows (48h search):</div><ul style="padding-left:18px; margin-top:2px;">${optsList}</ul>` 
+          : "";
+      } else {
+        recBox.style.display = "none";
+      }
 
       const avgRisk = (d.risk_index !== undefined && d.risk_index !== null) ? d.risk_index : (d.average_risk_score || 0);
       document.getElementById("route-seg-count").textContent = `${d.total_segments || 0} segments (Avg Index: ${avgRisk.toFixed(2)})`;

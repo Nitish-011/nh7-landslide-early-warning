@@ -359,6 +359,9 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
         seg_dict["peak_hour_utc"] = rain.get("peak_hour_utc")
         seg_dict["peak_mm"] = rain.get("peak_mm")
 
+    if rain.get("hourly"):
+        seg_dict["hourly"] = rain.get("hourly")
+
     return seg_dict
 
 

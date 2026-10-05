@@ -28,6 +28,10 @@ BACKTEST_ENABLED = os.getenv("BACKTEST_ENABLED", "false").lower() in ("true", "1
 BACKTEST_CACHE_DIR = Path(os.getenv("BACKTEST_CACHE_DIR", str(DATA_DIR / "backtest_cache"))).resolve()
 BACKTEST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Task 3: Time-aware forecast-based trip planning feature flag (default false)
+TIME_AWARE_PLANNER = os.getenv("TIME_AWARE_PLANNER", "false").lower() in ("true", "1", "yes")
+DEFAULT_SPEED_KMPH = float(os.getenv("DEFAULT_SPEED_KMPH", "30.0"))
+
 # Logging configuration
 LOG_FILE = LOGS_DIR / "backend.log"
 LOG_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
