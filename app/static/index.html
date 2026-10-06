@@ -1064,6 +1064,16 @@
             <div style="font-size:0.72rem; color:var(--text-muted);">Audits cross-validation ROC-AUC (0.767) and logistic regression terrain weights.</div>
             <div id="gr-res-model" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
           </div>
+
+          <!-- Probe 7: Backtest Summary -->
+          <div id="gr-card-backtest" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>7. Backtest Summary & Validation</strong>
+              <button class="btn-sm" onclick="testBacktestSummary()">Inspect (/backtest-summary)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Retrieves backtest evaluation metrics and generalization capability.</div>
+            <div id="gr-res-backtest" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
         </div>
       </div>
 
@@ -2095,6 +2105,22 @@
       }
     }
 
+    async function testBacktestSummary() {
+      const el = document.getElementById("gr-res-backtest");
+      const card = document.getElementById("gr-card-backtest");
+      el.textContent = "Querying /backtest-summary...";
+      const res = await apiCall("GET", "/backtest-summary");
+      if (res.ok && res.data) {
+        const d = res.data;
+        card.className = "guardrail-card pass";
+        el.innerHTML = `✅ <strong>PASS:</strong> Backtest summary loaded. Combined Prod AUC: ${d.combined_production?.auc || 'N/A'}`;
+      } else {
+        card.className = "guardrail-card fail";
+        let errMsg = res.error || res.status;
+        el.innerHTML = `❌ <strong>FAIL:</strong> Could not load backtest-summary (${errMsg})`;
+      }
+    }
+
     async function runAllGuardrails() {
       await testCoordinatesGuardrail();
       await testAntiSpamGuardrail();
@@ -2102,6 +2128,7 @@
       await testDryCapGuardrail();
       await testEtagGuardrail();
       await testModelInfoAudit();
+      await testBacktestSummary();
     }
 
     // --- Tab 9: Offline & Voice ---
