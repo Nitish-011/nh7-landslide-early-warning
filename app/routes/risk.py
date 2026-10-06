@@ -130,6 +130,17 @@ def get_risk_map(
     If 'as_of' date is provided, runs historical Time Machine replay using archived rainfall.
     When lang=hi, returns transliterated segment names and Devanagari risk levels.
     """
+    if lang is not None and lang not in ("en", "hi"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language '{lang}'. Supported languages are 'en' and 'hi'."
+        )
+    if simulate_rain_mm is not None and (simulate_rain_mm < 0.0 or simulate_rain_mm > 1000.0):
+        raise HTTPException(
+            status_code=400,
+            detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
+        )
+
     is_hi = (lang == "hi")
     corridor_title = i18n.CORRIDOR_NAME_HI if is_hi else i18n.CORRIDOR_NAME_EN
     corridor_en = i18n.CORRIDOR_NAME_EN if is_hi else None
@@ -225,6 +236,17 @@ def get_route_risk(
       - Forecast Attenuation: NWP precipitation forecasts exhibit diminishing skill past 24-48h.
       - Advisory Scope: guidance system only; does not override local police or BRO road status bulletins.
     """
+    if lang is not None and lang not in ("en", "hi"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language '{lang}'. Supported languages are 'en' and 'hi'."
+        )
+    if simulate_rain_mm is not None and (simulate_rain_mm < 0.0 or simulate_rain_mm > 1000.0):
+        raise HTTPException(
+            status_code=400,
+            detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
+        )
+
     # Gating and parameter validation for Task 3
     if depart_time is not None:
         if not getattr(config, "TIME_AWARE_PLANNER", False):
@@ -282,7 +304,9 @@ def get_route_risk(
     is_beyond_tomorrow = False
     try:
         target_date = datetime.strptime(date, "%Y-%m-%d").date()
-        today = datetime.now(timezone.utc).date()
+        # Evaluate date window using Indian Standard Time (IST = UTC+5:30) for Uttarakhand highway operations
+        IST = timezone(timedelta(hours=5, minutes=30))
+        today = datetime.now(IST).date()
         tomorrow = today + timedelta(days=1)
         if target_date > tomorrow:
             is_beyond_tomorrow = True
@@ -427,9 +451,10 @@ def get_route_risk(
 
     avg_score = round(total_score / len(route_segments), 2) if route_segments else 0.0
 
-    # Task 5: Check for official road closures along route
+    # Task 5: Check for official road closures and transit restrictions along route
     route_closure_top = None
     closed_segs = [s for s in route_segments if s.closure and s.closure.status == "closed"]
+    restricted_segs = [s for s in route_segments if s.closure and s.closure.status in ("restricted", "one_way")]
     if closed_segs:
         first_closed = closed_segs[0]
         route_closure_top = first_closed.closure
@@ -444,6 +469,21 @@ def get_route_risk(
             params={"closed_segment": first_closed.id, "closure_id": first_closed.closure.id},
             best_departure_options=[]
         )
+    elif restricted_segs:
+        first_restricted = restricted_segs[0]
+        route_closure_top = first_restricted.closure
+        status_label = "One-way movement" if first_restricted.closure.status == "one_way" else "Traffic restriction"
+        closure_msg = f"{status_label} active on {first_restricted.id} ({first_restricted.name}): {first_restricted.closure.reason} (Source: {first_restricted.closure.source})"
+        from app.models import TripRecommendation
+        current_action = recommendation_payload.action if recommendation_payload else "GO"
+        if current_action not in ("AVOID", "DELAY"):
+            recommendation_payload = TripRecommendation(
+                action="CAUTION",
+                action_code="REC_CAUTION",
+                reason=closure_msg,
+                params={"restricted_segment": first_restricted.id, "closure_id": first_restricted.closure.id},
+                best_departure_options=recommendation_payload.best_departure_options if recommendation_payload else []
+            )
 
     # Contextual Travel Advisory
     if is_beyond_tomorrow:
@@ -456,6 +496,8 @@ def get_route_risk(
 
     if closed_segs:
         advisory_body = f"OFFICIAL CLOSURE WARNING: Road closure active on {closed_segs[0].name}. Avoid travel across this sector."
+    elif restricted_segs:
+        advisory_body = f"TRAFFIC RESTRICTION NOTICE: {restricted_segs[0].closure.status.replace('_', ' ').title()} regulation active on {restricted_segs[0].name}. Proceed with heightened caution."
     elif overall_max_level == "Very High":
         advisory_body = (
             f"CRITICAL WARNING for {date}: High susceptibility to slope failure and active shooting stones "
@@ -585,8 +627,12 @@ def get_priority_list(
     Priority Score = Relative Risk Index × Blockage Consequence Index.
     All consequence metrics, hospital distances, and priority rankings are indicative operational
     guidance based on OpenStreetMap amenities and assumed parameters. Degrades gracefully if the
-    consequence dataset is missing.
     """
+    if simulate_rain_mm is not None and (simulate_rain_mm < 0.0 or simulate_rain_mm > 1000.0):
+        raise HTTPException(
+            status_code=400,
+            detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
+        )
     try:
         from app.consequence_service import get_priority_list_data
         data = get_priority_list_data(simulate_rain_mm=simulate_rain_mm)
@@ -818,6 +864,11 @@ def get_offline_pack(
     Supports HTTP ETag and 304 Not Modified conditional requests and gzip compression
     to minimize cellular data consumption in remote mountain valleys.
     """
+    if simulate_rain_mm is not None and (simulate_rain_mm < 0.0 or simulate_rain_mm > 1000.0):
+        raise HTTPException(
+            status_code=400,
+            detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
+        )
     # 1. Fetch live risk assessment
     raw_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
 

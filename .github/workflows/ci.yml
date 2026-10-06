@@ -1,0 +1,38 @@
+name: NH-7 Backend CI & Quality Gate
+
+on:
+  push:
+    branches: [ main, hardening ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run automated test suite (Pytest)
+        run: |
+          python -m pytest -v
+
+      - name: Verify pre-flight demo script
+        run: |
+          python run.py &
+          SERVER_PID=$!
+          sleep 4
+          python scripts/smoke.py
+          python scripts/demo_check.py
+          kill $SERVER_PID

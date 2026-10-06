@@ -285,7 +285,7 @@ def build_subscriber_alert_message(
     if risk_level in ("Very High", "High"):
         return (
             f"HIGH ALERT on {segment_name}: Geological instability & active rockfall hazard{rain_clause}.{driver_clause} "
-            "Road clearance teams deployed. Travel with extreme caution or consider alternate routes."
+            "Road clearance readiness advised. Travel with extreme caution or check official closure advisories."
         )
     elif risk_level == "Moderate":
         return (

@@ -324,8 +324,27 @@ def fetch_weather_pipeline(
                 "weather_fetched_at": snap_time or now_iso,
                 "weather_age_minutes": 0.0,
                 "is_simulated": False,
-                "stale_warning": None,
+                "stale_warning": "DEMO_MODE active: using pinned offline snapshot.",
             }
+        # If snapshot missing in DEMO_MODE, strictly use deterministic offline fixture (zero network access)
+        deterministic_demo = {
+            s["id"]: {
+                "rain_mm": 18.0,
+                "r3d_mm": 18.0,
+                "rain_24h_mm": 6.0,
+                "forecast_24h_mm": 10.0,
+                "forecast_72h_mm": 22.0,
+                "status": "cached_demo",
+                "hourly": {"time": [], "precipitation": []}
+            } for s in segments
+        }
+        return deterministic_demo, {
+            "weather_source": "snapshot",
+            "weather_fetched_at": now_iso,
+            "weather_age_minutes": 0.0,
+            "is_simulated": False,
+            "stale_warning": "DEMO_MODE active: snapshot missing, using deterministic offline fallback.",
+        }
 
     now = time.time()
 

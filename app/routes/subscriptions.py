@@ -156,6 +156,17 @@ def get_alerts(
     using the unified live ML + rainfall risk assessment service.
     When lang=hi, translates risk severity, segment name, and advisory message.
     """
+    if lang is not None and lang not in ("en", "hi"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language '{lang}'. Supported languages are 'en' and 'hi'."
+        )
+    if simulate_rain_mm is not None and (simulate_rain_mm < 0.0 or simulate_rain_mm > 1000.0):
+        raise HTTPException(
+            status_code=400,
+            detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
+        )
+
     with get_db() as conn:
         cursor = conn.cursor()
         
@@ -209,7 +220,7 @@ def get_alerts(
     if risk_level in ["Very High", "High"]:
         msg_en = (
             f"HIGH ALERT on {sub['segment_name']}: Geological instability & active rockfall hazard{rain_text}.{driver_text} "
-            "Road clearance teams deployed. Travel with extreme caution or consider alternate routes."
+            "Road clearance readiness advised. Travel with extreme caution or check official closure advisories."
         )
         msg = i18n.build_subscriber_alert_message(
             segment_name=sub["segment_name"],

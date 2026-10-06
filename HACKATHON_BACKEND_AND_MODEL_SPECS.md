@@ -13,7 +13,7 @@
 Rather than framing this as an unverified academic machine-learning demonstration or static susceptibility map, this project delivers:
 > **"A live, integrated, public-facing early-warning and trip-planning decision-support system for the Char Dham Yatra corridor."**
 
-Static academic susceptibility maps cannot prevent travelers from getting trapped when a cloudburst strikes. This platform unifies 30m high-resolution topographic modeling, live multi-station meteorological forecasting, dynamic time-aware journey planning, crowdsourced incident verification, consequence-based clearance prioritization, multi-channel alerting, and offline resilience into a single, cohesive, production-grade service.
+Static academic susceptibility maps cannot prevent travelers from getting trapped when a cloudburst strikes. This platform unifies 30m high-resolution topographic modeling, live multi-station meteorological forecasting, dynamic time-aware journey planning, crowdsourced incident verification, consequence-based clearance prioritization, multi-channel alerting, and offline resilience into a single, cohesive decision-support early-warning system.
 
 ---
 
@@ -89,19 +89,19 @@ For each road point, geomorphometric variables were sampled from 30m digital ele
 4. **Profile Curvature:** Quantifies flow acceleration and divergence zones.
 
 ### 3.4 Spatial Validation & Statistical Integrity
-To avoid optimistic performance bias from spatial autocorrelation, the model was evaluated using **5-Fold Spatial Block Cross-Validation** (dividing the 247 km highway into contiguous geographic sectors):
+To avoid optimistic performance bias from spatial autocorrelation, the model was evaluated using **6-Fold Spatial Block Cross-Validation** (dividing the 247 km highway into 6 contiguous geographic sectors with a 2.0 km exclusion buffer):
 
 | Evaluation Metric | Measured Score | Scientific Significance |
 | :--- | :--- | :--- |
 | **Spearman Correlation ($\rho$)** | **0.653** ($p = 0.0033$) | Statistically significant correlation between out-of-fold segment risk and actual observed landslides per km. |
 | **Cross-Validated ROC-AUC** | **0.767** [95% CI: 0.680 – 0.802] | Strong out-of-sample discriminative ability across spatially held-out highway sectors. |
-| **Block AUC Mean** | **0.665** [95% CI: 0.630 – 0.701] | Verified across 1,000 spatial block-bootstrap iterations. |
+| **Block AUC Mean** | **0.664** [95% CI: 0.630 – 0.701] | Verified across 1,000 spatial block-bootstrap iterations over 6 spatial blocks. |
 | **Primary Generalizing Driver** | **Slope ($\Delta\text{AUC} = +0.0523$)** | Permutation importance confirms slope steepness is the dominant physical predictor. |
 | **Secondary Driver** | **300m Relief ($\Delta\text{AUC} = +0.0216$)** | Large valley-to-ridge relief significantly elevates slope failure risk. |
-| **Spurious Feature Discarded** | **Elevation ($\Delta\text{AUC} = -0.0006$)** | Absolute elevation exhibited negative out-of-sample generalization; suppressed from production scoring. |
+| **Feature Note on Elevation** | **Elevation (Gini: 19.6%)** | Retained in deployed Random Forest v2 ensemble; noted in earlier spatial logistic experiments as yielding poor univariate out-of-fold transfer. |
 
 ### 3.5 Terrain Susceptibility Formulation
-The segment static terrain score ($P_{\text{terrain}}$) is computed via the spatial logistic model aggregated to the 18 segments using the **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
+The segment static terrain score ($P_{\text{terrain}}$) is computed via the spatial model aggregated to the 18 segments using the **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
 
 $$\text{Logit}(z) = -6.0963 + 0.1348 \times \text{Slope} + 0.0076 \times \text{Relief}_{300\text{m}}$$
 
@@ -112,9 +112,11 @@ $$P_{\text{terrain}} = \frac{1}{1 + e^{-z}}$$
 ## 4. Operational Algorithms & Business Logic
 
 ### 4.1 Dynamic Rainfall Coupling (Heuristic Threshold)
-Static terrain susceptibility is dynamically integrated with 3-day antecedent rainfall ($R_{\text{3d}}$) fetched from Open-Meteo across 5 corridor weather stations:
+Static terrain susceptibility is dynamically integrated with 3-day antecedent rainfall ($R_{\text{3d}}$) fetched from Open-Meteo across 5 corridor weather stations using the calibrated linear-capped composite formula:
 
-$$P_{\text{hazard}} = P_{\text{terrain}} \times \left(1 - e^{-k \cdot R_{\text{3d}}}\right)$$
+$$\text{risk\_score} = \min\left(K_{\text{terrain}} \times \text{terrain\_percentile} + K_{\text{rain}} \times \min\left(\frac{R_{\text{3d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
+
+where $K_{\text{terrain}} = 0.65$, $K_{\text{rain}} = 0.35$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (operational demo heuristics).
 
 - **Safety Cap:** When $R_{\text{3d}} < 25.0\text{ mm}$ (`DRY_CAP_MM = 25.0`), risk level is capped at `"Moderate"`. Dry mountain slopes do not fail spontaneously without seismic or severe hydraulic triggers.
 - **Explainable Driver Strings:** 18/18 segments feature dynamically generated natural-language explanations (e.g., `Steep 30.2° cut slope, high 300m relief (122m)`).

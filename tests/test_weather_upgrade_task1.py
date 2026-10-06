@@ -193,3 +193,22 @@ def test_contract_and_golden_with_flag_on():
         seg0 = data["segments"][0]
         assert "r3d_mm" in seg0
         assert "forecast_24h_mm" in seg0
+
+
+def test_per_segment_weather_pipeline_activation():
+    """
+    Verifies that when PER_SEGMENT_WEATHER is enabled, GET /risk-map exercises
+    the advanced meteorological pipeline with hourly breakdown and peak metrics.
+    """
+    with patch.object(config, "PER_SEGMENT_WEATHER", True):
+        resp = client.get("/risk-map?simulate_rain_mm=25")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["segments"]) == 18
+        for seg in data["segments"]:
+            assert "r3d_mm" in seg
+            assert "rain_24h_mm" in seg
+            assert "forecast_24h_mm" in seg
+            assert "peak_mm" in seg
+
+

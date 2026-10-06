@@ -132,7 +132,13 @@ async def inbound_sms_webhook(request: Request):
                 max_level = max_seg.get("adjusted_risk_level") or max_seg.get("risk_level", "Low")
 
                 closed_any = any(s.get("closure") and s["closure"]["status"] == "closed" for s in route)
-                action = "AVOID" if closed_any else ("CAUTION" if max_level in ("High", "Very High") else "GO")
+                restricted_any = any(s.get("closure") and s["closure"]["status"] in ("restricted", "one_way") for s in route)
+                if closed_any:
+                    action = "AVOID"
+                elif restricted_any or max_level in ("High", "Very High"):
+                    action = "CAUTION"
+                else:
+                    action = "GO"
 
                 from_town = s_from["name"].split(" to ")[0].strip()
                 to_town = s_to["name"].split(" to ")[-1].strip()

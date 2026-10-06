@@ -21,7 +21,9 @@ SNAPSHOT_PATH = Path(os.getenv("SNAPSHOT_PATH", str(DATA_DIR / "rain_snapshot.js
 ENABLE_SCHEDULER = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
 WEATHER_POLL_MINUTES = int(os.getenv("WEATHER_POLL_MINUTES", "30"))
 
-# Task 1: Per-segment hourly rainfall and forecast engine feature flag (default false)
+# Dual weather mode architecture:
+# - Default Core Mode (false): Hardened 5-station daily assimilation with 4-tier resilience & offline snapshots
+# - Advanced Hourly Mode (true): 18-segment hourly forecast and peak detection pipeline (opt-in via env)
 PER_SEGMENT_WEATHER = os.getenv("PER_SEGMENT_WEATHER", "false").lower() in ("true", "1", "yes")
 
 # Task 2: Backtest harness and historical Time Machine replay feature flag (default false)
