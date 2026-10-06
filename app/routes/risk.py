@@ -4,7 +4,8 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
-from app import config
+from fastapi.responses import Response, JSONResponse
+from app import config, i18n
 from app.database import get_db
 from app.models import (
     BacktestSummaryResponse,
@@ -53,13 +54,33 @@ def compute_deterministic_score(seed_str: str, base_score: float) -> float:
     score = (base_score * 0.65) + (val * 0.35)
     return round(max(0.05, min(0.98, score)), 2)
 
-def _fallback_risk_map() -> RiskMapResponse:
+def _build_segment_responses(raw_segments: list, lang: str = "en") -> List[SegmentResponse]:
+    out = []
+    for s in raw_segments:
+        s_data = dict(s)
+        if lang == "hi":
+            s_data["name_en"] = s.get("name")
+            s_data["name"] = i18n.localize_segment_name(s.get("id", ""), s.get("name", ""), "hi")
+            s_data["risk_level_en"] = s.get("risk_level")
+            s_data["risk_level"] = i18n.localize_risk_level(s.get("risk_level"), "hi")
+            s_data["main_driver_en"] = s.get("main_driver")
+            s_data["main_driver"] = i18n.localize_main_driver(s.get("main_driver"), "hi")
+            if s.get("terrain_level"):
+                s_data["terrain_level_en"] = s["terrain_level"]
+                s_data["terrain_level"] = i18n.localize_risk_level(s["terrain_level"], "hi")
+            if s.get("adjusted_risk_level"):
+                s_data["adjusted_risk_level_en"] = s["adjusted_risk_level"]
+                s_data["adjusted_risk_level"] = i18n.localize_risk_level(s["adjusted_risk_level"], "hi")
+        out.append(SegmentResponse(**s_data))
+    return out
+
+def _fallback_risk_map(lang: str = "en") -> RiskMapResponse:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM segments ORDER BY sequence_order ASC")
         rows = cursor.fetchall()
 
-    segments: List[SegmentResponse] = []
+    raw_segments: List[dict] = []
     high_risk_count = 0
 
     for r in rows:
@@ -68,26 +89,32 @@ def _fallback_risk_map() -> RiskMapResponse:
         if level in ["High", "Very High"]:
             high_risk_count += 1
             
-        segments.append(SegmentResponse(
-            id=r["id"],
-            name=r["name"],
-            sequence_order=r["sequence_order"],
-            start_lat=r["start_lat"],
-            start_lng=r["start_lng"],
-            end_lat=r["end_lat"],
-            end_lng=r["end_lng"],
-            subpoints=subpoints,
-            risk_level=level,
-            risk_score=r["risk_score"],
-            risk_index=r["risk_score"],
-            updated_at=r["updated_at"]
-        ))
+        raw_segments.append({
+            "id": r["id"],
+            "name": r["name"],
+            "sequence_order": r["sequence_order"],
+            "start_lat": r["start_lat"],
+            "start_lng": r["start_lng"],
+            "end_lat": r["end_lat"],
+            "end_lng": r["end_lng"],
+            "subpoints": subpoints,
+            "risk_level": level,
+            "risk_score": r["risk_score"],
+            "risk_index": r["risk_score"],
+            "updated_at": r["updated_at"]
+        })
+
+    is_hi = (lang == "hi")
+    corridor_title = i18n.CORRIDOR_NAME_HI if is_hi else i18n.CORRIDOR_NAME_EN
+    corridor_en = i18n.CORRIDOR_NAME_EN if is_hi else None
 
     return RiskMapResponse(
-        corridor="NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
-        total_segments=len(segments),
+        corridor=corridor_title,
+        corridor_en=corridor_en,
+        total_segments=len(raw_segments),
         high_or_very_high_risk_count=high_risk_count,
-        segments=segments
+        segments=_build_segment_responses(raw_segments, lang=lang),
+        lang=lang,
     )
 
 @router.get("/risk-map", response_model=RiskMapResponse)
@@ -95,13 +122,19 @@ def _fallback_risk_map() -> RiskMapResponse:
 def get_risk_map(
     request: Request,
     simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing"),
-    as_of: Optional[str] = Query(None, description="Historical replay date (YYYY-MM-DD) for backtest time machine")
+    as_of: Optional[str] = Query(None, description="Historical replay date (YYYY-MM-DD) for backtest time machine"),
+    lang: Optional[str] = Query("en", description="Language code: 'en' or 'hi' (default 'en')")
 ):
     """
     Returns all 18 NH-7 road segments between Rishikesh and Joshimath
     with current risk_level and risk_score from the trained ML pipeline and live weather.
     If 'as_of' date is provided, runs historical Time Machine replay using archived rainfall.
+    When lang=hi, returns transliterated segment names and Devanagari risk levels.
     """
+    is_hi = (lang == "hi")
+    corridor_title = i18n.CORRIDOR_NAME_HI if is_hi else i18n.CORRIDOR_NAME_EN
+    corridor_en = i18n.CORRIDOR_NAME_EN if is_hi else None
+
     if as_of:
         if not getattr(config, "BACKTEST_ENABLED", False):
             raise HTTPException(
@@ -119,10 +152,11 @@ def get_risk_map(
             live_segments, meta = get_archive_replay_risk_map(as_of=as_of)
             high_risk_count = sum(s["risk_level"] in ("High", "Very High") for s in live_segments)
             return RiskMapResponse(
-                corridor="NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
+                corridor=corridor_title,
+                corridor_en=corridor_en,
                 total_segments=len(live_segments),
                 high_or_very_high_risk_count=high_risk_count,
-                segments=[SegmentResponse(**s) for s in live_segments],
+                segments=_build_segment_responses(live_segments, lang=lang or "en"),
                 weather_source=meta.get("weather_source", "archive_replay"),
                 weather_fetched_at=meta.get("weather_fetched_at"),
                 weather_age_minutes=meta.get("weather_age_minutes"),
@@ -130,6 +164,7 @@ def get_risk_map(
                 stale_warning=meta.get("stale_warning"),
                 mode=meta.get("mode", "replay"),
                 as_of=meta.get("as_of", as_of),
+                lang=lang or "en",
             )
         except Exception as e:
             logger.exception(f"get_archive_replay_risk_map failed for {as_of} ({e})")
@@ -139,10 +174,11 @@ def get_risk_map(
         live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
         high_risk_count = sum(s["risk_level"] in ("High", "Very High") for s in live_segments)
         return RiskMapResponse(
-            corridor="NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)",
+            corridor=corridor_title,
+            corridor_en=corridor_en,
             total_segments=len(live_segments),
             high_or_very_high_risk_count=high_risk_count,
-            segments=[SegmentResponse(**s) for s in live_segments],
+            segments=_build_segment_responses(live_segments, lang=lang or "en"),
             weather_source=meta.get("weather_source"),
             weather_fetched_at=meta.get("weather_fetched_at"),
             weather_age_minutes=meta.get("weather_age_minutes"),
@@ -150,10 +186,11 @@ def get_risk_map(
             stale_warning=meta.get("stale_warning"),
             mode="live" if simulate_rain_mm is None else "simulated",
             as_of=None,
+            lang=lang or "en",
         )
     except Exception as e:
         logger.exception(f"get_live_risk_map failed ({e}); serving seeded mock fallback")
-        return _fallback_risk_map()
+        return _fallback_risk_map(lang=lang or "en")
 
 @router.get("/route-risk", response_model=RouteRiskResponse)
 @limiter.limit("120/minute")
@@ -170,7 +207,8 @@ def get_route_risk(
     speed_kmph: Optional[float] = Query(
         None,
         description="Average transit speed along the corridor in km/h (default 30.0 km/h). Assumes constant speed without intermediate halts."
-    )
+    ),
+    lang: Optional[str] = Query("en", description="Language code: 'en' or 'hi' (default 'en')")
 ):
     """
     Evaluates landslide risk for segments between two points on NH-7 for a given date.
@@ -322,9 +360,30 @@ def get_route_risk(
 
         eta_info = eta_map.get(row["id"]) if eta_map else {}
 
+        seg_name = row["name"]
+        seg_name_en = seg_name if lang == "hi" else None
+        seg_risk_lvl_display = seg_risk_level
+        seg_risk_lvl_en = seg_risk_level if lang == "hi" else None
+        driver_val = live_info.get("main_driver") if live_info else None
+        driver_val_en = driver_val if lang == "hi" else None
+        eta_risk_lvl = eta_info.get("risk_level_at_eta")
+        eta_risk_lvl_en = eta_risk_lvl if lang == "hi" else None
+        adj_risk_lvl = live_info.get("adjusted_risk_level") if live_info else None
+        adj_risk_lvl_en = adj_risk_lvl if lang == "hi" else None
+
+        if lang == "hi":
+            seg_name = i18n.localize_segment_name(row["id"], seg_name, "hi")
+            seg_risk_lvl_display = i18n.localize_risk_level(seg_risk_level, "hi")
+            driver_val = i18n.localize_main_driver(driver_val, "hi")
+            if eta_risk_lvl:
+                eta_risk_lvl = i18n.localize_risk_level(eta_risk_lvl, "hi")
+            if adj_risk_lvl:
+                adj_risk_lvl = i18n.localize_risk_level(adj_risk_lvl, "hi")
+
         route_segments.append(RouteSegmentRisk(
             id=row["id"],
-            name=row["name"],
+            name=seg_name,
+            name_en=seg_name_en,
             sequence_order=row["sequence_order"],
             start_lat=row["start_lat"],
             start_lng=row["start_lng"],
@@ -332,7 +391,8 @@ def get_route_risk(
             end_lng=row["end_lng"],
             subpoints=subpoints,
             subpoint_risk_scores=subpoint_scores,
-            risk_level=seg_risk_level,
+            risk_level=seg_risk_lvl_display,
+            risk_level_en=seg_risk_lvl_en,
             risk_score=seg_risk_score,
             risk_index=seg_risk_score,
             terrain_percentile=live_info.get("terrain_percentile") if live_info else None,
@@ -340,7 +400,8 @@ def get_route_risk(
             terrain_status=live_info.get("terrain_status") if live_info else None,
             rain_mm_3d=live_info.get("rain_mm_3d") if live_info else None,
             rain_status=live_info.get("rain_status") if live_info else None,
-            main_driver=live_info.get("main_driver") if live_info else None,
+            main_driver=driver_val,
+            main_driver_en=driver_val_en,
             method=live_info.get("method") if live_info else None,
             r3d_mm=live_info.get("r3d_mm") if live_info else None,
             rain_24h_mm=live_info.get("rain_24h_mm") if live_info else None,
@@ -352,10 +413,12 @@ def get_route_risk(
             eta_ist=eta_info.get("eta_ist"),
             rain_72h_at_eta_mm=eta_info.get("rain_72h_at_eta_mm"),
             forecast_rain_6h_around_eta_mm=eta_info.get("forecast_rain_6h_around_eta_mm"),
-            risk_level_at_eta=eta_info.get("risk_level_at_eta"),
+            risk_level_at_eta=eta_risk_lvl,
+            risk_level_at_eta_en=eta_risk_lvl_en,
             # Task 5: Additive closure and ground truth fields
             closure=live_info.get("closure") if live_info else None,
-            adjusted_risk_level=live_info.get("adjusted_risk_level") if live_info else None,
+            adjusted_risk_level=adj_risk_lvl,
+            adjusted_risk_level_en=adj_risk_lvl_en,
             ground_report_count_24h=live_info.get("ground_report_count_24h") if live_info else None,
             adjustment_reason=live_info.get("adjustment_reason") if live_info else None,
         ))
@@ -409,19 +472,47 @@ def get_route_risk(
     else:
         advisory_body = f"NORMAL CONDITIONS for {date}: Favorable road conditions anticipated across the corridor."
 
-    advisory = f"{advisory_prefix}{advisory_body}".strip()
+    advisory_en = f"{advisory_prefix}{advisory_body}".strip()
+    advisory = advisory_en
+    if lang == "hi":
+        advisory = i18n.build_route_advisory(
+            date=date,
+            overall_max_level=overall_max_level,
+            closed_seg_name=closed_segs[0].name if closed_segs else None,
+            is_beyond_tomorrow=is_beyond_tomorrow,
+            lang="hi"
+        )
+
+    if recommendation_payload and lang == "hi":
+        recommendation_payload.action_en = recommendation_payload.action
+        recommendation_payload.action = i18n.localize_action_code(recommendation_payload.action, "hi")
+        recommendation_payload.reason_en = recommendation_payload.reason
+        if closed_segs:
+            recommendation_payload.reason = f"आधिकारिक मार्ग बंद चेतावनी: {i18n.localize_segment_name(closed_segs[0].id, closed_segs[0].name, 'hi')} पर मार्ग बंद है।"
+
+    from_name = start_seg["name"]
+    to_name = end_seg["name"]
+    from_name_en = from_name if lang == "hi" else None
+    to_name_en = to_name if lang == "hi" else None
+    if lang == "hi":
+        from_name = i18n.localize_segment_name(from_segment, from_name, "hi")
+        to_name = i18n.localize_segment_name(to_segment, to_name, "hi")
 
     return RouteRiskResponse(
         from_segment=from_segment,
         to_segment=to_segment,
-        from_segment_name=start_seg["name"],
-        to_segment_name=end_seg["name"],
+        from_segment_name=from_name,
+        from_segment_name_en=from_name_en,
+        to_segment_name=to_name,
+        to_segment_name_en=to_name_en,
         date=date,
         total_segments=len(route_segments),
-        max_risk_level=overall_max_level,
+        max_risk_level=i18n.localize_risk_level(overall_max_level, "hi") if lang == "hi" else overall_max_level,
+        max_risk_level_en=overall_max_level if lang == "hi" else None,
         average_risk_score=avg_score,
         risk_index=avg_score,
         advisory=advisory,
+        advisory_en=advisory_en if lang == "hi" else None,
         segments=route_segments,
         weather_source=meta.get("weather_source"),
         weather_fetched_at=meta.get("weather_fetched_at"),
@@ -432,6 +523,7 @@ def get_route_risk(
         depart_time=applied_depart_time,
         speed_kmph=applied_speed,
         closure=route_closure_top,
+        lang=lang or "en",
     )
 
 @router.get("/model-info", response_model=ModelInfoResponse)
@@ -500,6 +592,155 @@ def get_priority_list(
     except Exception as e:
         logger.exception(f"Failed to generate priority list: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate priority list: {e}")
+
+
+@router.get("/voice-alert")
+@limiter.limit("60/minute")
+def get_voice_alert(
+    request: Request,
+    segment_id: Optional[str] = Query(None, description="Segment ID (e.g. seg_08)"),
+    from_segment: Optional[str] = Query(None, alias="from", description="Origin segment for route voice advisory"),
+    to_segment: Optional[str] = Query(None, alias="to", description="Destination segment for route voice advisory"),
+    from_seg: Optional[str] = Query(None, description="Alternative alias for origin segment"),
+    to_seg: Optional[str] = Query(None, description="Alternative alias for destination segment"),
+    lang: str = Query("en", description="Speech language: 'en' or 'hi' (default 'en')"),
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rain for testing voice alert trigger")
+):
+    """
+    Generates and serves spoken audio alerts (audio/mpeg) via gTTS from localized advisories (<= 300 chars).
+    Caches audio by hash of text and language in data/tts_cache/.
+    If gTTS fails or is offline, returns JSON {text, tts: 'browser'} so the client can speak via Web Speech API.
+    """
+    lang_clean = "hi" if str(lang).lower().startswith("hi") else "en"
+    origin = from_segment or from_seg
+    dest = to_segment or to_seg
+
+    if segment_id:
+        try:
+            live_segments, _ = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
+            target = next((s for s in live_segments if s["id"] == segment_id), None)
+        except Exception as e:
+            logger.warning(f"Failed to fetch live risk map for voice alert: {e}")
+            target = None
+
+        if not target:
+            # Fallback to DB
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM segments WHERE id = ?", (segment_id,))
+                row = cursor.fetchone()
+                if not row:
+                    raise HTTPException(status_code=404, detail=f"Segment '{segment_id}' not found.")
+                target = dict(row)
+
+        lvl = target.get("adjusted_risk_level") or target.get("risk_level", "Low")
+        rain_val = target.get("rain_mm_3d")
+        driver_val = target.get("main_driver")
+
+        text = i18n.build_segment_voice_script(
+            segment_id=target["id"],
+            segment_name=target["name"],
+            risk_level=lvl,
+            rain_mm=rain_val,
+            main_driver=driver_val,
+            lang=lang_clean
+        )
+    elif origin and dest:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM segments WHERE id = ?", (origin,))
+            start_row = cursor.fetchone()
+            cursor.execute("SELECT * FROM segments WHERE id = ?", (dest,))
+            end_row = cursor.fetchone()
+
+        if not start_row or not end_row:
+            raise HTTPException(status_code=404, detail=f"Origin segment '{origin}' or destination '{dest}' not found.")
+
+        try:
+            live_segments, _ = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
+        except Exception:
+            live_segments = []
+
+        seq1, seq2 = start_row["sequence_order"], end_row["sequence_order"]
+        low_s, high_s = min(seq1, seq2), max(seq1, seq2)
+        route = [s for s in live_segments if low_s <= s["sequence_order"] <= high_s]
+        if seq1 > seq2:
+            route.reverse()
+
+        LEVEL_ORDER = {"Low": 0, "Moderate": 1, "High": 2, "Very High": 3}
+        if route:
+            max_seg = max(route, key=lambda s: LEVEL_ORDER.get(s.get("adjusted_risk_level") or s.get("risk_level", "Low"), 0))
+            max_lvl = max_seg.get("adjusted_risk_level") or max_seg.get("risk_level", "Low")
+            closed_any = any(s.get("closure") and s["closure"]["status"] == "closed" for s in route)
+        else:
+            max_seg = dict(start_row)
+            max_lvl = start_row["risk_level"]
+            closed_any = False
+
+        action = "AVOID" if closed_any else ("CAUTION" if max_lvl in ("High", "Very High") else "GO")
+
+        text = i18n.build_route_voice_script(
+            from_name=start_row["name"],
+            to_name=end_row["name"],
+            action=action,
+            max_risk_level=max_lvl,
+            max_seg_name=max_seg["name"],
+            closed=closed_any,
+            lang=lang_clean
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Specify either 'segment_id' or both 'from' and 'to' parameters for voice alert."
+        )
+
+    # Strictly limit text to <= 300 characters
+    text = text[:300].strip()
+
+    # Cache lookup by SHA256 of text and language
+    cache_key = hashlib.sha256(f"{lang_clean}:{text}".encode("utf-8")).hexdigest()
+    cache_path = config.TTS_CACHE_DIR / f"{cache_key}.mp3"
+
+    if cache_path.exists():
+        try:
+            audio_bytes = cache_path.read_bytes()
+            return Response(
+                content=audio_bytes,
+                media_type="audio/mpeg",
+                headers={
+                    "X-TTS-Source": "cache",
+                    "X-TTS-Lang": lang_clean,
+                    "Content-Disposition": f"inline; filename={cache_key}.mp3"
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to read cached TTS file {cache_path}: {e}")
+
+    # Generate via gTTS
+    try:
+        from gtts import gTTS
+        tts = gTTS(text=text, lang=lang_clean)
+        config.TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp_path = cache_path.with_suffix(".tmp")
+        tts.save(str(tmp_path))
+        import os
+        os.replace(tmp_path, cache_path)
+        audio_bytes = cache_path.read_bytes()
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "X-TTS-Source": "gTTS",
+                "X-TTS-Lang": lang_clean,
+                "Content-Disposition": f"inline; filename={cache_key}.mp3"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"gTTS audio synthesis failed ({e}); falling back to browser Web Speech API")
+        return JSONResponse(
+            status_code=200,
+            content={"text": text, "tts": "browser", "lang": lang_clean}
+        )
 
 
 

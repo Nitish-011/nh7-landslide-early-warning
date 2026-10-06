@@ -111,3 +111,7 @@ DRY_RUN = os.getenv("DRY_RUN", "true").lower() in ("true", "1", "yes")
 ENABLE_TELEGRAM_BOT = os.getenv("ENABLE_TELEGRAM_BOT", "false").lower() in ("true", "1", "yes")
 ALERT_DISPATCH_INTERVAL_MINUTES = int(os.getenv("ALERT_DISPATCH_INTERVAL_MINUTES", "10"))
 ALERT_COOLDOWN_HOURS = float(os.getenv("ALERT_COOLDOWN_HOURS", "3.0"))
+
+# --- Task 7: Localization & Voice Alert Configuration ---
+TTS_CACHE_DIR = Path(os.getenv("TTS_CACHE_DIR", str(DATA_DIR / "tts_cache"))).resolve()
+TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)

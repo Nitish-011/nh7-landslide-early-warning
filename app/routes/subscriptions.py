@@ -130,12 +130,14 @@ def create_subscription(request: Request, req: SubscribeRequest):
 def get_alerts(
     request: Request,
     user_id: int = Query(..., description="Numeric subscription_id returned by /subscribe"),
-    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing"),
+    lang: Optional[str] = Query("en", description="Language code: 'en' or 'hi' (default 'en')")
 ):
     """
     Returns active alerts for a user's subscription.
     Looks up the user's subscribed segment and generates active warnings
     using the unified live ML + rainfall risk assessment service.
+    When lang=hi, translates risk severity, segment name, and advisory message.
     """
     with get_db() as conn:
         cursor = conn.cursor()
@@ -183,49 +185,84 @@ def get_alerts(
     driver_text = f" Primary factor: {main_driver}." if main_driver else ""
     rain_text = f" (3-day rain: {rain_mm_3d} mm)" if rain_mm_3d is not None else ""
 
+    from app import i18n
+    is_hi = (lang == "hi")
+
     # Generate realistic active alerts based on the segment's live hazard profile
     if risk_level in ["Very High", "High"]:
+        msg_en = (
+            f"HIGH ALERT on {sub['segment_name']}: Geological instability & active rockfall hazard{rain_text}.{driver_text} "
+            "Road clearance teams deployed. Travel with extreme caution or consider alternate routes."
+        )
+        msg = i18n.build_subscriber_alert_message(
+            segment_name=sub["segment_name"],
+            risk_level=risk_level,
+            rain_mm=rain_mm_3d,
+            main_driver=main_driver,
+            lang=lang or "en"
+        )
         alerts.append(AlertItem(
             alert_id=f"ALT-NH7-{sub['segment_id'].upper()}-01",
             segment_id=sub["segment_id"],
-            segment_name=sub["segment_name"],
-            severity=risk_level,
+            segment_name=i18n.localize_segment_name(sub["segment_id"], sub["segment_name"], "hi") if is_hi else sub["segment_name"],
+            segment_name_en=sub["segment_name"] if is_hi else None,
+            severity=i18n.localize_risk_level(risk_level, "hi") if is_hi else risk_level,
+            severity_en=risk_level if is_hi else None,
             risk_score=risk_score,
             risk_index=risk_score,
-            message=(
-                f"HIGH ALERT on {sub['segment_name']}: Geological instability & active rockfall hazard{rain_text}.{driver_text} "
-                "Road clearance teams deployed. Travel with extreme caution or consider alternate routes."
-            ),
+            message=msg,
+            message_en=msg_en if is_hi else None,
             channel=sub["channel"],
             issued_at=now_str,
             rain_mm_3d=rain_mm_3d,
             rain_status=rain_status,
-            main_driver=main_driver,
+            main_driver=i18n.localize_main_driver(main_driver, "hi") if is_hi else main_driver,
+            main_driver_en=main_driver if is_hi else None,
         ))
     elif risk_level == "Moderate":
+        msg_en = (
+            f"ADVISORY on {sub['segment_name']}: Moderate slope wetness and slippery road conditions{rain_text}.{driver_text} "
+            "Speed limits enforced near drainage outlets."
+        )
+        msg = i18n.build_subscriber_alert_message(
+            segment_name=sub["segment_name"],
+            risk_level=risk_level,
+            rain_mm=rain_mm_3d,
+            main_driver=main_driver,
+            lang=lang or "en"
+        )
         alerts.append(AlertItem(
             alert_id=f"ALT-NH7-{sub['segment_id'].upper()}-02",
             segment_id=sub["segment_id"],
-            segment_name=sub["segment_name"],
-            severity="Moderate",
+            segment_name=i18n.localize_segment_name(sub["segment_id"], sub["segment_name"], "hi") if is_hi else sub["segment_name"],
+            segment_name_en=sub["segment_name"] if is_hi else None,
+            severity=i18n.localize_risk_level("Moderate", "hi") if is_hi else "Moderate",
+            severity_en="Moderate" if is_hi else None,
             risk_score=risk_score,
             risk_index=risk_score,
-            message=(
-                f"ADVISORY on {sub['segment_name']}: Moderate slope wetness and slippery road conditions{rain_text}.{driver_text} "
-                "Speed limits enforced near drainage outlets."
-            ),
+            message=msg,
+            message_en=msg_en if is_hi else None,
             channel=sub["channel"],
             issued_at=now_str,
             rain_mm_3d=rain_mm_3d,
             rain_status=rain_status,
-            main_driver=main_driver,
+            main_driver=i18n.localize_main_driver(main_driver, "hi") if is_hi else main_driver,
+            main_driver_en=main_driver if is_hi else None,
         ))
     # If Low, no critical alerts are active (empty list)
+
+    sub_seg_en = f"{sub['segment_id']} ({sub['segment_name']})"
+    if is_hi:
+        sub_seg_name_hi = i18n.localize_segment_name(sub["segment_id"], sub["segment_name"], "hi")
+        sub_seg_display = f"{sub['segment_id']} ({sub_seg_name_hi})"
+    else:
+        sub_seg_display = sub_seg_en
 
     return AlertsResponse(
         user_id=sub["id"],
         subscriber_name=sub["name"],
-        subscribed_segment=f"{sub['segment_id']} ({sub['segment_name']})",
+        subscribed_segment=sub_seg_display,
+        subscribed_segment_en=sub_seg_en if is_hi else None,
         active_alerts_count=len(alerts),
         alerts=alerts,
         weather_source=meta.get("weather_source"),
@@ -233,4 +270,5 @@ def get_alerts(
         weather_age_minutes=meta.get("weather_age_minutes"),
         is_simulated=meta.get("is_simulated", False),
         stale_warning=meta.get("stale_warning"),
+        lang=lang or "en",
     )

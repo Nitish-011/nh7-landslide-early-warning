@@ -69,9 +69,14 @@ class SegmentResponse(BaseModel):
     adjusted_risk_level: Optional[str] = None
     ground_report_count_24h: Optional[int] = None
     adjustment_reason: Optional[str] = None
+    # Task 7: Localization fields (additive, optional)
+    name_en: Optional[str] = None
+    risk_level_en: Optional[str] = None
+    main_driver_en: Optional[str] = None
 
 class RiskMapResponse(BaseModel):
     corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
+    corridor_en: Optional[str] = None
     total_segments: int
     high_or_very_high_risk_count: int
     segments: List[SegmentResponse]
@@ -84,6 +89,7 @@ class RiskMapResponse(BaseModel):
     # Task 2 Time Machine & Historical Replay Metadata (additive, optional)
     mode: Optional[str] = None
     as_of: Optional[str] = None
+    lang: Optional[str] = "en"
 
 class BacktestSummaryResponse(BaseModel):
     model_config = {"extra": "ignore"}
@@ -113,6 +119,9 @@ class TripRecommendation(BaseModel):
     reason: str
     params: Dict[str, Any] = {}
     best_departure_options: List[DepartureOption] = []
+    # Task 7 Localization fields (additive, optional)
+    action_en: Optional[str] = None
+    reason_en: Optional[str] = None
 
 class RouteSegmentRisk(BaseModel):
     id: str
@@ -152,6 +161,11 @@ class RouteSegmentRisk(BaseModel):
     adjusted_risk_level: Optional[str] = None
     ground_report_count_24h: Optional[int] = None
     adjustment_reason: Optional[str] = None
+    # Task 7 Localization fields (additive, optional)
+    name_en: Optional[str] = None
+    risk_level_en: Optional[str] = None
+    main_driver_en: Optional[str] = None
+    risk_level_at_eta_en: Optional[str] = None
 
 class RouteRiskResponse(BaseModel):
     from_segment: str
@@ -177,6 +191,12 @@ class RouteRiskResponse(BaseModel):
     speed_kmph: Optional[float] = None
     # Task 5: Additive Route-Level Closure (optional)
     closure: Optional[RoadClosureResponse] = None
+    # Task 7 Localization fields (additive, optional)
+    from_segment_name_en: Optional[str] = None
+    to_segment_name_en: Optional[str] = None
+    max_risk_level_en: Optional[str] = None
+    advisory_en: Optional[str] = None
+    lang: Optional[str] = "en"
 
 # --- Subscription Models ---
 
@@ -219,6 +239,11 @@ class AlertItem(BaseModel):
     rain_mm_3d: Optional[float] = None
     rain_status: Optional[str] = None
     main_driver: Optional[str] = None
+    # Task 7 Localization fields (additive, optional)
+    segment_name_en: Optional[str] = None
+    severity_en: Optional[str] = None
+    message_en: Optional[str] = None
+    main_driver_en: Optional[str] = None
 
 class AlertsResponse(BaseModel):
     user_id: int
@@ -232,6 +257,15 @@ class AlertsResponse(BaseModel):
     weather_age_minutes: Optional[float] = None
     is_simulated: Optional[bool] = False
     stale_warning: Optional[str] = None
+    # Task 7 Localization fields (additive, optional)
+    subscribed_segment_en: Optional[str] = None
+    lang: Optional[str] = "en"
+
+# Task 7: Voice Alert Models
+class VoiceAlertFallbackResponse(BaseModel):
+    text: str
+    tts: str = "browser"
+    lang: str = "en"
 
 # --- Field Reports Models ---
 
