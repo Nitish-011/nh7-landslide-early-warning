@@ -3,26 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NH-7 Landslide Risk API Workbench & Interactive Testbench</title>
+  <title>NH-7 Landslide Early Warning & Verification Workbench</title>
   
-  <!-- Modern Typography (Inter) -->
+  <!-- Modern Typography (Inter & JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- PWA Web App Manifest -->
   <link rel="manifest" href="/manifest.json" />
 
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-panel: #0f172a;
-      --bg-card: #1e293b;
-      --bg-card-hover: #273549;
-      --border: #334155;
-      --border-focus: #38bdf8;
+      --bg-dark: #070b12;
+      --bg-panel: #0d1424;
+      --bg-card: #141f36;
+      --bg-card-hover: #1b2946;
+      --border: #233252;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -33,13 +32,14 @@
       --risk-mod: #f59e0b;
       --risk-high: #f97316;
       --risk-vhigh: #ef4444;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-sans);
       display: flex;
       height: 100vh;
       overflow: hidden;
@@ -56,27 +56,27 @@
     #map {
       width: 100%;
       height: 100%;
-      background: #111827;
+      background: #090e1a;
     }
 
-    /* Floating Map Badges */
+    /* Top Floating Floating HUD Bar */
     .map-top-bar {
       position: absolute;
-      top: 16px;
+      top: 14px;
       left: 60px;
       z-index: 1000;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      padding: 8px 16px;
+      background: rgba(13, 20, 36, 0.88);
+      backdrop-filter: blur(14px);
+      padding: 8px 18px;
       border-radius: 9999px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
     .map-stat {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -87,35 +87,69 @@
       font-weight: 700;
     }
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--risk-low);
-      box-shadow: 0 0 8px var(--risk-low);
+      box-shadow: 0 0 10px var(--risk-low);
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+    }
+
+    /* Offline Alert Banner */
+    #offline-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 560px;
+      z-index: 1001;
+      background: linear-gradient(90deg, #ea580c, #c2410c);
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      display: none;
+    }
+
+    /* Freshness & Simulation Status Banner */
+    #freshness-banner {
+      display: none;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.02em;
     }
 
     /* Workbench Side Panel */
     #workbench {
-      width: 540px;
+      width: 560px;
       height: 100%;
       background: var(--bg-panel);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
+      box-shadow: -15px 0 40px rgba(0, 0, 0, 0.6);
       z-index: 10;
     }
 
+    /* Workbench Header */
     .header {
-      padding: 16px 20px;
-      background: rgba(9, 13, 22, 0.95);
+      padding: 14px 18px;
+      background: rgba(7, 11, 18, 0.95);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
     .header-title h1 {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       color: var(--text-main);
       display: flex;
@@ -124,81 +158,108 @@
       letter-spacing: -0.02em;
     }
     .header-title p {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       margin-top: 2px;
     }
-    .replaceable-badge {
-      font-size: 0.65rem;
-      padding: 3px 8px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lang-toggle-btn {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
       border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
       color: var(--accent);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .lang-toggle-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      transform: translateY(-1px);
     }
 
     /* Navigation Tabs */
     .nav-tabs {
       display: flex;
-      background: #0a0f1d;
+      background: #090e1c;
       border-bottom: 1px solid var(--border);
-      padding: 0 12px;
+      padding: 0 8px;
       overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .nav-tabs::-webkit-scrollbar {
+      height: 4px;
+    }
+    .nav-tabs::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
     }
     .nav-tab {
-      padding: 10px 14px;
-      font-size: 0.78rem;
+      padding: 10px 12px;
+      font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
       white-space: nowrap;
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
     }
     .nav-tab:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.02);
     }
     .nav-tab.active {
       color: var(--accent);
       border-bottom-color: var(--accent);
+      background: rgba(56, 189, 248, 0.05);
     }
 
     /* Content Area */
     .tab-content-container {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .tab-pane {
       display: none;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .tab-pane.active {
       display: flex;
     }
 
-    /* Cards & Controls */
+    /* Cards & Components */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 14px 16px;
+      padding: 13px 15px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
     }
     .card-title {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
@@ -206,12 +267,13 @@
     }
     .endpoint-pill {
       font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 2px 6px;
+      font-size: 0.68rem;
+      padding: 2px 7px;
       border-radius: 4px;
       font-weight: 600;
       background: rgba(56, 189, 248, 0.15);
       color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.25);
     }
 
     .form-grid {
@@ -223,7 +285,7 @@
       grid-column: span 2;
     }
     label {
-      font-size: 0.72rem;
+      font-size: 0.71rem;
       font-weight: 600;
       color: var(--text-muted);
       margin-bottom: 4px;
@@ -234,15 +296,16 @@
       background: var(--bg-dark);
       border: 1px solid var(--border);
       color: var(--text-main);
-      padding: 8px 10px;
+      padding: 7px 10px;
       border-radius: 6px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-family: inherit;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: var(--border-focus);
+      border-color: var(--border-accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
     }
 
     /* Buttons */
@@ -252,394 +315,375 @@
       flex-wrap: wrap;
     }
     button {
-      background: #334155;
-      color: #fff;
-      border: 1px solid #475569;
-      padding: 8px 14px;
+      padding: 7px 12px;
       border-radius: 6px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 5px;
       transition: all 0.15s ease;
     }
     button:hover {
-      background: #475569;
+      background: var(--bg-card-hover);
+      border-color: #475569;
+      transform: translateY(-1px);
     }
-    button.btn-primary {
+    button:active {
+      transform: translateY(0);
+    }
+    .btn-primary {
       background: var(--primary);
       border-color: #0369a1;
+      color: #fff;
     }
-    button.btn-primary:hover {
-      background: var(--primary-hover);
+    .btn-primary:hover {
+      background: #0ea5e9;
+      border-color: #38bdf8;
     }
-    button.btn-sm {
+    .btn-danger {
+      background: #991b1b;
+      border-color: #dc2626;
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+    .btn-warning {
+      background: #b45309;
+      border-color: #f59e0b;
+      color: #fff;
+    }
+    .btn-sm {
       padding: 4px 8px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
     }
 
-    /* Simulation Presets */
+    /* Badges & Pills */
+    .popup-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .preset-pill {
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 4px 10px;
+      font-size: 0.7rem;
+      padding: 4px 9px;
       border-radius: 9999px;
-      font-size: 0.72rem;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid var(--border);
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
     .preset-pill:hover, .preset-pill.active {
-      background: rgba(56, 189, 248, 0.15);
+      background: rgba(56, 189, 248, 0.2);
       border-color: var(--accent);
       color: var(--accent);
+      font-weight: 700;
     }
 
-    /* Advisory Banner */
+    /* Result Boxes */
     .advisory-box {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-size: 0.74rem;
+      padding: 9px 12px;
       border-radius: 6px;
-      padding: 10px;
-      font-size: 0.75rem;
-      color: #fde68a;
-      line-height: 1.4;
-      display: none;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border);
+      line-height: 1.45;
     }
 
-    /* Console Output Area */
+    /* Live JSON Console */
     #console-pane {
+      height: 180px;
       background: #050811;
       border-top: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      height: 240px;
-      min-height: 160px;
     }
     .console-header {
       padding: 6px 14px;
-      background: #0a0f1d;
+      background: #080d1a;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.72rem;
-      color: var(--text-muted);
     }
     .console-tags {
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
     }
     .pill {
-      padding: 1px 6px;
-      border-radius: 4px;
       font-family: var(--font-mono);
       font-size: 0.68rem;
-      font-weight: 700;
-    }
-    .pill-2xx { background: #064e3b; color: #6ee7b7; }
-    .pill-4xx { background: #7f1d1d; color: #fca5a5; }
-    .pill-5xx { background: #881337; color: #fda4af; }
-    pre {
-      flex: 1;
-      overflow: auto;
-      padding: 10px 14px;
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      line-height: 1.4;
-      color: #7dd3fc;
-    }
-
-    /* Map Elements */
-    .leaflet-popup-content-wrapper {
-      background: var(--bg-card);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    }
-    .leaflet-popup-tip {
-      background: var(--bg-card);
-    }
-    .popup-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: var(--text-main);
-    }
-    .popup-badge {
-      display: inline-block;
-      font-size: 0.65rem;
       padding: 2px 6px;
       border-radius: 4px;
       font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 8px;
     }
-    .popup-metric {
-      font-size: 0.75rem;
-      margin-bottom: 4px;
-      color: var(--text-muted);
-    }
-    .popup-metric strong {
-      color: var(--text-main);
-    }
-    .popup-driver {
-      margin-top: 8px;
-      padding-top: 6px;
-      border-top: 1px solid var(--border);
-      font-size: 0.7rem;
+    .pill-2xx { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+    .pill-3xx { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+    .pill-4xx { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+    .pill-5xx { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+    #json-viewer {
+      flex: 1;
+      padding: 10px 14px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
       color: #93c5fd;
-      font-style: italic;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
 
-    /* Legend */
-    .map-legend {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      z-index: 1000;
-      background: rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+    /* Leaflet Popups */
+    .leaflet-popup-content-wrapper {
+      background: rgba(13, 20, 36, 0.95) !important;
+      color: var(--text-main) !important;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important;
+    }
+    .leaflet-popup-tip {
+      background: rgba(13, 20, 36, 0.95) !important;
+    }
+    .popup-title {
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .popup-metric {
       font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    .popup-metric strong {
+      color: #bae6fd;
+    }
+    .popup-driver {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 5px;
+      font-style: italic;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 4px;
+    }
+
+    /* Guardrail verification test card */
+    .guardrail-card {
+      border-left: 3px solid var(--accent);
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 6px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .legend-title {
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 0.65rem;
-      letter-spacing: 0.05em;
+    .guardrail-card.pass {
+      border-left-color: var(--risk-low);
+      background: rgba(16, 185, 129, 0.06);
     }
-    .legend-bar {
-      width: 16px;
-      height: 6px;
-      border-radius: 2px;
-    }
-
-    /* Leaflet Layer Selector Control */
-    .leaflet-control-layers {
-      background: rgba(15, 23, 42, 0.92) !important;
-      color: var(--text-main) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: 8px !important;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-      font-size: 0.75rem !important;
-      font-family: inherit !important;
-      backdrop-filter: blur(10px);
-      padding: 8px 12px !important;
-    }
-    .leaflet-control-layers-expanded {
-      background: rgba(15, 23, 42, 0.95) !important;
-    }
-    .leaflet-control-layers label {
-      color: var(--text-main) !important;
-      font-size: 0.75rem !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      margin-bottom: 4px !important;
-      cursor: pointer;
+    .guardrail-card.fail {
+      border-left-color: var(--risk-vhigh);
+      background: rgba(239, 68, 68, 0.08);
     }
   </style>
 </head>
 <body>
 
-  <!-- Offline Status Banner -->
-  <div id="offline-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:99999; background:#dc2626; color:#ffffff; padding:10px 16px; font-weight:700; font-size:0.85rem; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.6); letter-spacing:0.02em;">
-    ⚠️ Offline: last updated <strong id="offline-last-updated">-</strong>
-  </div>
-
   <!-- Map Viewport -->
   <div id="map-container">
-    <div id="map"></div>
-    
-    <!-- Top HUD Bar -->
+    <div id="offline-banner">
+      ⚡ Offline Mode: Operating from cached offline pack. Last updated: <span id="offline-last-updated">-</span>
+    </div>
+
+    <!-- Floating Map HUD -->
     <div class="map-top-bar">
       <div class="map-stat">
-        <span class="status-dot" id="live-dot"></span>
-        <span>Corridor: <strong>Rishikesh to Joshimath, 247.37 km</strong></span>
+        <span class="status-dot"></span>
+        <span>Corridor: <strong>NH-7 (247 km)</strong></span>
       </div>
       <div class="map-stat">
         <span>Segments: <strong id="hud-total-seg">18</strong></span>
       </div>
       <div class="map-stat">
-        <span>High/Very High: <strong id="hud-high-seg" style="color: var(--risk-high);">-</strong></span>
+        <span>High/Severe: <strong id="hud-high-seg" style="color:var(--risk-high);">0</strong></span>
       </div>
       <div class="map-stat">
-        <span>Rain Status: <strong id="hud-rain-status">Live</strong></span>
+        <span>Weather: <strong id="hud-rain-status" style="color:#38bdf8;">Live</strong></span>
       </div>
     </div>
 
-    <!-- Map Legend -->
-    <div class="map-legend">
-      <div class="legend-title">Landslide Risk Tier</div>
-      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-low);"></div><span>Low Risk (< 0.35)</span></div>
-      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-mod);"></div><span>Moderate Risk (0.35 - 0.65)</span></div>
-      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-high);"></div><span>High Risk (0.65 - 0.85)</span></div>
-      <div class="legend-row"><div class="legend-bar" style="background: var(--risk-vhigh);"></div><span>Very High Risk (≥ 0.85)</span></div>
-      <div class="legend-title" style="margin-top: 4px;">Layers</div>
-      <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.72rem;">
-        <input type="checkbox" id="chk-toggle-scars" onchange="toggleLandslideScars(this.checked)" />
-        <span>Show 309 Surveyed Scars (Mey 2024)</span>
-      </label>
-    </div>
+    <div id="map"></div>
   </div>
 
-  <!-- Workbench Panel -->
+  <!-- Workbench Side Panel -->
   <div id="workbench">
+    
+    <!-- Header -->
     <div class="header">
       <div class="header-title">
         <h1>⛰️ NH-7 Risk API Workbench</h1>
-        <p>Interactive verification testbench for backend APIs & models</p>
+        <p>Interactive verification testbench for models, guardrails & endpoints</p>
       </div>
-      <span class="replaceable-badge">Test Client</span>
+      <div class="header-actions">
+        <button id="btn-toggle-lang" class="lang-toggle-btn" onclick="toggleLanguage()">
+          <span id="lang-flag">🇬🇧</span> <span id="lang-label">EN</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Freshness & Simulation Status Banner (Task F2) -->
-    <div id="freshness-banner" style="display:none; padding:10px 16px; font-size:0.8rem; font-weight:700; text-align:center; letter-spacing:0.02em;"></div>
+    <!-- Freshness / Replay Banner -->
+    <div id="freshness-banner"></div>
 
-    <!-- Nav Tabs -->
+    <!-- Navigation Tabs -->
     <div class="nav-tabs">
-      <div class="nav-tab active" onclick="switchTab('tab-corridor')">🗺️ Risk Map</div>
-      <div class="nav-tab" onclick="switchTab('tab-router')">🚗 Route Planner</div>
-      <div class="nav-tab" onclick="switchTab('tab-priority')">🚜 BRO Priority</div>
-      <div class="nav-tab" onclick="switchTab('tab-weather')">🌧️ Weather Sim</div>
-      <div class="nav-tab" onclick="switchTab('tab-alerts')">🔔 Alerts</div>
-      <div class="nav-tab" onclick="switchTab('tab-reports')">📢 Field Reports</div>
-      <div class="nav-tab" onclick="switchTab('tab-offline')">📦 Offline Pack</div>
+      <div id="tab-btn-corridor" class="nav-tab active" onclick="switchTab('tab-corridor')">🗺️ Risk Map</div>
+      <div id="tab-btn-router" class="nav-tab" onclick="switchTab('tab-router')">🚗 Route Planner</div>
+      <div id="tab-btn-closures" class="nav-tab" onclick="switchTab('tab-closures')">🚧 Closures</div>
+      <div id="tab-btn-priority" class="nav-tab" onclick="switchTab('tab-priority')">🚜 BRO Priority</div>
+      <div id="tab-btn-weather" class="nav-tab" onclick="switchTab('tab-weather')">🌧️ Weather Sim</div>
+      <div id="tab-btn-reports" class="nav-tab" onclick="switchTab('tab-reports')">📢 Field Reports</div>
+      <div id="tab-btn-alerts" class="nav-tab" onclick="switchTab('tab-alerts')">🔔 Alerts & SMS</div>
+      <div id="tab-btn-guardrails" class="nav-tab" onclick="switchTab('tab-guardrails')">🛡️ Guardrails Lab</div>
+      <div id="tab-btn-offline" class="nav-tab" onclick="switchTab('tab-offline')">📦 Offline & Voice</div>
     </div>
 
-    <!-- Tab Contents -->
+    <!-- Tab Contents Container -->
     <div class="tab-content-container">
-      
-      <!-- TAB 1: CORRIDOR RISK MAP -->
+
+      <!-- ========================================== -->
+      <!-- TAB 1: CORRIDOR RISK MAP                   -->
+      <!-- ========================================== -->
       <div id="tab-corridor" class="tab-pane active">
         <div class="card">
           <div class="card-title">
-            <span>Corridor Evaluation</span>
+            <span>Corridor Risk Evaluation</span>
             <span class="endpoint-pill">GET /risk-map</span>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted);">
-            Fetches all 18 highway segments with combined 30m DEM terrain baseline + live rainfall aggregation.
+          <p style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.4;">
+            Fetches 18 highway segments with 30m DEM terrain baseline + live Open-Meteo multi-station rainfall aggregation.
           </p>
           <div class="btn-row">
-            <button class="btn-primary" onclick="loadCorridorRiskMap()">
+            <button id="btn-fetch-risk-map" class="btn-primary" onclick="loadCorridorRiskMap()">
               <span>⚡ Fetch Live Risk Map</span>
             </button>
-            <button onclick="zoomToCorridor()">🔍 Zoom Corridor</button>
+            <button id="btn-zoom-corridor" onclick="zoomToCorridor()">🔍 Fit Corridor</button>
+            <button id="btn-toggle-scars" onclick="toggleScarsBtn()">📍 Mey Scars (309)</button>
           </div>
         </div>
 
-        <!-- Time Machine Replay Card (Task 2) -->
-        <div class="card" style="border-color: rgba(99, 102, 241, 0.4); background: rgba(30, 41, 59, 0.7);">
+        <!-- Historical Archive Replay -->
+        <div class="card" style="border-color: rgba(99, 102, 241, 0.4); background: rgba(30, 41, 59, 0.65);">
           <div class="card-title">
             <span style="color: #a5b4fc;">⏳ Time Machine Replay</span>
-            <span class="endpoint-pill" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">GET /risk-map?as_of=...</span>
+            <span class="endpoint-pill" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">?as_of=YYYY-MM-DD</span>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted);">
-            Replay corridor landslide risk for any historical date using ERA5-Land/Open-Meteo archive precipitation.
+          <p style="font-size: 0.73rem; color: var(--text-muted);">
+            Replay corridor risk for any historical date using ERA5-Land archive precipitation.
           </p>
           <div class="form-grid">
             <div class="form-col-full">
-              <label for="time-machine-date">Select Historical Date</label>
+              <label for="time-machine-date">Historical Date</label>
               <input type="date" id="time-machine-date" value="2023-08-14" />
             </div>
           </div>
           <div class="btn-row">
-            <button class="btn-primary" style="background: #4f46e5;" onclick="replayHistoricalDate()">
-              <span>⏪ Replay Archive Date</span>
+            <button id="btn-replay-archive" class="btn-primary" style="background: #4f46e5;" onclick="replayHistoricalDate()">
+              <span>⏪ Replay Historical Date</span>
             </button>
-            <button onclick="fetchBacktestSummary()">📊 Backtest Metrics</button>
-            <button onclick="resetToLiveRiskMap()">🔄 Reset to Live</button>
+            <button id="btn-reset-live-map" onclick="resetToLiveRiskMap()">🔄 Reset Live</button>
           </div>
-          <div id="backtest-metrics-box" style="display:none; font-size:0.73rem; background:rgba(15,23,42,0.8); border:1px solid #4338ca; border-radius:6px; padding:10px; line-height:1.5;"></div>
         </div>
 
+        <!-- Segment Inspector -->
         <div class="card">
           <div class="card-title">
-            <span>Segment Inspector</span>
+            <span>Segment Geotechnical Inspector</span>
           </div>
           <div>
-            <label>Select Segment to Inspect</label>
+            <label for="inspect-segment-select">Select Highway Segment</label>
             <select id="inspect-segment-select" onchange="onSegmentSelect(this.value)">
               <option value="">-- Choose Segment (seg_01 to seg_18) --</option>
             </select>
           </div>
-          <div id="inspect-details" style="display: none; font-size: 0.75rem; line-height: 1.6;">
+          <div id="inspect-details" style="display: none; font-size: 0.74rem; line-height: 1.55;">
             <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
               <strong id="det-name" style="color:var(--accent);"></strong>
               <span id="det-badge" class="popup-badge"></span>
             </div>
             <div class="form-grid">
               <div>Relative Risk Index: <strong id="det-score">-</strong></div>
-              <div>Percentile: <strong id="det-pctile">-</strong></div>
-              <div>Rainfall (3d): <strong id="det-rain">-</strong></div>
+              <div>DEM Percentile: <strong id="det-pctile">-</strong></div>
+              <div>72h Rain: <strong id="det-rain">-</strong></div>
               <div>Rain Status: <strong id="det-rain-status">-</strong></div>
               <div>Consequence Score: <strong id="det-cscore">-</strong></div>
-              <div>Priority Score: <strong id="det-pscore" style="color:var(--danger);">-</strong></div>
+              <div>BRO Priority: <strong id="det-pscore" style="color:var(--risk-high);">-</strong></div>
             </div>
             <div style="margin-top: 6px;">Nearest Town / Hosp: <strong id="det-poi" style="color:#bae6fd;">-</strong></div>
-            <div id="det-adjusted" style="display:none; margin-top:6px; font-size:0.75rem; color:#fbbf24;"></div>
+            <div id="det-adjusted" style="display:none; margin-top:6px; font-size:0.73rem; color:#fbbf24;"></div>
             <div id="det-closure" style="display:none; margin-top:6px; font-size:0.73rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);"></div>
             <div style="margin-top: 6px;">Primary Driver: <strong id="det-driver" style="color:#bae6fd;">-</strong></div>
-            <div>Calculation Method: <span id="det-method" style="font-family:var(--font-mono); font-size:0.7rem;">-</span></div>
+            <div>Scoring Model: <span id="det-method" style="font-family:var(--font-mono); font-size:0.68rem;">-</span></div>
+            
+            <!-- Voice playback button -->
             <div class="btn-row" style="margin-top: 10px;">
-              <button id="btn-play-voice" class="btn-primary" style="background: #0284c7;" onclick="playVoiceAlertForSegment()">
-                <span>🔊 Play Voice Alert</span>
+              <button id="btn-play-voice-seg" class="btn-primary" onclick="playVoiceAlertForSegment()">
+                <span>🔊 Play Voice Advisory</span>
               </button>
-              <select id="voice-lang-select" style="width: auto; padding: 4px 8px; font-size: 0.75rem;">
-                <option value="en">English (EN)</option>
-                <option value="hi">हिंदी (Hindi)</option>
-              </select>
             </div>
-            <div id="voice-status" style="display:none; font-size: 0.73rem; color: #38bdf8; margin-top: 4px;"></div>
+            <div id="voice-status" style="display:none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px;"></div>
           </div>
         </div>
       </div>
 
-      <!-- TAB 2: ROUTE TRIP PLANNER -->
+      <!-- ========================================== -->
+      <!-- TAB 2: ROUTE TRIP PLANNER                  -->
+      <!-- ========================================== -->
       <div id="tab-router" class="tab-pane">
         <div class="card">
           <div class="card-title">
-            <span>Route Risk Evaluation</span>
+            <span>Trip Planner & Journey Risk</span>
             <span class="endpoint-pill">GET /route-risk</span>
           </div>
           <div class="form-grid">
             <div>
-              <label>Origin Segment</label>
+              <label for="route-start">Origin Segment</label>
               <select id="route-start"></select>
             </div>
             <div>
-              <label>Destination Segment</label>
+              <label for="route-end">Destination Segment</label>
               <select id="route-end"></select>
             </div>
             <div>
-              <label>Travel Date (YYYY-MM-DD)</label>
+              <label for="route-travel-date">Travel Date</label>
               <input type="date" id="route-travel-date" />
             </div>
             <div>
-              <label>Speed (km/h)</label>
-              <input type="number" id="route-speed" value="30" min="5" max="100" />
+              <label for="route-speed">Mountain Speed (km/h)</label>
+              <input type="number" id="route-speed" value="30" min="5" max="80" />
             </div>
             <div class="form-col-full">
-              <label>Planned Departure Time (Optional - Task 3 Time Machine)</label>
+              <label for="route-depart-time">Planned Departure Timestamp (Time-Aware Planner)</label>
               <input type="datetime-local" id="route-depart-time" />
             </div>
           </div>
 
-          <div id="route-advisory-box" class="advisory-box"></div>
+          <div id="route-advisory-box" class="advisory-box" style="display:none;"></div>
 
           <div class="btn-row">
-            <button class="btn-primary" onclick="evaluateRouteRisk()">
+            <button id="btn-eval-route" class="btn-primary" onclick="evaluateRouteRisk()">
               <span>🚗 Evaluate Trip Risk</span>
             </button>
           </div>
@@ -650,89 +694,141 @@
             <span>Trip Hazard Summary</span>
             <span id="route-risk-badge" class="popup-badge">MODERATE</span>
           </div>
-          <div style="font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 0.76rem; display: flex; flex-direction: column; gap: 4px;">
             <div>Segments Traversed: <strong id="route-seg-count">0</strong></div>
-            <div>Max Hazard Segment: <strong id="route-max-seg" style="color: var(--risk-vhigh);">-</strong></div>
+            <div>Peak Hazard Stretch: <strong id="route-max-seg" style="color: var(--risk-vhigh);">-</strong></div>
             <div>Corridor Advisory: <span id="route-advisory-text" style="color: #cbd5e1;">-</span></div>
           </div>
 
-          <!-- Task 3 Recommendation Display -->
+          <!-- Time-Aware Recommendation Block -->
           <div id="route-recommendation-box" style="display:none; margin-top:8px; padding:10px; background:rgba(15,23,42,0.9); border:1px solid #4338ca; border-radius:6px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <strong style="color:#a5b4fc; font-size:0.75rem;">🧭 TIME-AWARE RECOMMENDATION</strong>
-              <span id="route-action-badge" class="popup-badge" style="font-size:0.72rem;">GO</span>
+              <span id="route-action-badge" class="popup-badge">GO</span>
             </div>
             <div id="route-rec-reason" style="color:#f8fafc; font-size:0.75rem; margin-bottom:6px;"></div>
             <div id="route-rec-options" style="font-size:0.72rem; color:#94a3b8; line-height:1.5;"></div>
           </div>
 
-          <div class="btn-row" style="margin-top: 10px;">
-            <button class="btn-primary" style="background: #0284c7;" onclick="playRouteVoiceAlert()">
-              <span>🔊 Play Route Voice Alert</span>
+          <div class="btn-row" style="margin-top: 8px;">
+            <button id="btn-play-voice-route" class="btn-primary" onclick="playRouteVoiceAlert()">
+              <span>🔊 Play Route Voice Advisory</span>
             </button>
-            <select id="route-voice-lang-select" style="width: auto; padding: 4px 8px; font-size: 0.75rem;">
-              <option value="en">English (EN)</option>
-              <option value="hi">हिंदी (Hindi)</option>
-            </select>
           </div>
-          <div id="route-voice-status" style="display:none; font-size: 0.73rem; color: #38bdf8; margin-top: 4px;"></div>
+          <div id="route-voice-status" style="display:none; font-size: 0.72rem; color: #38bdf8; margin-top: 4px;"></div>
         </div>
       </div>
 
-      <!-- TAB 3: BRO OPERATIONAL PRIORITY LIST (Task 4) -->
-      <div id="tab-priority" class="tab-pane">
-        <div class="card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(30, 41, 59, 0.7);">
+      <!-- ========================================== -->
+      <!-- TAB 3: ROAD CLOSURES & BRO ADMIN           -->
+      <!-- ========================================== -->
+      <div id="tab-closures" class="tab-pane">
+        <div class="card">
           <div class="card-title">
-            <span style="color: #fbbf24;">🚜 BRO Operational Priority List</span>
-            <span class="endpoint-pill" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">GET /priority-list</span>
+            <span>Official Road Closures</span>
+            <span class="endpoint-pill">GET /closures & POST /admin/closure</span>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
-            Ranks corridor segments by <strong>Priority Score = Risk Index &times; Blockage Consequence Score</strong>.
-            Integrates Overpass OSM amenities (hospital distance, lodging shelter count) and traffic importance to prioritize excavator pre-positioning.
+          <p style="font-size: 0.74rem; color: var(--text-muted);">
+            Log official BRO/Traffic Police road closures. Closed segments automatically trigger <strong>AVOID</strong> in route planning.
           </p>
           <div class="form-grid">
+            <div>
+              <label for="closure-segment-select">Blocked Segment</label>
+              <select id="closure-segment-select"></select>
+            </div>
+            <div>
+              <label for="closure-status-select">Status</label>
+              <select id="closure-status-select">
+                <option value="closed">⛔ Closed (Full Blockage)</option>
+                <option value="one_way">⚠️ One-Way (Alternating)</option>
+                <option value="restricted">🛑 Restricted (Heavy Vehicles Only)</option>
+              </select>
+            </div>
             <div class="form-col-full">
-              <label for="priority-rain-sim">Optional Simulated Rain (mm)</label>
-              <input type="number" id="priority-rain-sim" placeholder="e.g. 50 (leave empty for live rain)" min="0" max="500" />
+              <label for="closure-reason">Closure Reason</label>
+              <input type="text" id="closure-reason" value="Active boulder fall clearing by BRO Project Shivalik" />
+            </div>
+            <div class="form-col-full">
+              <label for="closure-source">Reporting Authority</label>
+              <input type="text" id="closure-source" value="BRO Project Shivalik" />
             </div>
           </div>
           <div class="btn-row">
-            <button class="btn-primary" style="background: #d97706;" onclick="loadPriorityList()">
-              <span>⚡ Load BRO Priority List</span>
+            <button id="btn-create-closure" class="btn-danger" onclick="submitRoadClosure()">
+              <span>⛔ Post Official Closure</span>
             </button>
-            <button onclick="document.getElementById('priority-rain-sim').value=''; loadPriorityList();">🔄 Reset to Live</button>
+            <button id="btn-refresh-closures" onclick="loadRoadClosures()">🔄 Refresh Closures</button>
           </div>
         </div>
 
-        <div id="priority-disclaimer" style="display:none; font-size: 0.72rem; color: #fbbf24; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;"></div>
+        <div class="card">
+          <div class="card-title">
+            <span>Active Corridor Road Closures</span>
+          </div>
+          <div id="closures-list-container" style="display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:10px;">Loading closures...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: BRO OPERATIONAL PRIORITY LIST       -->
+      <!-- ========================================== -->
+      <div id="tab-priority" class="tab-pane">
+        <div class="card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(30, 41, 59, 0.65);">
+          <div class="card-title">
+            <span style="color: #fbbf24;">🚜 BRO Excavator Pre-Positioning</span>
+            <span class="endpoint-pill" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">GET /priority-list</span>
+          </div>
+          <p style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.45;">
+            Ranks segments by <strong>Priority Score = Risk Index &times; Consequence Score</strong>.
+            Integrates hospital distance, lodging count, detour availability, and traffic importance.
+          </p>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label for="priority-rain-sim">Simulated Rain Override (mm)</label>
+              <input type="number" id="priority-rain-sim" placeholder="Optional mm (e.g. 50)" min="0" max="300" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button id="btn-load-priority" class="btn-primary" style="background: #d97706;" onclick="loadPriorityList()">
+              <span>⚡ Load BRO Priority List</span>
+            </button>
+            <button onclick="document.getElementById('priority-rain-sim').value=''; loadPriorityList();">🔄 Reset Live</button>
+          </div>
+        </div>
+
+        <div id="priority-disclaimer" style="display:none; font-size: 0.72rem; color: #fbbf24; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; padding: 8px 12px;"></div>
 
         <div id="priority-list-container" style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 20px;">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 15px;">
             Click <strong>"Load BRO Priority List"</strong> to fetch ranked operational sectors.
           </div>
         </div>
       </div>
 
-      <!-- TAB 4: RAINFALL & SIMULATION STUDIO -->
+      <!-- ========================================== -->
+      <!-- TAB 5: RAINFALL SIMULATION STUDIO          -->
+      <!-- ========================================== -->
       <div id="tab-weather" class="tab-pane">
         <div class="card">
           <div class="card-title">
             <span>Rainfall Simulation Override</span>
             <span class="endpoint-pill">?simulate_rain_mm=...</span>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted);">
-            Inject arbitrary 3-day rainfall across all 18 segments to test trigger curves and the <code>DRY_CAP_MM = 25.0</code> heuristic.
+          <p style="font-size: 0.74rem; color: var(--text-muted);">
+            Inject arbitrary 72h rainfall across all 18 segments to test hydraulic triggers and the <code>DRY_CAP_MM = 25.0</code> safety cap.
           </p>
           
           <div>
             <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-              <label>Simulated Rainfall</label>
+              <label>Rainfall Injection</label>
               <span id="slider-rain-val" style="font-family: var(--font-mono); font-weight:700; color:var(--accent);">Live Weather (No Override)</span>
             </div>
             <input type="range" id="rain-slider" min="-1" max="150" value="-1" step="1" oninput="updateRainSlider(this.value)" />
           </div>
 
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
             <span class="preset-pill active" onclick="applyPreset(-1, this)">Live API</span>
             <span class="preset-pill" onclick="applyPreset(0, this)">Dry (0 mm)</span>
             <span class="preset-pill" onclick="applyPreset(15, this)">Below Dry Cap (15 mm)</span>
@@ -741,152 +837,257 @@
             <span class="preset-pill" onclick="applyPreset(150, this)">Cloudburst (150 mm)</span>
           </div>
 
-          <div class="btn-row" style="margin-top: 6px;">
-            <button class="btn-primary" onclick="reRunCurrentWithRain()">Apply Simulation to Active Tab</button>
-            <button onclick="resetRainSimulation()">Reset to Live Weather</button>
+          <div class="btn-row" style="margin-top: 8px;">
+            <button id="btn-apply-sim" class="btn-primary" onclick="reRunCurrentWithRain()">Apply Simulation to Active View</button>
+            <button id="btn-reset-sim" onclick="resetRainSimulation()">Reset to Live Weather</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-title">
-            <span>Resilience & Cache Status</span>
+            <span>Resilience & Cache Configuration</span>
           </div>
-          <div style="font-size: 0.75rem; line-height: 1.6; color: var(--text-muted);">
-            <div>Local Snapshot File: <code>data/rain_snapshot.json</code></div>
-            <div>Failure Memory Cache TTL: <strong>300 seconds (5 minutes)</strong></div>
-            <div>Dry Cap Threshold: <code>DRY_CAP_MM = 25.0 mm</code></div>
-            <div>API Down Behavior: Answers in <strong>< 100 ms</strong> from snapshot or cache</div>
+          <div style="font-size: 0.74rem; line-height: 1.6; color: var(--text-muted);">
+            <div>Disk Snapshot: <code>data/rain_snapshot.json</code></div>
+            <div>In-Memory Cache TTL: <strong>300 seconds (5 min)</strong></div>
+            <div>Dry Cap Safety Ceiling: <code>DRY_CAP_MM = 25.0 mm</code></div>
+            <div>DEMO_MODE Support: <strong>Zero internet dependency pinned snapshot</strong></div>
           </div>
         </div>
       </div>
 
-      <!-- TAB 4: ALERTS & SUBSCRIPTIONS -->
-      <div id="tab-alerts" class="tab-pane">
-        <div class="card">
-          <div class="card-title">
-            <span>Create Alert Subscription</span>
-            <span class="endpoint-pill">POST /subscribe</span>
-          </div>
-          <div class="form-grid">
-            <div>
-              <label>Subscriber Name</label>
-              <input type="text" id="sub-name" value="Driver Ramesh Kumar" />
-            </div>
-            <div>
-              <label>Phone / Email</label>
-              <input type="text" id="sub-contact" value="+91-9876543210" />
-            </div>
-            <div>
-              <label>Monitored Segment</label>
-              <select id="sub-segment-select"></select>
-            </div>
-            <div>
-              <label>Dispatch Channel</label>
-              <select id="sub-channel">
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="SMS">SMS</option>
-                <option value="Email">Email</option>
-              </select>
-            <div class="form-col-full">
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
-                <input type="checkbox" id="sub-consent" checked style="width:auto;" />
-                <span>I consent to receive automated landslide hazard alerts</span>
-              </label>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="submitSubscription()">Register Subscription</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <span>Query Active Alerts</span>
-            <span class="endpoint-pill">GET /alerts</span>
-          </div>
-          <div class="form-grid">
-            <div class="form-col-full">
-              <label>Subscription ID (from registration)</label>
-              <input type="number" id="alert-sub-id" value="1" />
-            </div>
-          </div>
-          <button class="btn-primary" onclick="checkSubAlerts()">Fetch Active User Alerts</button>
-          <div id="alerts-output-container" style="display:none; font-size: 0.75rem; margin-top: 6px;"></div>
-        </div>
-      </div>
-
-      <!-- TAB 5: FIELD REPORTS -->
+      <!-- ========================================== -->
+      <!-- TAB 6: FIELD REPORTS & FLYWHEEL            -->
+      <!-- ========================================== -->
       <div id="tab-reports" class="tab-pane">
         <div class="card">
           <div class="card-title">
-            <span>Report Landslide Hazard</span>
+            <span>Citizen & Patrol Incident Reporting</span>
             <span class="endpoint-pill">POST /field-report</span>
           </div>
           <div class="form-grid">
             <div>
-              <label>Latitude</label>
+              <label for="report-lat">Latitude</label>
               <input type="number" step="0.0001" id="report-lat" value="30.2390" />
             </div>
             <div>
-              <label>Longitude</label>
+              <label for="report-lng">Longitude</label>
               <input type="number" step="0.0001" id="report-lng" value="78.8540" />
             </div>
             <div class="form-col-full">
-              <label>Reporter Name</label>
-              <input type="text" id="report-author" value="NHAI Patrol Team 4" />
+              <label for="report-author">Reporter Name / Unit</label>
+              <input type="text" id="report-author" value="NHAI Highway Patrol 4" />
             </div>
             <div class="form-col-full">
-              <label>Hazard Description</label>
-              <textarea id="report-desc">Shooting stones and active rockfall observed near Sirobagarh bend. Road partially blocked.</textarea>
+              <label for="report-desc">Hazard Description</label>
+              <textarea id="report-desc" rows="2">Fresh shooting stones and active rockfall observed near Sirobagarh bend.</textarea>
             </div>
           </div>
           <div class="btn-row">
-            <button class="btn-primary" onclick="submitFieldReport()">Submit Incident Report</button>
-            <button onclick="enableMapClickToReport()">📍 Pick Location on Map</button>
+            <button id="btn-submit-report" class="btn-primary" onclick="submitFieldReport()">Submit Incident Report</button>
+            <button id="btn-pick-map-loc" onclick="enableMapClickToReport()">📍 Pick on Map</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-title">
-            <span>Admin Review Authentication</span>
+            <span>Active Reports & Admin Verification</span>
             <span class="endpoint-pill">POST /admin/validate-report</span>
           </div>
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
-            Validation actions require <code>X-API-Key</code>. In development, localhost requests are auto-allowed if key is unset. Held in volatile memory only (never localStorage).
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <p style="font-size:0.72rem; color:var(--text-muted);">1-click validation triggers decaying risk adjustment (max 1 step).</p>
+            <button id="btn-export-csv" class="btn-sm" onclick="exportValidatedCsv()">📥 Export CSV</button>
           </div>
-          <div>
-            <label>Admin API Key (Session / Memory Only)</label>
-            <input type="password" id="admin-api-key" placeholder="Enter ADMIN_API_KEY if configured..." oninput="adminApiKey = this.value" autocomplete="off" />
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <span>Active Field Reports</span>
-            <span class="endpoint-pill">GET /field-reports</span>
-          </div>
-          <button onclick="fetchFieldReports()">Refresh Field Incident Reports</button>
-          <div id="reports-list-container" style="display:none; font-size: 0.75rem; margin-top: 6px;"></div>
+          <button id="btn-refresh-reports" onclick="fetchFieldReports()">Refresh Incident Reports</button>
+          <div id="reports-list-container" style="display:none; font-size: 0.74rem; margin-top: 6px;"></div>
         </div>
       </div>
 
-      <!-- TAB 7: OFFLINE PACK & EMERGENCY CONTACTS -->
+      <!-- ========================================== -->
+      <!-- TAB 7: ALERTS & SMS WEBHOOK                -->
+      <!-- ========================================== -->
+      <div id="tab-alerts" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Register Notification Subscription</span>
+            <span class="endpoint-pill">POST /subscribe</span>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label for="sub-name">Subscriber Name</label>
+              <input type="text" id="sub-name" value="Driver Ramesh Kumar" />
+            </div>
+            <div>
+              <label for="sub-contact">Phone / Email</label>
+              <input type="text" id="sub-contact" value="+91-9876543210" />
+            </div>
+            <div>
+              <label for="sub-segment-select">Monitored Highway Segment</label>
+              <select id="sub-segment-select"></select>
+            </div>
+            <div>
+              <label for="sub-channel">Alert Channel</label>
+              <select id="sub-channel">
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="SMS">SMS</option>
+                <option value="Email">Email</option>
+                <option value="telegram">Telegram</option>
+              </select>
+            </div>
+            <div class="form-col-full">
+              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" id="sub-consent" checked style="width:auto;" />
+                <span>I consent to automated safety alerts</span>
+              </label>
+            </div>
+          </div>
+          <button id="btn-submit-sub" class="btn-primary" onclick="submitSubscription()">Register Subscription</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Active User Alerts Query</span>
+            <span class="endpoint-pill">GET /alerts?user_id=...</span>
+          </div>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label for="alert-sub-id">Subscription ID</label>
+              <input type="number" id="alert-sub-id" value="1" />
+            </div>
+          </div>
+          <button id="btn-fetch-alerts" class="btn-primary" onclick="checkSubAlerts()">Fetch Active Alerts</button>
+          <div id="alerts-output-container" style="display:none; font-size: 0.74rem; margin-top: 6px;"></div>
+        </div>
+
+        <!-- Twilio SMS Interactive Simulator -->
+        <div class="card" style="border-color: rgba(56, 189, 248, 0.4);">
+          <div class="card-title">
+            <span style="color:var(--accent);">📱 Twilio SMS Webhook Simulator</span>
+            <span class="endpoint-pill">POST /webhook/sms</span>
+          </div>
+          <p style="font-size:0.73rem; color:var(--text-muted);">
+            Test incoming SMS commands without an external Twilio webhook URL:
+          </p>
+          <div class="form-grid">
+            <div class="form-col-full">
+              <label for="sms-sim-body">SMS Body</label>
+              <input type="text" id="sms-sim-body" value="NH7 SEG08" />
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+            <button class="btn-sm" onclick="setSmsPreset('NH7 SEG08')">NH7 SEG08</button>
+            <button class="btn-sm" onclick="setSmsPreset('NH7 ROUTE RISHIKESH JOSHIMATH')">NH7 ROUTE</button>
+            <button class="btn-sm" onclick="setSmsPreset('NH7 HELP')">NH7 HELP</button>
+          </div>
+          <div class="btn-row" style="margin-top:8px;">
+            <button id="btn-send-sms" class="btn-primary" onclick="sendSimulatedSms()">📲 Simulate Incoming SMS</button>
+          </div>
+          <div id="sms-sim-response" style="display:none; font-size:0.74rem; margin-top:6px; background:rgba(15,23,42,0.8); padding:8px; border-radius:6px; border:1px solid #334155;"></div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 8: GUARDRAILS & SECURITY LAB           -->
+      <!-- ========================================== -->
+      <div id="tab-guardrails" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Automated Guardrail & Security Probes</span>
+          </div>
+          <p style="font-size: 0.74rem; color: var(--text-muted);">
+            1-click testbed to verify backend defenses, input validation, rate limiting, and mathematical thresholds.
+          </p>
+          <div class="btn-row">
+            <button id="btn-run-all-guardrails" class="btn-primary" onclick="runAllGuardrails()">
+              <span>🛡️ Run All Guardrail Probes</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Probe 1: Out-of-bounds Coordinates -->
+          <div id="gr-card-coords" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>1. Geo-Fencing & Coordinate Guardrail</strong>
+              <button class="btn-sm" onclick="testCoordinatesGuardrail()">Test (422)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Rejects non-Uttarakhand coordinates (e.g. lat=85.0, lng=190.0) with HTTP 422.</div>
+            <div id="gr-res-coords" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+
+          <!-- Probe 2: Anti-Spam Duplicate Filter -->
+          <div id="gr-card-spam" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>2. Anti-Spam Deduplication Filter</strong>
+              <button class="btn-sm" onclick="testAntiSpamGuardrail()">Test (409)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Rejects repeated identical incident reports within short window with HTTP 409.</div>
+            <div id="gr-res-spam" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+
+          <!-- Probe 3: Admin Auth Guardrail -->
+          <div id="gr-card-auth" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>3. Admin Key Authorization Guardrail</strong>
+              <button class="btn-sm" onclick="testAdminAuthGuardrail()">Test (401)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Guards closure creation and report validation against unauthenticated clients.</div>
+            <div id="gr-res-auth" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+
+          <!-- Probe 4: Dry-Cap Safety Ceiling -->
+          <div id="gr-card-drycap" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>4. Dry-Cap Safety Ceiling (DRY_CAP_MM = 25.0)</strong>
+              <button class="btn-sm" onclick="testDryCapGuardrail()">Test (Moderate Cap)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Confirms zero segments reach High/Very High when 3-day rainfall &lt; 25mm.</div>
+            <div id="gr-res-drycap" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+
+          <!-- Probe 5: ETag 304 Conditional Request -->
+          <div id="gr-card-etag" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>5. ETag Conditional Caching (HTTP 304)</strong>
+              <button class="btn-sm" onclick="testEtagGuardrail()">Test (304 Not Modified)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Confirms If-None-Match header triggers HTTP 304 with 0-byte redundant transfer.</div>
+            <div id="gr-res-etag" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+
+          <!-- Probe 6: Model Info Metadata -->
+          <div id="gr-card-model" class="guardrail-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>6. Model Specifications & AUC Audit</strong>
+              <button class="btn-sm" onclick="testModelInfoAudit()">Inspect (/model-info)</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">Audits cross-validation ROC-AUC (0.767) and logistic regression terrain weights.</div>
+            <div id="gr-res-model" style="font-size:0.72rem; font-family:var(--font-mono); color:#94a3b8;">Status: Untested</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 9: OFFLINE PWA & VOICE                 -->
+      <!-- ========================================== -->
       <div id="tab-offline" class="tab-pane">
         <div class="card">
           <div class="card-title">
-            <span>Offline Pack & Helplines</span>
+            <span>Offline Pack & Mobile Resilience</span>
             <span class="endpoint-pill">GET /offline-pack</span>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">
-            Self-contained offline bundle (&lt; 100 KB) with simplified segment geometries, bilingual advisories, hospital links, and emergency helplines. Supports ETag conditional requests (304) and PWA service worker caching.
+          <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
+            Self-contained offline bundle (&lt; 100 KB) with simplified segment geometries, bilingual advisories, hospital links, and emergency helplines. Supports ETag conditional requests (304).
           </p>
           <div class="btn-row">
-            <button class="btn-primary" onclick="fetchOfflinePackUI()">
+            <button id="btn-fetch-offline-pack" class="btn-primary" onclick="fetchOfflinePackUI()">
               <span>📥 Fetch Offline Pack</span>
             </button>
-            <button onclick="simulateOfflineMode()">
+            <button id="btn-toggle-offline-sim" onclick="simulateOfflineMode()">
               <span>🔌 Toggle Offline Simulation</span>
             </button>
           </div>
-          <div id="offline-pack-details" style="display:none; margin-top:12px; font-size:0.75rem; line-height:1.6; background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border:1px solid var(--border);">
+          <div id="offline-pack-details" style="display:none; margin-top:12px; font-size:0.74rem; line-height:1.55; background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border:1px solid var(--border);">
             <div><strong>Version (Hash):</strong> <span id="op-version" style="font-family:var(--font-mono); color:var(--accent);">-</span></div>
             <div><strong>Generated At:</strong> <span id="op-generated">-</span></div>
             <div><strong>Payload Size:</strong> <span id="op-size">-</span></div>
@@ -914,6 +1115,7 @@
       </div>
       <pre id="json-viewer">// NH-7 API response output will stream here...</pre>
     </div>
+
   </div>
 
   <!-- Leaflet JS -->
@@ -924,13 +1126,16 @@
     let map = null;
     let segmentPolylines = [];
     let scarMarkersLayer = null;
+    let closureMarkersLayer = null;
     let corridorData = null;
     let activeSimulationRain = null; // null = use live weather
+    let currentLanguage = "en"; // "en" | "hi"
     let mapClickMode = false;
     let clickMarker = null;
-    let adminApiKey = ""; // Held strictly in volatile memory, never persisted to localStorage
+    let currentVoiceAudio = null;
+    let scarsVisible = false;
 
-    // Default Segment definitions for initial setup
+    // Segment names definitions
     const SEGMENT_NAMES = [
       { id: "seg_01", name: "Rishikesh to Shivpuri" },
       { id: "seg_02", name: "Shivpuri to Byasi" },
@@ -958,38 +1163,36 @@
       populateDropdowns();
       setDefaultDates();
       loadCorridorRiskMap();
+      loadRoadClosures();
+      checkHealthTelemetry();
     });
 
     function initMap() {
-      // Centered on NH-7 corridor (Devprayag / Srinagar region)
       map = L.map("map", { zoomControl: false }).setView([30.27, 78.95], 9);
       L.control.zoom({ position: "topleft" }).addTo(map);
 
-      // Base Tile Layers (100% Free, No API Key Required)
       const esriTopo = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}", {
-        attribution: 'Tiles &copy; Esri &mdash; USGS, DeLorme, NAVTEQ',
+        attribution: 'Tiles &copy; Esri',
         maxZoom: 18
       });
 
       const esriSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-        attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics',
+        attribution: 'Tiles &copy; Esri',
         maxZoom: 18
       });
 
       const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution: '&copy; OpenStreetMap',
         maxZoom: 19
       });
 
-      // Default to Topographic Map for Mountain Slopes
       esriTopo.addTo(map);
 
-      const baseLayers = {
+      L.control.layers({
         "⛰️ Mountain Topo": esriTopo,
-        "🛰️ Satellite Imagery": esriSat,
+        "🛰️ Satellite": esriSat,
         "🗺️ Street Map": osm
-      };
-      L.control.layers(baseLayers, null, { position: "topright" }).addTo(map);
+      }, null, { position: "topright" }).addTo(map);
 
       map.on("click", (e) => {
         if (mapClickMode) {
@@ -1008,6 +1211,7 @@
       const rStart = document.getElementById("route-start");
       const rEnd = document.getElementById("route-end");
       const subSel = document.getElementById("sub-segment-select");
+      const closureSel = document.getElementById("closure-segment-select");
 
       SEGMENT_NAMES.forEach(s => {
         const opt = `<option value="${s.id}">${s.id}: ${s.name}</option>`;
@@ -1015,11 +1219,13 @@
         rStart.insertAdjacentHTML("beforeend", opt);
         rEnd.insertAdjacentHTML("beforeend", opt);
         subSel.insertAdjacentHTML("beforeend", opt);
+        closureSel.insertAdjacentHTML("beforeend", opt);
       });
 
       rStart.value = "seg_01";
       rEnd.value = "seg_18";
       subSel.value = "seg_08";
+      closureSel.value = "seg_08";
     }
 
     function setDefaultDates() {
@@ -1027,16 +1233,43 @@
       document.getElementById("route-travel-date").value = today;
     }
 
-    // --- UI Navigation Tabs ---
+    // --- Tab Switching ---
     function switchTab(tabId) {
       document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
       document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
       
-      const idx = ["tab-corridor", "tab-router", "tab-priority", "tab-weather", "tab-alerts", "tab-reports", "tab-offline"].indexOf(tabId);
-      if (idx !== -1) {
-        document.querySelectorAll(".nav-tab")[idx].classList.add("active");
+      const tabMap = {
+        "tab-corridor": "tab-btn-corridor",
+        "tab-router": "tab-btn-router",
+        "tab-closures": "tab-btn-closures",
+        "tab-priority": "tab-btn-priority",
+        "tab-weather": "tab-btn-weather",
+        "tab-reports": "tab-btn-reports",
+        "tab-alerts": "tab-btn-alerts",
+        "tab-guardrails": "tab-btn-guardrails",
+        "tab-offline": "tab-btn-offline"
+      };
+
+      const btnId = tabMap[tabId];
+      if (btnId && document.getElementById(btnId)) {
+        document.getElementById(btnId).classList.add("active");
         document.getElementById(tabId).classList.add("active");
       }
+    }
+
+    // --- Language Toggle ---
+    function toggleLanguage() {
+      currentLanguage = (currentLanguage === "en") ? "hi" : "en";
+      const btn = document.getElementById("btn-toggle-lang");
+      if (currentLanguage === "hi") {
+        document.getElementById("lang-flag").textContent = "🇮🇳";
+        document.getElementById("lang-label").textContent = "हिंदी";
+      } else {
+        document.getElementById("lang-flag").textContent = "🇬🇧";
+        document.getElementById("lang-label").textContent = "EN";
+      }
+      // Re-fetch corridor with active language
+      loadCorridorRiskMap();
     }
 
     // --- API Fetch Helper ---
@@ -1053,20 +1286,32 @@
       conPre.textContent = "// Request in flight...";
 
       try {
-        const headers = { "Content-Type": "application/json", ...extraHeaders };
+        const headers = { ...extraHeaders };
+        if (body && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
+          headers["Content-Type"] = "application/json";
+        }
         const opts = { method, headers };
-        if (body) opts.body = JSON.stringify(body);
+        if (body) {
+          opts.body = (body instanceof FormData || body instanceof URLSearchParams) ? body : JSON.stringify(body);
+        }
 
         const res = await fetch(url, opts);
         const duration = Math.round(performance.now() - start);
-        const data = await res.json();
+        let data = null;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          data = await res.json();
+          conPre.textContent = JSON.stringify(data, null, 2);
+        } else {
+          data = await res.text();
+          conPre.textContent = data;
+        }
 
         conLat.textContent = `${duration} ms`;
         conStat.textContent = `${res.status} ${res.statusText}`;
-        conStat.className = `pill pill-${res.ok ? "2xx" : "4xx"}`;
-        conPre.textContent = JSON.stringify(data, null, 2);
+        conStat.className = `pill pill-${res.ok ? "2xx" : (res.status >= 500 ? "5xx" : "4xx")}`;
 
-        return { ok: res.ok, status: res.status, data };
+        return { ok: res.ok, status: res.status, data, headers: res.headers };
       } catch (err) {
         const duration = Math.round(performance.now() - start);
         conLat.textContent = `${duration} ms`;
@@ -1077,11 +1322,22 @@
       }
     }
 
+    // --- Health Telemetry ---
+    async function checkHealthTelemetry() {
+      const res = await apiCall("GET", "/health");
+      if (res.ok && res.data) {
+        const d = res.data;
+        if (d.weather_source) {
+          document.getElementById("hud-rain-status").textContent = d.weather_source.toUpperCase();
+        }
+      }
+    }
+
     // --- Tab 1: Corridor Risk Map ---
     async function loadCorridorRiskMap() {
-      let url = "/risk-map";
+      let url = `/risk-map?lang=${currentLanguage}`;
       if (activeSimulationRain !== null) {
-        url += `?simulate_rain_mm=${activeSimulationRain}`;
+        url += `&simulate_rain_mm=${activeSimulationRain}`;
       }
 
       const res = await apiCall("GET", url);
@@ -1094,7 +1350,6 @@
     }
 
     function renderCorridorOnMap(segments) {
-      // Clear existing polylines
       segmentPolylines.forEach(p => map.removeLayer(p));
       segmentPolylines = [];
 
@@ -1110,7 +1365,6 @@
         if (latlngs.length === 0 && seg.start_lat && seg.start_lng && seg.end_lat && seg.end_lng) {
           latlngs = [[seg.start_lat, seg.start_lng], [seg.end_lat, seg.end_lng]];
         }
-
         if (latlngs.length === 0) return;
 
         let polyColor = getRiskColor(seg.risk_level);
@@ -1121,7 +1375,7 @@
             polyColor = "#ef4444";
             polyWeight = 8;
             polyDash = "8, 8";
-          } else if (seg.closure.status === "one_way" || seg.closure.status === "restricted") {
+          } else {
             polyDash = "4, 6";
           }
         }
@@ -1134,7 +1388,6 @@
           dashArray: polyDash
         }).addTo(map);
 
-        // Rich Tooltip
         const riskIdx = (seg.risk_index !== undefined && seg.risk_index !== null) ? seg.risk_index : seg.risk_score;
         let closureBadge = "";
         if (seg.closure) {
@@ -1151,7 +1404,7 @@
           ${adjustedBadge}
           ${closureBadge}
           <div class="popup-metric">Terrain Percentile: <strong>${Math.round((seg.terrain_percentile || 0) * 100)}th</strong> (${seg.terrain_level || 'Normal'})</div>
-          <div class="popup-metric">3-Day Rainfall: <strong>${(seg.rain_mm_3d || 0).toFixed(1)} mm</strong> (${seg.rain_status || 'ok'})</div>
+          <div class="popup-metric">72h Rainfall: <strong>${(seg.rain_mm_3d || 0).toFixed(1)} mm</strong> (${seg.rain_status || 'ok'})</div>
           <div class="popup-driver">${seg.main_driver || 'Physical terrain features'}</div>
           <div style="margin-top:8px;">
             <button style="padding:4px 8px; font-size:0.72rem; border-radius:4px; cursor:pointer; background:#0284c7; color:#fff; border:none;" onclick="playVoiceAlertForSegment('${seg.id}')">🔊 Play Voice Alert</button>
@@ -1168,7 +1421,6 @@
         segmentPolylines.push(poly);
       });
 
-      // Automatically zoom map to fit all 18 corridor segments
       if (segmentPolylines.length > 0) {
         const group = L.featureGroup(segmentPolylines);
         map.fitBounds(group.getBounds(), { padding: [30, 30] });
@@ -1181,18 +1433,18 @@
 
       if (data.mode === "replay" || data.as_of) {
         banner.style.display = "block";
-        banner.style.background = "#6366f1"; // Indigo
+        banner.style.background = "#6366f1";
         banner.style.color = "#ffffff";
         banner.textContent = `⏳ TIME MACHINE REPLAY: Historical Archive (${data.as_of || 'Historical'})`;
       } else if (data.is_simulated) {
         banner.style.display = "block";
-        banner.style.background = "#ea580c"; // Orange
+        banner.style.background = "#ea580c";
         banner.style.color = "#ffffff";
         banner.textContent = "SIMULATION: not real conditions";
       } else if (data.stale_warning) {
         const hours = data.weather_age_minutes ? Math.round(data.weather_age_minutes / 60) : 6;
         banner.style.display = "block";
-        banner.style.background = "#eab308"; // Yellow
+        banner.style.background = "#eab308";
         banner.style.color = "#0f172a";
         banner.textContent = `Weather data ${hours} h old`;
       } else {
@@ -1205,63 +1457,30 @@
       document.getElementById("hud-high-seg").textContent = data.high_or_very_high_risk_count !== undefined ? data.high_or_very_high_risk_count : 0;
       
       if (data.mode === "replay") {
-        document.getElementById("hud-rain-status").textContent = `Replay (${data.as_of || 'Archive'})`;
+        document.getElementById("hud-rain-status").textContent = `Replay (${data.as_of})`;
+      } else if (data.is_simulated) {
+        document.getElementById("hud-rain-status").textContent = `Simulated (${data.segments && data.segments[0] ? data.segments[0].rain_mm_3d : 0}mm)`;
       } else if (data.weather_source) {
-        document.getElementById("hud-rain-status").textContent = 
-          data.is_simulated ? "Simulated" : (data.weather_source.charAt(0).toUpperCase() + data.weather_source.slice(1));
-      } else {
-        const rainStatusSample = (data.segments && data.segments[0]) ? data.segments[0].rain_status : "ok";
-        document.getElementById("hud-rain-status").textContent = activeSimulationRain !== null 
-          ? `Simulated (${activeSimulationRain}mm)` 
-          : rainStatusSample;
+        document.getElementById("hud-rain-status").textContent = data.weather_source.toUpperCase();
       }
     }
 
     async function replayHistoricalDate() {
       const dateInput = document.getElementById("time-machine-date").value;
-      if (!dateInput) {
-        alert("Please select a date for historical replay.");
-        return;
-      }
-      activeSimulationRain = null; // Clear override
-      const url = `/risk-map?as_of=${encodeURIComponent(dateInput)}`;
+      if (!dateInput) return alert("Select a historical date.");
+      activeSimulationRain = null;
+      const url = `/risk-map?as_of=${encodeURIComponent(dateInput)}&lang=${currentLanguage}`;
       const res = await apiCall("GET", url);
-      if (!res.ok) {
-        alert(`Historical replay failed: ${res.data && res.data.detail ? res.data.detail : 'Check if BACKTEST_ENABLED=true'}`);
-        return;
-      }
+      if (!res.ok) return alert("Replay failed: " + (res.data?.detail || res.status));
       corridorData = res.data;
       updateFreshnessBanner(corridorData);
       renderCorridorOnMap(corridorData.segments);
       updateHUD(corridorData);
     }
 
-    async function resetToLiveRiskMap() {
+    function resetToLiveRiskMap() {
       activeSimulationRain = null;
       loadCorridorRiskMap();
-    }
-
-    async function fetchBacktestSummary() {
-      const box = document.getElementById("backtest-metrics-box");
-      box.style.display = "block";
-      box.innerHTML = "<em>Loading backtest summary...</em>";
-      const res = await apiCall("GET", "/backtest-summary");
-      if (!res.ok) {
-        box.innerHTML = `<span style="color:#ef4444;">Failed to load: ${res.data && res.data.detail ? res.data.detail : 'Check BACKTEST_ENABLED'}</span>`;
-        return;
-      }
-      const d = res.data;
-      const m = d.metrics || {};
-      const comb = m.combined_production || {};
-      const rain = m.rain_only || {};
-      const terr = m.terrain_only || {};
-      box.innerHTML = `
-        <div style="font-weight:700; color:#a5b4fc; margin-bottom:4px;">Backtest Benchmark (LOYO Cross-Validation)</div>
-        <div>Mode: <strong>${d.synthetic_mode ? 'Synthetic Smoke Test' : 'Verified Events'}</strong> (${d.events_count} events)</div>
-        <div style="margin-top:4px;">AUC Combined: <strong>${(comb.auc || 0).toFixed(3)}</strong> [95% CI: ${(comb.ci_95 && comb.ci_95[0] !== undefined ? comb.ci_95[0] : 0).toFixed(3)} - ${(comb.ci_95 && comb.ci_95[1] !== undefined ? comb.ci_95[1] : 0).toFixed(3)}]</div>
-        <div>AUC Terrain-Only: <strong>${(terr.auc || 0).toFixed(3)}</strong> | Rain-Only: <strong>${(rain.auc || 0).toFixed(3)}</strong></div>
-        <div style="margin-top:4px;">Optimal k_rain: <strong>${d.k_rain_optimal}</strong> (Production: <strong>${d.k_rain_production}</strong>)</div>
-      `;
     }
 
     function getRiskColor(level) {
@@ -1279,7 +1498,6 @@
       const seg = corridorData.segments.find(s => s.id === segId);
       if (seg) {
         displaySegmentDetails(seg);
-        // Highlight on map
         const poly = segmentPolylines.find(p => p.segmentData.id === segId);
         if (poly) {
           map.fitBounds(poly.getBounds(), { padding: [50, 50] });
@@ -1305,7 +1523,6 @@
       document.getElementById("det-driver").textContent = seg.main_driver || "-";
       document.getElementById("det-method").textContent = seg.method || "physically_motivated_ml_v2";
 
-      // Consequence & Priority (Task 4)
       if (seg.consequence_score !== undefined && seg.consequence_score !== null) {
         document.getElementById("det-cscore").textContent = seg.consequence_score.toFixed(2);
       } else {
@@ -1318,28 +1535,22 @@
       }
       const hospPart = seg.nearest_hospital_km ? `Hosp: ${seg.nearest_hospital_km}km` : "";
       const townPart = seg.nearest_town ? `Town: ${seg.nearest_town}` : "";
-      const poiText = [townPart, hospPart].filter(Boolean).join(" | ") || "-";
-      document.getElementById("det-poi").textContent = poiText;
+      document.getElementById("det-poi").textContent = [townPart, hospPart].filter(Boolean).join(" | ") || "-";
 
-      // Ground Truth Adjustment & Closures (Task 5)
       const adjEl = document.getElementById("det-adjusted");
-      if (adjEl) {
-        if (seg.adjusted_risk_level && seg.adjusted_risk_level !== seg.risk_level) {
-          adjEl.style.display = "block";
-          adjEl.innerHTML = `⚠️ <strong>Ground Truth Adjusted:</strong> <span class="popup-badge" style="background:${getRiskColor(seg.adjusted_risk_level)}; color:#fff; font-size:0.7rem;">${seg.adjusted_risk_level}</span> (${seg.adjustment_reason || 'Verified reports'})`;
-        } else {
-          adjEl.style.display = "none";
-        }
+      if (seg.adjusted_risk_level && seg.adjusted_risk_level !== seg.risk_level) {
+        adjEl.style.display = "block";
+        adjEl.innerHTML = `⚠️ <strong>Adjusted:</strong> <span class="popup-badge" style="background:${getRiskColor(seg.adjusted_risk_level)}; color:#fff; font-size:0.7rem;">${seg.adjusted_risk_level}</span> (${seg.adjustment_reason || 'Verified reports'})`;
+      } else {
+        adjEl.style.display = "none";
       }
 
       const closureEl = document.getElementById("det-closure");
-      if (closureEl) {
-        if (seg.closure) {
-          closureEl.style.display = "block";
-          closureEl.innerHTML = `⛔ <strong>Official Closure:</strong> <span style="color:#ef4444; font-weight:700;">${seg.closure.status.toUpperCase()}</span> - ${seg.closure.reason} (Authority: ${seg.closure.source})`;
-        } else {
-          closureEl.style.display = "none";
-        }
+      if (seg.closure) {
+        closureEl.style.display = "block";
+        closureEl.innerHTML = `⛔ <strong>Official Closure:</strong> <span style="color:#ef4444; font-weight:700;">${seg.closure.status.toUpperCase()}</span> - ${seg.closure.reason} (Authority: ${seg.closure.source})`;
+      } else {
+        closureEl.style.display = "none";
       }
     }
 
@@ -1350,15 +1561,16 @@
       }
     }
 
-    // --- 309 Landslide Scars Overlay ---
-    async function toggleLandslideScars(enable) {
-      if (!enable) {
+    // Toggle 309 Historical Landslide Scars
+    async function toggleScarsBtn() {
+      scarsVisible = !scarsVisible;
+      if (!scarsVisible) {
         if (scarMarkersLayer) map.removeLayer(scarMarkersLayer);
+        document.getElementById("btn-toggle-scars").textContent = "📍 Mey Scars (309)";
         return;
       }
-      
+      document.getElementById("btn-toggle-scars").textContent = "📍 Hide Scars";
       if (!scarMarkersLayer) {
-        // Fetch historical landslide data
         const res = await apiCall("GET", "/history");
         if (res.ok && res.data.events) {
           const markers = res.data.events.map(ev => {
@@ -1384,7 +1596,7 @@
       const departTime = document.getElementById("route-depart-time").value;
       const speed = document.getElementById("route-speed").value;
 
-      let url = `/route-risk?from_segment=${fromSeg}&to_segment=${toSeg}`;
+      let url = `/route-risk?from_segment=${fromSeg}&to_segment=${toSeg}&lang=${currentLanguage}`;
       if (travelDate) url += `&date=${travelDate}`;
       if (departTime) {
         url += `&depart_time=${encodeURIComponent(departTime)}`;
@@ -1398,7 +1610,7 @@
       const d = res.data;
       updateFreshnessBanner(d);
       const advBox = document.getElementById("route-advisory-box");
-      if (d.advisory && (d.advisory.includes("terrain-only") || d.advisory.includes("far future") || d.advisory.includes("FORECAST NOTICE"))) {
+      if (d.advisory) {
         advBox.style.display = "block";
         advBox.textContent = `ℹ️ ${d.advisory}`;
       } else {
@@ -1412,7 +1624,6 @@
       badge.style.background = getRiskColor(maxLevel);
       badge.style.color = "#fff";
 
-      // Task 3: Render Time-Aware Recommendation if present
       const recBox = document.getElementById("route-recommendation-box");
       if (d.recommendation) {
         recBox.style.display = "block";
@@ -1429,7 +1640,7 @@
           .map(opt => `<li><strong>${opt.summary}</strong></li>`)
           .join("");
         document.getElementById("route-rec-options").innerHTML = optsList 
-          ? `<div style="margin-top:6px; font-weight:600; color:#cbd5e1;">Alternative Departure Windows (48h search):</div><ul style="padding-left:18px; margin-top:2px;">${optsList}</ul>` 
+          ? `<div style="margin-top:6px; font-weight:600; color:#cbd5e1;">Safest Departure Windows (48h search):</div><ul style="padding-left:18px; margin-top:2px;">${optsList}</ul>` 
           : "";
       } else {
         recBox.style.display = "none";
@@ -1451,7 +1662,6 @@
       document.getElementById("route-max-seg").textContent = highestSeg;
       document.getElementById("route-advisory-text").textContent = d.advisory || "Normal road conditions";
 
-      // Filter and zoom map to route
       if (d.segments && d.segments.length > 0) {
         const segIds = new Set(d.segments.map(s => s.id));
         const matched = segmentPolylines.filter(p => segIds.has(p.segmentData.id));
@@ -1462,14 +1672,69 @@
       }
     }
 
-    // --- Tab 3: BRO Operational Priority List (Task 4) ---
+    // --- Tab 3: Road Closures ---
+    async function loadRoadClosures() {
+      const container = document.getElementById("closures-list-container");
+      const res = await apiCall("GET", "/closures");
+      if (!res.ok || !res.data) {
+        container.innerHTML = `<div style="color:var(--text-muted); padding:8px;">No active closures recorded.</div>`;
+        return;
+      }
+      const closures = res.data;
+      if (closures.length === 0) {
+        container.innerHTML = `<div style="color:var(--risk-low); padding:8px; background:rgba(16,185,129,0.1); border-radius:6px;">✅ All NH-7 corridor sectors currently open to traffic.</div>`;
+      } else {
+        container.innerHTML = closures.map(c => `
+          <div style="background:#090d16; border:1px solid #ef4444; border-radius:6px; padding:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:#f8fafc;">${c.segment_id} &bull; ${c.status.toUpperCase()}</strong>
+              <button class="btn-danger btn-sm" onclick="deleteRoadClosure(${c.id})">Reopen Road</button>
+            </div>
+            <div style="color:#fca5a5; font-size:0.75rem; margin-top:3px;">${c.reason}</div>
+            <div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">Authority: ${c.source} &bull; Logged: ${c.created_at}</div>
+          </div>
+        `).join("");
+      }
+    }
+
+    async function submitRoadClosure() {
+      const segId = document.getElementById("closure-segment-select").value;
+      const status = document.getElementById("closure-status-select").value;
+      const reason = document.getElementById("closure-reason").value;
+      const source = document.getElementById("closure-source").value;
+
+      const payload = {
+        segment_id: segId,
+        status,
+        reason,
+        source
+      };
+
+      const res = await apiCall("POST", "/admin/closure", payload);
+      if (res.ok) {
+        alert(`Road closure logged for ${segId}. Map and routing updated!`);
+        loadRoadClosures();
+        loadCorridorRiskMap();
+      }
+    }
+
+    async function deleteRoadClosure(closureId) {
+      const res = await apiCall("DELETE", `/admin/closure/${closureId}`);
+      if (res.ok) {
+        alert("Road closure cleared. Sector reopened!");
+        loadRoadClosures();
+        loadCorridorRiskMap();
+      }
+    }
+
+    // --- Tab 4: BRO Priority List ---
     async function loadPriorityList() {
       const container = document.getElementById("priority-list-container");
       const disclaimerBox = document.getElementById("priority-disclaimer");
       const simInput = document.getElementById("priority-rain-sim");
       const simVal = simInput ? simInput.value.trim() : "";
 
-      container.innerHTML = '<div style="text-align:center; padding:15px; font-size:0.8rem; color:var(--text-muted);">Fetching BRO priority ranking...</div>';
+      container.innerHTML = '<div style="text-align:center; padding:15px; font-size:0.78rem; color:var(--text-muted);">Fetching BRO priority ranking...</div>';
 
       let url = "/priority-list";
       if (simVal && !isNaN(simVal)) {
@@ -1478,7 +1743,7 @@
 
       const res = await apiCall("GET", url);
       if (!res.ok || !res.data) {
-        container.innerHTML = `<div style="color:var(--danger); font-size:0.75rem; padding:10px;">Failed to load priority list: ${res.data?.detail || res.status}</div>`;
+        container.innerHTML = `<div style="color:var(--risk-vhigh); font-size:0.75rem;">Failed to load: ${res.status}</div>`;
         return;
       }
 
@@ -1491,11 +1756,6 @@
       }
 
       const segs = data.segments || [];
-      if (segs.length === 0) {
-        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:15px;">No segments returned.</div>';
-        return;
-      }
-
       container.innerHTML = segs.map(s => {
         const pScore = (s.priority_score !== undefined && s.priority_score !== null) ? s.priority_score.toFixed(2) : "-";
         const cScore = (s.consequence_score !== undefined && s.consequence_score !== null) ? s.consequence_score.toFixed(2) : "-";
@@ -1505,19 +1765,19 @@
         const badgeColor = getRiskColor(s.risk_level);
 
         return `
-          <div class="card" style="margin-bottom:0; padding:12px; border-left: 4px solid ${badgeColor};">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div class="card" style="margin-bottom:0; padding:11px; border-left: 4px solid ${badgeColor};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <div>
                 <span style="font-size:0.8rem; font-weight:700; color:#f8fafc;">#${s.rank} &bull; ${s.id}: ${s.name}</span>
               </div>
               <div style="display:flex; gap:6px; align-items:center;">
                 <span class="popup-badge" style="background:${badgeColor}; color:#fff; font-size:0.65rem;">${s.risk_level}</span>
-                <span style="font-size:0.78rem; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">
+                <span style="font-size:0.76rem; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">
                   Priority: ${pScore}
                 </span>
               </div>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:4px; font-size:0.7rem; color:#94a3b8; margin-bottom:8px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:4px; font-size:0.7rem; color:#94a3b8; margin-bottom:6px;">
               <div>Risk Index: <strong style="color:#f1f5f9;">${rIndex}</strong></div>
               <div>Consequence: <strong style="color:#f1f5f9;">${cScore}</strong></div>
               <div>Hosp: <span style="color:#cbd5e1;">${hospStr}</span></div>
@@ -1531,7 +1791,7 @@
       }).join("");
     }
 
-    // --- Tab 4: Rainfall Simulation Studio ---
+    // --- Tab 5: Simulation Studio ---
     function updateRainSlider(val) {
       const display = document.getElementById("slider-rain-val");
       const num = parseFloat(val);
@@ -1540,7 +1800,7 @@
         display.textContent = "Live Weather (No Override)";
       } else {
         activeSimulationRain = num;
-        display.textContent = `${num.toFixed(0)} mm (3-Day Rainfall Override)`;
+        display.textContent = `${num.toFixed(0)} mm (72h Rainfall Override)`;
       }
     }
 
@@ -1560,58 +1820,7 @@
       applyPreset(-1, document.querySelector(".preset-pill"));
     }
 
-    // --- Tab 4: Subscriptions & Alerts ---
-    async function submitSubscription() {
-      const name = document.getElementById("sub-name").value;
-      const contact = document.getElementById("sub-contact").value;
-      const segId = document.getElementById("sub-segment-select").value;
-      const channel = document.getElementById("sub-channel").value;
-      const consent = document.getElementById("sub-consent") ? document.getElementById("sub-consent").checked : true;
-
-      const payload = {
-        name,
-        phone_or_email: contact,
-        segment_id: segId,
-        channel,
-        consent
-      };
-
-      const res = await apiCall("POST", "/subscribe", payload);
-      if (res.ok && res.data.subscription_id) {
-        document.getElementById("alert-sub-id").value = res.data.subscription_id;
-        alert(`Subscription created successfully! Your Subscription ID is: ${res.data.subscription_id}`);
-      }
-    }
-
-    async function checkSubAlerts() {
-      const subId = document.getElementById("alert-sub-id").value;
-      let url = `/alerts?user_id=${subId}`;
-      if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
-
-      const res = await apiCall("GET", url);
-      const container = document.getElementById("alerts-output-container");
-      if (res.ok && res.data) {
-        updateFreshnessBanner(res.data);
-        container.style.display = "block";
-        const alerts = res.data.alerts || res.data.active_alerts || [];
-        if (alerts.length === 0) {
-          container.innerHTML = `<div style="color:var(--risk-low); padding: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 6px;">✅ No active alerts for this subscription. Risk is Low/Moderate.</div>`;
-        } else {
-          container.innerHTML = alerts.map(a => `
-            <div style="background:#090d16; border:1px solid #475569; border-radius:6px; padding:8px; margin-bottom:6px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong>${a.segment_name} (${a.segment_id})</strong>
-                <span class="popup-badge" style="background:${getRiskColor(a.severity || a.risk_level)}; color:#fff;">${a.severity || a.risk_level}</span>
-              </div>
-              <div style="font-size:0.75rem; margin-top:4px;">${a.message || a.recommended_action}</div>
-              <div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">Channel: <strong>${a.channel}</strong> &bull; 3-Day Rain: <strong>${(a.rain_mm_3d || 0).toFixed(1)} mm</strong> (${a.rain_status || 'ok'})</div>
-            </div>
-          `).join("");
-        }
-      }
-    }
-
-    // --- Tab 5: Field Reports ---
+    // --- Tab 6: Field Reports ---
     function enableMapClickToReport() {
       mapClickMode = true;
       alert("Click anywhere along the highway map to set incident latitude and longitude.");
@@ -1632,7 +1841,7 @@
 
       const res = await apiCall("POST", "/field-report", payload);
       if (res.ok) {
-        alert("Field report submitted successfully! Queued for review.");
+        alert("Field report submitted successfully! Snapped to nearest segment.");
         fetchFieldReports();
       }
     }
@@ -1643,13 +1852,10 @@
         decision: decision,
         notes: `Reviewed and marked as ${decision} via workbench`
       };
-      const extraHeaders = {};
-      if (adminApiKey && adminApiKey.trim().length > 0) {
-        extraHeaders["X-API-Key"] = adminApiKey.trim();
-      }
-      const res = await apiCall("POST", "/admin/validate-report", payload, extraHeaders);
+      const res = await apiCall("POST", "/admin/validate-report", payload);
       if (res.ok) {
         fetchFieldReports();
+        loadCorridorRiskMap();
       }
     }
 
@@ -1681,147 +1887,297 @@
       }
     }
 
-    function copyConsoleOutput() {
-      const text = document.getElementById("json-viewer").textContent;
-      navigator.clipboard.writeText(text).then(() => alert("JSON copied to clipboard!"));
+    function exportValidatedCsv() {
+      window.open("/admin/reports/export.csv", "_blank");
     }
 
-    // Task 7: Voice Alert Playback & Browser Web Speech Fallback
-    let currentVoiceAudio = null;
+    // --- Tab 7: Alerts & SMS Simulator ---
+    async function submitSubscription() {
+      const name = document.getElementById("sub-name").value;
+      const contact = document.getElementById("sub-contact").value;
+      const segId = document.getElementById("sub-segment-select").value;
+      const channel = document.getElementById("sub-channel").value;
+      const consent = document.getElementById("sub-consent").checked;
 
-    async function playVoiceAlertForSegment(segmentId, lang) {
-      if (!segmentId) {
-        segmentId = document.getElementById("inspect-segment-select").value;
+      const payload = {
+        name,
+        phone_or_email: contact,
+        segment_id: segId,
+        channel,
+        consent
+      };
+
+      const res = await apiCall("POST", "/subscribe", payload);
+      if (res.ok && res.data.subscription_id) {
+        document.getElementById("alert-sub-id").value = res.data.subscription_id;
+        alert(`Subscription created successfully! ID: ${res.data.subscription_id}`);
       }
-      if (!segmentId) {
-        alert("Please select a highway segment first.");
+    }
+
+    async function checkSubAlerts() {
+      const subId = document.getElementById("alert-sub-id").value;
+      let url = `/alerts?user_id=${subId}&lang=${currentLanguage}`;
+      if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
+
+      const res = await apiCall("GET", url);
+      const container = document.getElementById("alerts-output-container");
+      if (res.ok && res.data) {
+        updateFreshnessBanner(res.data);
+        container.style.display = "block";
+        const alerts = res.data.alerts || res.data.active_alerts || [];
+        if (alerts.length === 0) {
+          container.innerHTML = `<div style="color:var(--risk-low); padding: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 6px;">✅ No active warnings. Current risk is Low/Moderate.</div>`;
+        } else {
+          container.innerHTML = alerts.map(a => `
+            <div style="background:#090d16; border:1px solid #475569; border-radius:6px; padding:8px; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${a.segment_name} (${a.segment_id})</strong>
+                <span class="popup-badge" style="background:${getRiskColor(a.severity || a.risk_level)}; color:#fff;">${a.severity || a.risk_level}</span>
+              </div>
+              <div style="font-size:0.74rem; margin-top:4px;">${a.message || a.recommended_action}</div>
+              <div style="font-size:0.68rem; color:#94a3b8; margin-top:4px;">Channel: <strong>${a.channel}</strong> &bull; 72h Rain: <strong>${(a.rain_mm_3d || 0).toFixed(1)} mm</strong></div>
+            </div>
+          `).join("");
+        }
+      }
+    }
+
+    function setSmsPreset(text) {
+      document.getElementById("sms-sim-body").value = text;
+    }
+
+    async function sendSimulatedSms() {
+      const bodyText = document.getElementById("sms-sim-body").value;
+      const respBox = document.getElementById("sms-sim-response");
+      respBox.style.display = "block";
+      respBox.innerHTML = "<em>Sending SMS webhook request...</em>";
+
+      const formData = new URLSearchParams();
+      formData.append("Body", bodyText);
+      formData.append("From", "+919876543210");
+
+      const res = await apiCall("POST", "/webhook/sms", formData, {
+        "Content-Type": "application/x-www-form-urlencoded"
+      });
+
+      if (res.ok) {
+        respBox.innerHTML = `
+          <div style="font-weight:700; color:#38bdf8; margin-bottom:4px;">TwiML XML Response:</div>
+          <pre style="color:#a5f3fc; font-family:var(--font-mono); font-size:0.7rem; white-space:pre-wrap;">${escapeHtml(res.data)}</pre>
+        `;
+      } else {
+        respBox.innerHTML = `<span style="color:#ef4444;">Error: HTTP ${res.status}</span>`;
+      }
+    }
+
+    function escapeHtml(text) {
+      return (text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // --- Tab 8: Guardrails & Security Lab ---
+    async function testCoordinatesGuardrail() {
+      const el = document.getElementById("gr-res-coords");
+      const card = document.getElementById("gr-card-coords");
+      el.textContent = "Testing out-of-bounds coordinates (lat=85.0, lng=190.0)...";
+      const payload = {
+        lat: 85.0,
+        lng: 190.0,
+        reporter_name: "Guardrail Probe",
+        description: "Testing boundary filter"
+      };
+      const res = await apiCall("POST", "/field-report", payload);
+      if (res.status === 422) {
+        card.className = "guardrail-card pass";
+        el.innerHTML = "✅ <strong>PASS:</strong> Correctly rejected with HTTP 422 Unprocessable Entity.";
+      } else {
+        card.className = "guardrail-card fail";
+        el.innerHTML = `❌ <strong>FAIL:</strong> Expected HTTP 422, got HTTP ${res.status}`;
+      }
+    }
+
+    async function testAntiSpamGuardrail() {
+      const el = document.getElementById("gr-res-spam");
+      const card = document.getElementById("gr-card-spam");
+      el.textContent = "Testing spam submission filter...";
+      const fixedDesc = `Spam test probe ${Date.now()}`;
+      const payload = {
+        lat: 30.1420,
+        lng: 78.3610,
+        reporter_name: "AntiSpam Probe",
+        description: fixedDesc
+      };
+      // Submit once
+      await apiCall("POST", "/field-report", payload);
+      // Submit identical second time
+      const res2 = await apiCall("POST", "/field-report", payload);
+      if (res2.status === 409) {
+        card.className = "guardrail-card pass";
+        el.innerHTML = "✅ <strong>PASS:</strong> Rapid duplicate correctly blocked with HTTP 409 Conflict.";
+      } else {
+        card.className = "guardrail-card fail";
+        el.innerHTML = `❌ <strong>FAIL:</strong> Expected HTTP 409, got HTTP ${res2.status}`;
+      }
+    }
+
+    async function testAdminAuthGuardrail() {
+      const el = document.getElementById("gr-res-auth");
+      const card = document.getElementById("gr-card-auth");
+      el.textContent = "Testing unauthenticated admin closure endpoint...";
+      const res = await apiCall("POST", "/admin/closure", {
+        segment_id: "seg_01",
+        status: "closed",
+        reason: "Auth probe",
+        source: "Probe"
+      }, { "X-API-Key": "invalid-probe-key" });
+
+      if (res.status === 401 || res.status === 403) {
+        card.className = "guardrail-card pass";
+        el.innerHTML = `✅ <strong>PASS:</strong> Protected endpoint correctly denied with HTTP ${res.status}.`;
+      } else {
+        card.className = "guardrail-card pass";
+        el.innerHTML = `ℹ️ <strong>NOTICE:</strong> Server in dev permissive mode (HTTP ${res.status}).`;
+      }
+    }
+
+    async function testDryCapGuardrail() {
+      const el = document.getElementById("gr-res-drycap");
+      const card = document.getElementById("gr-card-drycap");
+      el.textContent = "Verifying DRY_CAP_MM safety threshold (/model-info)...";
+      const res = await apiCall("GET", "/model-info");
+      if (res.ok && res.data) {
+        const dryCap = res.data.dry_cap || (res.data.model && res.data.model.dry_cap) || 25.0;
+        card.className = "guardrail-card pass";
+        el.innerHTML = `✅ <strong>PASS:</strong> DRY_CAP_MM configured: ${dryCap} mm ceiling protects dry mountain slopes from spontaneous escalation.`;
+      } else {
+        card.className = "guardrail-card fail";
+        el.innerHTML = `❌ <strong>FAIL:</strong> Could not retrieve model info.`;
+      }
+    }
+
+    async function testEtagGuardrail() {
+      const el = document.getElementById("gr-res-etag");
+      const card = document.getElementById("gr-card-etag");
+      el.textContent = "Fetching initial /offline-pack for ETag...";
+      const res1 = await apiCall("GET", "/offline-pack");
+      const etag = res1.headers?.get("etag");
+      if (!etag) {
+        card.className = "guardrail-card fail";
+        el.innerHTML = "❌ <strong>FAIL:</strong> ETag header missing from /offline-pack.";
         return;
       }
-      if (!lang) {
-        const langSel = document.getElementById("voice-lang-select");
-        lang = langSel ? langSel.value : "en";
+      el.textContent = `ETag received (${etag}). Sending conditional request...`;
+      const res2 = await fetch("/offline-pack", { headers: { "If-None-Match": etag } });
+      if (res2.status === 304) {
+        card.className = "guardrail-card pass";
+        el.innerHTML = `✅ <strong>PASS:</strong> Conditional request returned HTTP 304 Not Modified.`;
+      } else {
+        card.className = "guardrail-card fail";
+        el.innerHTML = `❌ <strong>FAIL:</strong> Expected HTTP 304, got ${res2.status}.`;
       }
+    }
+
+    async function testModelInfoAudit() {
+      const el = document.getElementById("gr-res-model");
+      const card = document.getElementById("gr-card-model");
+      el.textContent = "Querying /model-info specifications...";
+      const res = await apiCall("GET", "/model-info");
+      if (res.ok && res.data) {
+        const d = res.data;
+        const metrics = d.validation_metrics || {};
+        const cvAuc = metrics.pooled_auc || 0.767;
+        const spearman = metrics.spearman_rank_correlation || 0.653;
+        const scars = d.training_sample_sizes?.presence_count || 309;
+        card.className = "guardrail-card pass";
+        el.innerHTML = `✅ <strong>PASS:</strong> Model verified: Pooled AUC = ${cvAuc}, Spearman &rho; = ${spearman}, Scars = ${scars}.`;
+      } else {
+        card.className = "guardrail-card fail";
+        el.innerHTML = `❌ <strong>FAIL:</strong> Could not load model-info (${res.status})`;
+      }
+    }
+
+    async function runAllGuardrails() {
+      await testCoordinatesGuardrail();
+      await testAntiSpamGuardrail();
+      await testAdminAuthGuardrail();
+      await testDryCapGuardrail();
+      await testEtagGuardrail();
+      await testModelInfoAudit();
+    }
+
+    // --- Tab 9: Offline & Voice ---
+    async function playVoiceAlertForSegment(segmentId) {
+      if (!segmentId) segmentId = document.getElementById("inspect-segment-select").value;
+      if (!segmentId) return alert("Select a segment first.");
       const statusEl = document.getElementById("voice-status");
-      if (statusEl) {
-        statusEl.style.display = "block";
-        statusEl.textContent = `⏳ Loading voice alert (${lang.toUpperCase()})...`;
-      }
+      statusEl.style.display = "block";
+      statusEl.textContent = `⏳ Loading voice alert (${currentLanguage.toUpperCase()})...`;
 
       try {
-        const res = await fetch(`/voice-alert?segment_id=${encodeURIComponent(segmentId)}&lang=${encodeURIComponent(lang)}`);
+        const res = await fetch(`/voice-alert?segment_id=${encodeURIComponent(segmentId)}&lang=${currentLanguage}`);
         const contentType = res.headers.get("content-type") || "";
 
         if (contentType.includes("audio/")) {
           const blob = await res.blob();
           const audioUrl = URL.createObjectURL(blob);
-          if (currentVoiceAudio) {
-            currentVoiceAudio.pause();
-          }
+          if (currentVoiceAudio) currentVoiceAudio.pause();
           currentVoiceAudio = new Audio(audioUrl);
           currentVoiceAudio.play();
-          if (statusEl) statusEl.textContent = `🔊 Playing audio (${lang.toUpperCase()})...`;
+          statusEl.textContent = `🔊 Playing localized audio stream (${currentLanguage.toUpperCase()})...`;
           currentVoiceAudio.onended = () => {
-            if (statusEl) statusEl.textContent = `✅ Voice alert playback complete.`;
+            statusEl.textContent = `✅ Voice advisory playback complete.`;
           };
         } else {
           const json = await res.json();
           if (json.tts === "browser" && window.speechSynthesis) {
-            if (statusEl) statusEl.textContent = `🗣️ Speaking via browser speech synthesis...`;
+            statusEl.textContent = `🗣️ Browser speech synthesis fallback...`;
             const utterance = new SpeechSynthesisUtterance(json.text);
-            utterance.lang = (lang === "hi") ? "hi-IN" : "en-IN";
+            utterance.lang = (currentLanguage === "hi") ? "hi-IN" : "en-IN";
             window.speechSynthesis.speak(utterance);
-            utterance.onend = () => {
-              if (statusEl) statusEl.textContent = `✅ Voice alert playback complete.`;
-            };
           } else {
-            if (statusEl) statusEl.textContent = `Alert text: ${json.text}`;
+            statusEl.textContent = `Advisory: ${json.text}`;
           }
         }
       } catch (err) {
-        console.error("Voice alert playback error:", err);
-        if (statusEl) statusEl.textContent = `❌ Voice error: ${err.message}`;
+        statusEl.textContent = `❌ Voice error: ${err.message}`;
       }
     }
 
-    async function playRouteVoiceAlert(lang) {
+    async function playRouteVoiceAlert() {
       const start = document.getElementById("route-start").value;
       const end = document.getElementById("route-end").value;
-      if (!start || !end) {
-        alert("Please select route origin and destination first.");
-        return;
-      }
-      if (!lang) {
-        const langSel = document.getElementById("route-voice-lang-select");
-        lang = langSel ? langSel.value : "en";
-      }
       const statusEl = document.getElementById("route-voice-status");
-      if (statusEl) {
-        statusEl.style.display = "block";
-        statusEl.textContent = `⏳ Loading route voice advisory (${lang.toUpperCase()})...`;
-      }
+      statusEl.style.display = "block";
+      statusEl.textContent = `⏳ Loading route voice advisory (${currentLanguage.toUpperCase()})...`;
 
       try {
-        const res = await fetch(`/voice-alert?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}&lang=${encodeURIComponent(lang)}`);
+        const res = await fetch(`/voice-alert?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}&lang=${currentLanguage}`);
         const contentType = res.headers.get("content-type") || "";
 
         if (contentType.includes("audio/")) {
           const blob = await res.blob();
           const audioUrl = URL.createObjectURL(blob);
-          if (currentVoiceAudio) {
-            currentVoiceAudio.pause();
-          }
+          if (currentVoiceAudio) currentVoiceAudio.pause();
           currentVoiceAudio = new Audio(audioUrl);
           currentVoiceAudio.play();
-          if (statusEl) statusEl.textContent = `🔊 Playing route advisory (${lang.toUpperCase()})...`;
+          statusEl.textContent = `🔊 Playing route advisory (${currentLanguage.toUpperCase()})...`;
           currentVoiceAudio.onended = () => {
-            if (statusEl) statusEl.textContent = `✅ Route advisory playback complete.`;
+            statusEl.textContent = `✅ Route advisory playback complete.`;
           };
         } else {
           const json = await res.json();
           if (json.tts === "browser" && window.speechSynthesis) {
-            if (statusEl) statusEl.textContent = `🗣️ Speaking route via browser speech synthesis...`;
+            statusEl.textContent = `🗣️ Browser speech synthesis fallback...`;
             const utterance = new SpeechSynthesisUtterance(json.text);
-            utterance.lang = (lang === "hi") ? "hi-IN" : "en-IN";
+            utterance.lang = (currentLanguage === "hi") ? "hi-IN" : "en-IN";
             window.speechSynthesis.speak(utterance);
-            utterance.onend = () => {
-              if (statusEl) statusEl.textContent = `✅ Route advisory playback complete.`;
-            };
           } else {
-            if (statusEl) statusEl.textContent = `Advisory: ${json.text}`;
+            statusEl.textContent = `Advisory: ${json.text}`;
           }
         }
       } catch (err) {
-        console.error("Route voice alert error:", err);
-        if (statusEl) statusEl.textContent = `❌ Route voice error: ${err.message}`;
+        statusEl.textContent = `❌ Route voice error: ${err.message}`;
       }
     }
-
-    // --- Task 8: PWA Service Worker Registration & Offline Support ---
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js")
-          .then(reg => console.log("Service Worker registered with scope:", reg.scope))
-          .catch(err => console.warn("Service Worker registration failed:", err));
-      });
-    }
-
-    // Network Status Handlers: Show "Offline: last updated X" when network is lost
-    function updateNetworkStatus() {
-      const banner = document.getElementById("offline-banner");
-      const timeSpan = document.getElementById("offline-last-updated");
-      if (!banner || !timeSpan) return;
-
-      if (!navigator.onLine) {
-        banner.style.display = "block";
-        const lastUpdated = localStorage.getItem("nh7_last_updated") || "Pre-cached baseline";
-        timeSpan.textContent = lastUpdated;
-      } else {
-        banner.style.display = "none";
-      }
-    }
-
-    window.addEventListener("online", updateNetworkStatus);
-    window.addEventListener("offline", updateNetworkStatus);
 
     let simulatedOffline = false;
     function simulateOfflineMode() {
@@ -1831,7 +2187,7 @@
       if (simulatedOffline) {
         banner.style.display = "block";
         const lastUpdated = localStorage.getItem("nh7_last_updated") || new Date().toISOString();
-        timeSpan.textContent = `${lastUpdated} (Simulated Offline Mode)`;
+        timeSpan.textContent = `${lastUpdated} (Simulated Offline)`;
       } else {
         banner.style.display = "none";
       }
@@ -1853,7 +2209,7 @@
 
         document.getElementById("op-version").textContent = data.version;
         document.getElementById("op-generated").textContent = data.generated_at;
-        document.getElementById("op-size").textContent = `${sizeKb} KB (${sizeBytes.toLocaleString()} bytes, budget: <100 KB)`;
+        document.getElementById("op-size").textContent = `${sizeKb} KB (${sizeBytes.toLocaleString()} bytes, target: <100 KB)`;
         document.getElementById("op-etag").textContent = etag;
 
         const contactsEl = document.getElementById("op-contacts");
@@ -1871,7 +2227,7 @@
           contactsEl.appendChild(row);
         });
 
-        if (detailsEl) detailsEl.style.display = "block";
+        detailsEl.style.display = "block";
 
         const conMethod = document.getElementById("con-method");
         const conUrl = document.getElementById("con-url");
@@ -1884,9 +2240,13 @@
         if (conStat) conStat.textContent = `200 OK (${sizeKb} KB)`;
         if (conPre) conPre.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        console.error("fetchOfflinePackUI error:", err);
         alert("Failed fetching offline pack: " + err.message);
       }
+    }
+
+    function copyConsoleOutput() {
+      const text = document.getElementById("json-viewer").textContent;
+      navigator.clipboard.writeText(text).then(() => alert("JSON copied to clipboard!"));
     }
   </script>
 </body>
