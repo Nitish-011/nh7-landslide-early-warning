@@ -59,7 +59,7 @@ If *everything* were dynamic (including topography), the model would violate the
 
 ## 2. The Replaceable Test Frontend
 
-The test frontend is located in [`app/static/index.html`](file:///c:/hackathon%20IBM%20x%20Jigyasa/app/static/index.html) and served automatically by FastAPI at `http://127.0.0.1:8000/`.
+The test frontend is located in [`app/static/index.html`](app/static/index.html) and served automatically by FastAPI at `http://127.0.0.1:8000/`.
 
 ### Why It Is 100% Replaceable
 - **Zero Build Step:** It is a single, self-contained HTML/CSS/JS file using Vanilla modern CSS, Leaflet.js, and browser-native `fetch()`. No Node.js build, bundler, or transpilation is required.
@@ -341,7 +341,7 @@ This tests:
 
 ## 6. Scientific Validation & Model Performance Summary
 
-The underlying predictive model is scientifically audited in [`outputs/validation_report.md`](file:///c:/hackathon%20IBM%20x%20Jigyasa/outputs/validation_report.md):
+The underlying predictive model is scientifically audited in [`outputs/validation_report.md`](outputs/validation_report.md):
 
 | Metric | Result | Interpretation |
 | :--- | :--- | :--- |

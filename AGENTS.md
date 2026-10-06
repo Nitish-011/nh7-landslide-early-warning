@@ -15,7 +15,7 @@ Welcome, Antigravity Agent! This document defines the workspace context and engi
 
 ## 🧭 Key Rules for Building Frontends & Features
 
-1. **Do NOT mock the backend:** The backend is fully live and operational. Use `http://localhost:8000/risk-map`, `http://localhost:8000/trip-planner`, etc.
+1. **Do NOT mock the backend:** The backend is fully live and operational. Use `http://localhost:8000/risk-map`, `http://localhost:8000/route-risk`, etc.
 2. **Corridor Geofence Guardrail:** Any crowd-sourced field report (`POST /field-report`) MUST have coordinates within 3.0 km of the highway polyline (`geojson/nh7_route.geojson`). Points further away will receive `HTTP 422`.
 3. **Dry Weather Cap:** Risk cannot exceed "Moderate" if 3-day antecedent rainfall is under 25mm (`DRY_CAP_MM = 25.0`), preventing false alarms during dry weather.
 4. **Storm Simulation:** To test disaster responses, use `?simulate_rain_mm=120` on `/risk-map`, `/route-risk`, and `/alerts`.

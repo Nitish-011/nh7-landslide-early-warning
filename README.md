@@ -136,12 +136,12 @@ nh7-landslide-early-warning/
 │   ├── limiter.py              # SlowAPI DDoS rate limiter
 │   ├── middleware.py           # Request logging, correlation ID, timing headers
 │   ├── routes/                 # Modular endpoint controllers
-│   │   ├── risk.py             # /risk-map, /route-risk, /trip-planner, /consequence
-│   │   ├── closures.py         # /closures, /closures/active, /admin/closure
+│   │   ├── risk.py             # /risk-map, /route-risk, /priority-list, /voice-alert
+│   │   ├── closures.py         # /closures, /admin/closure
 │   │   ├── reports.py          # /field-report, /admin/validate-report
-│   │   ├── subscriptions.py    # /subscribe, /alerts, /voice-alert
-│   │   ├── history.py          # /history, /backtest
-│   │   └── webhooks.py         # /webhook/sms (Twilio), /webhook/telegram
+│   │   ├── subscriptions.py    # /subscribe, /alerts
+│   │   ├── history.py          # /history
+│   │   └── webhooks.py         # /webhook/sms (Twilio)
 │   ├── notifiers/              # Messaging drivers (Twilio, Telegram, Console)
 │   └── static/                 # Frontend UI (index.html, sw.js, manifest.json)
 ├── data/                       # Persistent data, caches, and geomorphic records
@@ -184,8 +184,8 @@ Here are the most important endpoints you can try right now via `curl` or in you
 | `GET` | `/risk-map` | Real-time risk for all 18 NH-7 segments | `curl http://localhost:8000/risk-map` |
 | `GET` | `/risk-map?simulate_rain_mm=120` | Stress-test with simulated 120mm cloudburst | Test via browser or curl |
 | `GET` | `/risk-map?as_of=2023-08-14` | Replay past monsoon event (requires `BACKTEST_ENABLED=true`) | Replay past monsoon event |
-| `POST` | `/trip-planner` | Safe departure advisory with waypoint ETAs | Pass JSON with origin & destination |
-| `GET` | `/consequence` | BRO infrastructure consequence & priority | `curl http://localhost:8000/consequence` |
+| `GET` | `/route-risk` | Safe departure advisory with waypoint ETAs | `curl "http://localhost:8000/route-risk?from_segment=...&to_segment=..."` |
+| `GET` | `/priority-list` | BRO infrastructure consequence & priority | `curl http://localhost:8000/priority-list` |
 | `GET` | `/closures` | Active road closures & bypass advisories | `curl http://localhost:8000/closures` |
 | `POST` | `/field-report` | Crowd-sourced hazard report (3km geofence) | Submit road condition report |
 | `GET` | `/voice-alert?lang=hi` | Stream bilingual neural audio alert (MP3) | Open in browser to listen |
@@ -206,9 +206,8 @@ Here are the most important endpoints you can try right now via `curl` or in you
 - **Average Precision (PR-AUC):** **0.533**, **Top-20% Highway Capture Rate:** **43.0%**.
 - **Spearman Rank Correlation ($\rho$):** **0.653** ($p = 0.0033$), verifying strong statistical concordance with ground-truth landslide frequency.
 - **Dynamic Meteorological Layer:** Weighted linear-capped live rainfall heuristic ($\text{score} = \min(0.60 \times \text{terrain} + 0.40 \times \min(R_{3\text{d}}/100, 1.0), 1.0)$, with $25\text{ mm}$ dry-weather cap).
-- **Inference Latency:** `< 12 ms` to evaluate the entire 247 km highway corridor.
 
-👉 *For the complete model card, confusion matrices, and backtest results, check [MODEL_PERFORMANCE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/MODEL_PERFORMANCE.md).*
+👉 *For the complete model card, confusion matrices, and backtest results, check [MODEL_PERFORMANCE.md](MODEL_PERFORMANCE.md).*
 
 ---
 
@@ -280,12 +279,12 @@ DRY_RUN=true
 
 ## 📖 Additional Documentation Guides
 
-- [ANTIGRAVITY_BACKEND_CONTEXT.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/ANTIGRAVITY_BACKEND_CONTEXT.md) — 🧠 Comprehensive AI Agent specification with every route, request schema, and response payload.
-- [AGENTS.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/AGENTS.md) — Antigravity IDE & CLI agent instructions and engineering guidelines.
-- [FEATURES.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/FEATURES.md) — Exhaustive accounting of all 12 feature domains and database schemas.
-- [MODEL_PERFORMANCE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/MODEL_PERFORMANCE.md) — In-depth data science report, spatial CV benchmarks, and model card.
-- [FRONTEND_TESTING_GUIDE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/FRONTEND_TESTING_GUIDE.md) — Step-by-step browser walkthrough to test every button and tab from the UI.
-- [CHANGELOG.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/CHANGELOG.md) — Chronological integration history across all hackathon tasks.
+- [ANTIGRAVITY_BACKEND_CONTEXT.md](ANTIGRAVITY_BACKEND_CONTEXT.md) — 🧠 Comprehensive AI Agent specification with every route, request schema, and response payload.
+- [AGENTS.md](AGENTS.md) — Antigravity IDE & CLI agent instructions and engineering guidelines.
+- [FEATURES.md](FEATURES.md) — Exhaustive accounting of all 12 feature domains and database schemas.
+- [MODEL_PERFORMANCE.md](MODEL_PERFORMANCE.md) — In-depth data science report, spatial CV benchmarks, and model card.
+- [FRONTEND_TESTING_GUIDE.md](FRONTEND_TESTING_GUIDE.md) — Step-by-step browser walkthrough to test every button and tab from the UI.
+- [CHANGELOG.md](CHANGELOG.md) — Chronological integration history across all hackathon tasks.
 
 ---
 
