@@ -139,17 +139,18 @@ The workbench has three primary visual zones:
 
 ---
 
-### 🧪 Scenario 6: Monsoon Storm & Cloudburst Weather Simulator
+### 🧪 Scenario 6: Monsoon Storm & Extreme Weather Simulator
 *Goal: Stress-test the entire 247 km highway by injecting synthetic rainfall intensities.*
 
 1. Click the **🌧️ Weather Sim** tab in the sidebar.
 2. Drag the **Simulated Rainfall Slider**:
-   - **At 0 mm (Bone Dry):** Notice all segments drop to Low/Moderate. The `DRY_CAP_MM = 25.0` rule prevents false alarms.
-   - **Click Preset "Moderate 35mm":** Sensitive slopes around Kaudiyala and Byasi elevate to Yellow/Amber.
-   - **Click Preset "Severe 85mm":** Multiple high-gradient segments turn Orange/Red.
-   - **Click Preset "Cloudburst 140mm":**
+   - **At 0 mm (Bone Dry):** Notice all segments drop to Low/Moderate. The `DRY_CAP_MAX_SCORE = 0.49` rule prevents false alarms.
+   - **Click Preset "Moderate 35mm":** Sensitive slopes around Kaudiyala and Byasi elevate to High.
+   - **Click Preset "Severe 85mm":** Multiple high-gradient segments turn Orange/Red (15/18 High/Very High).
+   - **Click Preset "Extreme rainfall (140 mm / 3 days)":**
      - Watch the highway explode into fiery Red and Purple (Severe)!
-     - In the Top HUD, `High/Severe` count jumps from `0` to `7+` segments.
+     - In the Top HUD, `High/Severe` count jumps to `18/18` segments (all 18 segments reach High or Very High, with 10 Very High).
+     - Even lowest-ranked segments (seg_10, seg_08) elevate to High due to `TERRAIN_FLOOR = 0.35`.
      - A dynamic yellow warning banner appears: `⚠️ Simulated Storm Override: 140.0 mm rainfall active`.
 3. Click **Reset to Live Weather**:
    - The simulation clears and the map restores real-time Open-Meteo weather data.

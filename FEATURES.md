@@ -77,17 +77,18 @@ The platform bridges machine learning with operational field disaster management
     - **Default Operational Mode (`PER_SEGMENT_WEATHER=false`):** Assimilates weather from 5 corridor reference stations (**Rishikesh, Srinagar, Rudraprayag, Karnaprayag, Joshimath**) mapped to nearest segment midpoints via Open-Meteo.
     - **Advanced Hourly Mode (`PER_SEGMENT_WEATHER=true`):** Ingests weather for all 18 segment midpoints, computing 24h/72h antecedent and forecast rainfall, peak rain hour UTC, and peak hourly mm.
   - Computes 3-day antecedent rainfall $R_{3\text{d}} = R_{\text{yesterday}} + R_{\text{today}} + R_{\text{tomorrow}}$.
-  - Integrates a transparent weighted linear-capped dynamic hazard formula:
-    $$\text{risk\_score} = \min\left(K_{\text{terrain}} \times \text{terrain\_percentile} + K_{\text{rain}} \times \min\left(\frac{R_{3\text{d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
-    where $K_{\text{terrain}} = 0.60$, $K_{\text{rain}} = 0.40$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (linear-capped operational heuristic, not an exponential or logistic formulation).
+  - Integrates a transparent weighted linear-capped dynamic hazard formula with baseline terrain floor:
+    $$\text{effective\_terrain} = \text{TERRAIN\_FLOOR} + (1.0 - \text{TERRAIN\_FLOOR}) \times \text{terrain\_percentile}$$
+    $$\text{raw\_score} = \min\left(K_{\text{terrain}} \times \text{effective\_terrain} + K_{\text{rain}} \times \min\left(\frac{R_{3\text{d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
+    where $K_{\text{terrain}} = 0.60$, $K_{\text{rain}} = 0.40$, $\text{TERRAIN\_FLOOR} = 0.35$ (baseline floor ensuring even the lowest-percentile segments can escalate to High under severe storms), and $\text{RAIN\_REF\_MM} = 150.0\text{ mm}$ (linear-capped operational heuristic avoiding premature saturation at 100mm).
   - **Standardized Categorical Warning Tiers (`LEVEL_CUTS` in `app/config.py`):**
     - **Low:** $\text{score} < 0.25$
     - **Moderate:** $0.25 \le \text{score} < 0.50$
     - **High:** $0.50 \le \text{score} < 0.75$
     - **Very High:** $\text{score} \ge 0.75$
-  - **Dry Condition Guardrail (`DRY_CAP_MM = 25.0`):** If valid $R_{3\text{d}} < 25.0\text{ mm}$, categorical risk cannot exceed "Moderate" ($\le 0.49$), preventing false alarms during dry sunny weather.
+  - **Dry Condition Guardrail & Linear Ramp (`DRY_RAMP_LOW_MM = 15.0`, `DRY_RAMP_HIGH_MM = 35.0`, `DRY_CAP_MAX_SCORE = 0.49`, reference `DRY_CAP_MM = 25.0`):** Replaces the hard 25mm cliff with a smooth linear ramp between 15 mm and 35 mm: if $R_{3\text{d}} \le 15.0\text{ mm}$, risk cannot exceed Moderate ($\le 0.49$), preventing false alarms in dry sunny weather; between 15 and 35 mm, the ceiling transitions linearly to uncapped risk, preventing abrupt step jumps between 24.9mm and 25.1mm.
   - **Caching & Circuit Breaker:** Normal fresh weather cache is **1800 seconds (30 minutes)**. If the live weather API fails or times out (4.0s timeout), the failure is cached for **300 seconds (5 minutes)** as a circuit breaker, falling back to local snapshot (`data/rain_snapshot.json`) or terrain-only ranking (`rain_status: "unavailable"`). If live engine computation fails entirely, `/risk-map` returns explicit degraded metadata (`mode: "degraded"`, `weather_source: "database_fallback"`, `stale_warning: "Live risk computation failed; serving last-known database state."`).
-  - **Simulation Override:** Supports `?simulate_rain_mm=120.0` (0.0 to 1000.0 mm) on `/risk-map` to stress-test highway segments under simulated cloudburst conditions. (Note: `/risk-map` accepts only `simulate_rain_mm`, `as_of`, and `lang`).
+  - **Simulation Override:** Supports `?simulate_rain_mm=120.0` (0.0 to 1000.0 mm) on `/risk-map` to stress-test highway segments under simulated extreme rain conditions. (Note: `/risk-map` accepts only `simulate_rain_mm`, `as_of`, and `lang`).
 
 ### Feature 2: Historical Time Machine & Backtest Engine
 - **Mechanism:**
@@ -193,7 +194,7 @@ The platform bridges machine learning with operational field disaster management
     2. `🚗 Route Planner`: Origin/destination selector, departure time picker, speed regulator, and travel advisory card.
     3. `🚧 Closures`: Active road closures list, administrative closure reporter, and reopening toggle.
     4. `🚜 BRO Priority`: Infrastructure consequence score table, bridge proximity indicators, and emergency equipment staging order.
-    5. `🌧️ Weather Sim`: Interactive storm intensity slider (0 to 180 mm) with quick-select presets (Moderate 35mm, Severe 85mm, Cloudburst 140mm).
+    5. `🌧️ Weather Sim`: Interactive storm intensity slider (0 to 180 mm) with quick-select presets (Moderate 35mm, Severe 85mm, Extreme rainfall (140 mm / 3 days)).
     6. `📢 Field Reports`: Crowd report submission form, interactive map click-to-fill coordinate picker, and admin validation controls.
     7. `🔔 Alerts & SMS`: Live alert queue, phone subscription form, and in-browser interactive Twilio SMS simulator.
     8. `🛡️ Guardrails Lab`: One-click security testbed testing Rate Limiting (429), Corridor Boundary Rejection (422), and Timing-Safe Auth.
@@ -202,7 +203,7 @@ The platform bridges machine learning with operational field disaster management
 
 ### Feature 12: Scientific Validation & Automated Test Suite
 - **Mechanism:**
-  - **122 automated pytest tests** spanning unit, integration, security, and contract test cases with 100% pass rate.
+  - **125 automated pytest tests** spanning unit, integration, security, and contract test cases with 100% pass rate.
   - Golden JSON schema regression tests (`tests/golden/`) verifying strict API backward compatibility.
   - Re-runnable validation audit script (`scripts/validation_audit.py`) and historical backtest runner (`scripts/backtest.py`).
 
@@ -317,8 +318,12 @@ CREATE TABLE alert_log (
 | `TOTAL_SEGMENTS` | 18 | Discrete civil administration and geomorphic segments |
 | `K_TERRAIN` | 0.60 | Weight of static geomorphic susceptibility ranking in composite score |
 | `K_RAIN` | 0.40 | Weight of dynamic linear-capped rainfall index term in composite score |
-| `RAIN_REF_MM` | 100.0 mm | Linear-capped rainfall saturation constant |
-| `DRY_CAP_MM` | 25.0 mm | Antecedent rainfall threshold below which risk is capped at "Moderate" ($\le 0.49$) |
+| `RAIN_REF_MM` | 150.0 mm | Linear-capped rainfall saturation constant (avoids premature saturation at 100mm) |
+| `TERRAIN_FLOOR` | 0.35 | Baseline susceptibility floor ensuring lowest-percentile segments can escalate under severe storms |
+| `DRY_CAP_MM` | 25.0 mm | Reference antecedent rainfall threshold for dry condition heuristics |
+| `DRY_RAMP_LOW_MM` | 15.0 mm | Lower bound of dry-cap linear ramp ($\le 15.0\text{ mm}$ capped at Moderate $\le 0.49$) |
+| `DRY_RAMP_HIGH_MM` | 35.0 mm | Upper bound of dry-cap linear ramp ($\ge 35.0\text{ mm}$ full uncapped response) |
+| `DRY_CAP_MAX_SCORE`| 0.49 | Maximum permitted score under dry conditions (Moderate ceiling) |
 | `WEATHER_CACHE_TTL` | 1800 seconds (30 min) | Normal fresh weather cache duration |
 | `FAILED_CACHE_TTL` | 300 seconds (5 min) | Circuit-breaker memory cache lifespan for failed weather API calls |
 | `MAX_CORRIDOR_DIST_KM`| 3.0 km | Maximum allowable distance from NH-7 polyline for field hazard reports |

@@ -149,3 +149,59 @@ def test_emergency_contacts_env_parsing(monkeypatch):
 
     monkeypatch.delenv("EMERGENCY_CONTACTS", raising=False)
     importlib.reload(cfg)
+
+
+def test_risk_strictly_increases_between_100_and_150mm():
+    """
+    Regression test: ensures RAIN_REF_MM=150 prevents premature saturation at 100mm.
+    For every segment on NH-7, risk_score must strictly increase from 100mm to 150mm.
+    """
+    resp100 = client.get("/risk-map?simulate_rain_mm=100")
+    assert resp100.status_code == 200
+    segs100 = {s["id"]: s["risk_score"] for s in resp100.json()["segments"]}
+
+    resp150 = client.get("/risk-map?simulate_rain_mm=150")
+    assert resp150.status_code == 200
+    segs150 = {s["id"]: s["risk_score"] for s in resp150.json()["segments"]}
+
+    for seg_id, score100 in segs100.items():
+        score150 = segs150[seg_id]
+        assert score150 > score100, (
+            f"Segment {seg_id} failed strict monotonicity: "
+            f"score at 100mm ({score100}) >= score at 150mm ({score150})"
+        )
+
+
+def test_terrain_floor_allows_low_rank_segments_to_escalate():
+    """
+    Regression test: TERRAIN_FLOOR (0.35) ensures even lowest-percentile segments
+    (seg_10 with pct=0.00, seg_08 with pct=0.06) escalate to High under severe rain (140mm+).
+    """
+    resp140 = client.get("/risk-map?simulate_rain_mm=140")
+    assert resp140.status_code == 200
+    segs140 = {s["id"]: s for s in resp140.json()["segments"]}
+
+    # seg_10 has terrain_percentile 0.00, seg_08 has 0.06
+    assert segs140["seg_10"]["risk_score"] >= 0.50
+    assert segs140["seg_10"]["risk_level"] in ("High", "Very High")
+    assert segs140["seg_08"]["risk_score"] >= 0.50
+    assert segs140["seg_08"]["risk_level"] in ("High", "Very High")
+
+
+def test_dry_condition_guardrail_and_ramp():
+    """
+    Regression test: dry conditions (0mm, 15mm) remain capped at Moderate (<=0.49),
+    and smooth ramp transitions without cliff.
+    """
+    resp0 = client.get("/risk-map?simulate_rain_mm=0")
+    assert resp0.status_code == 200
+    for s in resp0.json()["segments"]:
+        assert s["risk_level"] in ("Low", "Moderate")
+        assert s["risk_score"] <= 0.49
+
+    resp15 = client.get("/risk-map?simulate_rain_mm=15")
+    assert resp15.status_code == 200
+    for s in resp15.json()["segments"]:
+        assert s["risk_level"] in ("Low", "Moderate")
+        assert s["risk_score"] <= 0.49
+

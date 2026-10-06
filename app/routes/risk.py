@@ -65,10 +65,16 @@ def compute_subpoint_risk(
         terrain_pt = base_terrain
 
     if rain_mm is not None and rain_mm >= 0.0:
+        effective_terrain_pt = config.TERRAIN_FLOOR + (1.0 - config.TERRAIN_FLOOR) * terrain_pt
         rain_factor = min(rain_mm / config.RAIN_REF_MM, 1.0)
-        score = min(config.K_TERRAIN * terrain_pt + config.K_RAIN * rain_factor, 1.0)
-        if rain_mm < config.DRY_CAP_MM:
-            score = min(score, 0.49)
+        raw_score = min(config.K_TERRAIN * effective_terrain_pt + config.K_RAIN * rain_factor, 1.0)
+        if rain_mm <= config.DRY_RAMP_LOW_MM:
+            score = min(raw_score, config.DRY_CAP_MAX_SCORE)
+        elif rain_mm >= config.DRY_RAMP_HIGH_MM:
+            score = raw_score
+        else:
+            ramp = (rain_mm - config.DRY_RAMP_LOW_MM) / (config.DRY_RAMP_HIGH_MM - config.DRY_RAMP_LOW_MM)
+            score = config.DRY_CAP_MAX_SCORE + ramp * (raw_score - config.DRY_CAP_MAX_SCORE) if raw_score > config.DRY_CAP_MAX_SCORE else raw_score
     else:
         # Fallback when rainfall is not factored or unavailable:
         if total_pts > 1:

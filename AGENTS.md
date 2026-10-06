@@ -17,7 +17,7 @@ Welcome, Antigravity Agent! This document defines the workspace context and engi
 
 1. **Do NOT mock the backend:** The backend is fully live and operational. Use `http://localhost:8000/risk-map`, `http://localhost:8000/route-risk`, etc.
 2. **Corridor Geofence Guardrail:** Any crowd-sourced field report (`POST /field-report`) MUST have coordinates within 3.0 km of the highway polyline (`geojson/nh7_route.geojson`). Points further away will receive `HTTP 422`.
-3. **Dry Weather Cap:** Risk cannot exceed "Moderate" if 3-day antecedent rainfall is under 25mm (`DRY_CAP_MM = 25.0`), preventing false alarms during dry weather.
+3. **Dry Weather Cap:** Risk cannot exceed "Moderate" if 3-day antecedent rainfall is under 15–25mm (`DRY_RAMP_LOW_MM = 15.0`, `DRY_CAP_MM = 25.0`), preventing false alarms during dry weather. Smooth linear ramp between 15mm and 35mm.
 4. **Storm Simulation:** To test disaster responses, use `?simulate_rain_mm=120` on `/risk-map`, `/route-risk`, and `/alerts`.
 5. **Bilingual Support:** All route risk, alerts, and segment names support Hindi Devanagari by passing `lang=hi`.
 6. **Voice Alerts:** Spoken neural audio alerts are streamed from `GET /voice-alert?lang=hi` or `lang=en`.

@@ -49,9 +49,10 @@ If *everything* were dynamic (including topography), the model would ignore the 
 1. **Live Meteorology:** Real-time 3-day antecedent rainfall is dynamically requested from the Open-Meteo API across 5 corridor weather stations (`fetch_rainfall`).
 2. **Fault-Tolerant Fallback & Circuit Breaker:** If the live weather API experiences timeouts or goes offline, the backend dynamically falls back to `data/rain_snapshot.json` with a 5-minute memory circuit breaker, serving requests in under 100 milliseconds and tagging `rain_status: "cached"`.
 3. **Dynamic Hazard Combination Engine:** Each request computes the real-time hazard score on the fly:
-   $$\text{Risk} = \min(0.60 \times P_{\text{terrain}} + 0.40 \times \min(R_{\text{3d}}/100.0, 1.0), 1.0)$$
-   and applies the `DRY_CAP_MM = 25.0` heuristic (capping risk at "Moderate" if dry).
-4. **Simulation Overrides (`simulate_rain_mm`):** Any caller or UI user can supply `?simulate_rain_mm=85` to immediately simulate a monsoon downpour or cloudburst across `/risk-map`, `/route-risk`, and `/alerts`.
+   $$\text{effective\_terrain} = \text{TERRAIN\_FLOOR} + (1.0 - \text{TERRAIN\_FLOOR}) \times P_{\text{terrain}}$$
+   $$\text{Risk} = \min(0.60 \times \text{effective\_terrain} + 0.40 \times \min(R_{\text{3d}}/150.0, 1.0), 1.0)$$
+   where $\text{TERRAIN\_FLOOR} = 0.35$ and $\text{RAIN\_REF\_MM} = 150.0\text{ mm}$, with a smooth linear ramp between 15 mm and 35 mm capping risk at Moderate ($\le 0.49$) during dry conditions.
+4. **Simulation Overrides (`simulate_rain_mm`):** Any caller or UI user can supply `?simulate_rain_mm=85` to immediately simulate a monsoon downpour or extreme rainfall across `/risk-map`, `/route-risk`, and `/alerts`.
 5. **Date-Aware Route Analysis:** If a travel date is beyond tomorrow (> 48 hours), the backend dynamically detects that rainfall forecasts are unreliable, evaluates risk using terrain susceptibility, and emits a clear travel advisory banner.
 6. **Crowd-Sourced Reports & Alerts:** Submitting field hazard reports (`POST /field-report`), Admin validation (`POST /admin/validate-report`), creating subscriptions (`POST /subscribe`), and querying user-specific warnings (`GET /alerts`) are 100% dynamic operations stored in SQLite.
 
@@ -197,18 +198,20 @@ Enables stress-testing the physical hazard curve and the `DRY_CAP_MM = 25.0` saf
 #### How to Test on UI:
 1. Click the **"🌧️ Weather Sim"** tab.
 2. Observe the quick presets:
-   - **Dry (0 mm):** Risk capped at Moderate by `DRY_CAP_MM = 25.0`.
-   - **Below Dry Cap (15 mm):** Demonstrates that dry ground prevents high alert escalation.
-   - **Moderate Rain (50 mm):** Activates slope pore-pressure accumulation.
-   - **Monsoon Downpour (100 mm):** Triggers widespread "High" warnings.
-   - **Cloudburst (150 mm):** Escalates multiple critical segments (Sirobagarh, Tangani, Teen Dhara) to "Very High".
+   - **Dry (0 mm):** Risk capped at Moderate by `DRY_CAP_MAX_SCORE = 0.49`.
+   - **Dry Cap (15 mm):** Linear ramp lower bound prevents false alarm escalation.
+   - **Moderate (35 mm):** Ramps to full dynamic calculation (50% Moderate, 50% High).
+   - **Severe (85 mm):** Activates slope pore-pressure accumulation, escalating 4 segments to Very High.
+   - **Monsoon Downpour (100 mm):** Triggers widespread warnings (16/18 High/Very High).
+   - **Extreme rainfall (140 mm / 3 days):** Escalates 10 segments to Very High; lowest-ranked segments reach High.
+   - **Peak Storm (150 mm):** Full saturation ($R_{\text{3d}} = 150.0\text{ mm}$).
 3. Click **"Monsoon Downpour (100 mm)"** -> Notice the map updates in real time, coloring severe segments orange and red!
 4. Click **"Reset to Live Weather"** to return to real Open-Meteo readings.
 
 #### Test via cURL:
 ```powershell
-# Simulate 120mm cloudburst across the corridor
-curl -X GET "http://127.0.0.1:8000/risk-map?simulate_rain_mm=120"
+# Simulate 140mm extreme rainfall across the corridor
+curl -X GET "http://127.0.0.1:8000/risk-map?simulate_rain_mm=140"
 
 # Simulate route risk under 0mm dry conditions
 curl -X GET "http://127.0.0.1:8000/route-risk?from_segment=seg_01&to_segment=seg_18&simulate_rain_mm=0"
@@ -333,7 +336,9 @@ Run the automated resilience test suite:
 python -m pytest tests/test_risk_resilience.py -v
 ```
 This tests:
-- `test_dry_cap_heuristic`: Confirms scores are capped at "Moderate" when $R_{\text{3d}} < 25\text{ mm}$.
+- `test_dry_condition_guardrail_and_ramp`: Confirms scores are capped at "Moderate" ($\le 0.49$) when $R_{\text{3d}} \le 15.0\text{ mm}$.
+- `test_risk_strictly_increases_between_100_and_150mm`: Verifies monotonic score increases and prevents premature saturation at 100mm.
+- `test_terrain_floor_allows_low_rank_segments_to_escalate`: Confirms lowest-percentile segments escalate to High under severe rain (140mm+).
 - `test_rain_failure_fallback_speed`: Simulates complete weather API failure and verifies `/risk-map` responds in **under 1.0 second** (typically ~40 ms).
 - `test_future_date_route_risk_terrain_only`: Verifies dates past tomorrow trigger terrain-only mode with travel advisory warnings.
 

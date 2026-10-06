@@ -46,10 +46,10 @@ When you open **[http://localhost:8000](http://localhost:8000)**, you'll see our
 
 ```
 +---------------------------------------------------------------------------------------------------+
-|  1. 🌧️ TAB 5: TRIGGER A MONSOON CLOUDBURST                                                        |
-|     Click the "Weather Sim" tab. Drag the rainfall slider from 0 mm to 150 mm (or hit the         |
-|     "Cloudburst 140mm" button). Watch the highway polylines on the map instantly explode from     |
-|     Green (Low) to Fiery Red and Purple (Severe)!                                                |
+|  1. 🌧️ TAB 5: TRIGGER AN EXTREME MONSOON DOWNPOUR                                                  |
+|     Click the "Weather Sim" tab. Drag the rainfall slider from 0 mm to 180 mm (or hit the         |
+|     "Extreme rainfall (140 mm / 3 days)" button). Watch the highway polylines on the map          |
+|     instantly explode from Green (Low) to Fiery Red and Purple (Severe)!                          |
 +---------------------------------------------------------------------------------------------------+
 |  2. 🔊 TAB 9: HEAR HINDI NEURAL VOICE WARNINGS                                                    |
 |     Go to "Offline & Voice" tab, or toggle the language switcher at the top right (EN ➔ HI).       |
@@ -216,7 +216,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 Our test suite provides strong validation against regressions across API contracts, guardrails, and physics calculations:
 
 ```bash
-# Run all 122 automated tests
+# Run all 125 automated tests
 python -m pytest
 ```
 
@@ -224,33 +224,33 @@ Output:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.14.6, pytest-9.0.3
-collected 122 items
+collected 125 items
 
 tests/contract/test_contract.py ..................                       [ 14%]
-tests/contract/test_golden_schema.py .........                           [ 22%]
-tests/test_alert_delivery_task6.py ......                                [ 27%]
+tests/contract/test_golden_schema.py .........                           [ 21%]
+tests/test_alert_delivery_task6.py ......                                [ 26%]
 tests/test_backtest_task2.py ......                                      [ 31%]
-tests/test_closures_and_flywheel_task5.py .......                        [ 37%]
-tests/test_consequence_task4.py ......                                   [ 42%]
-tests/test_freshness_f2.py .......                                       [ 48%]
-tests/test_localization_and_voice_task7.py .......                       [ 54%]
-tests/test_model_info_f3.py ........                                     [ 60%]
-tests/test_offline_pack_task8.py .......                                 [ 66%]
-tests/test_production_f5.py ......                                       [ 71%]
-tests/test_risk_resilience.py .....                                      [ 75%]
+tests/test_closures_and_flywheel_task5.py .......                        [ 36%]
+tests/test_consequence_task4.py ......                                   [ 41%]
+tests/test_freshness_f2.py .......                                       [ 47%]
+tests/test_localization_and_voice_task7.py .......                       [ 52%]
+tests/test_model_info_f3.py ........                                     [ 59%]
+tests/test_offline_pack_task8.py .......                                 [ 64%]
+tests/test_production_f5.py ......                                       [ 69%]
+tests/test_risk_resilience.py ........                                   [ 76%]
 tests/test_security_f1.py .............                                  [ 86%]
 tests/test_trip_planner_task3.py ....                                    [ 89%]
 tests/test_validation_audit_f4.py ......                                 [ 94%]
 tests/test_weather_upgrade_task1.py .......                              [100%]
 
-======================== 122 tests passing ========================
+======================== 125 tests passing ========================
 ```
 
 ---
 
 ## 🛠️ Environment Variables Configuration
 
-The system works out-of-the-box with default values. To configure production integrations (SMS, Telegram, Admin Keys), create a `.env` file or export environment variables:
+The system works out-of-the-box with default values. To configure production integrations (SMS, Telegram, Admin Keys, Model Parameters), create a `.env` file or export environment variables:
 
 ```bash
 # Environment Mode: 'development' or 'production'
@@ -273,6 +273,14 @@ ALERT_DISPATCH_INTERVAL_MINUTES=10
 
 # Safe Mode: True simulates delivery in logs without hitting external messaging APIs
 DRY_RUN=true
+
+# Model & Risk Calibration Parameters (Uncalibrated Demo Heuristics)
+RAIN_REF_MM=150.0                     # 3-day rainfall saturation constant (prevents saturation below 150mm)
+TERRAIN_FLOOR=0.35                    # Baseline susceptibility floor allowing low-rank segments to escalate
+DRY_CAP_MM=25.0                       # Reference dry condition threshold (25mm)
+DRY_RAMP_LOW_MM=15.0                  # Lower bound of dry-cap linear ramp (<=15mm capped at Moderate <=0.49)
+DRY_RAMP_HIGH_MM=35.0                 # Upper bound of dry-cap linear ramp (>=35mm full response)
+DRY_CAP_MAX_SCORE=0.49                # Moderate ceiling score under dry conditions
 ```
 
 ---

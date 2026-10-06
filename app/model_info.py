@@ -12,11 +12,15 @@ from typing import Any, Dict
 
 from app.config import (
     BASE_DIR,
+    DRY_CAP_MAX_SCORE,
     DRY_CAP_MM,
+    DRY_RAMP_HIGH_MM,
+    DRY_RAMP_LOW_MM,
     K_RAIN,
     K_TERRAIN,
     RAIN_REF_MM,
     RISK_LEVEL_THRESHOLDS,
+    TERRAIN_FLOOR,
 )
 
 logger = logging.getLogger("backend")
@@ -188,8 +192,12 @@ def get_model_info_payload() -> Dict[str, Any]:
             "k_rain": K_RAIN,
             "k_terrain": K_TERRAIN,
             "rain_ref_mm": RAIN_REF_MM,
+            "terrain_floor": TERRAIN_FLOOR,
         },
         "dry_cap": DRY_CAP_MM,
+        "dry_ramp_low_mm": DRY_RAMP_LOW_MM,
+        "dry_ramp_high_mm": DRY_RAMP_HIGH_MM,
+        "dry_cap_max_score": DRY_CAP_MAX_SCORE,
         "limitations": LIMITATIONS,
         "data_sources": {
             "inventory": citation,

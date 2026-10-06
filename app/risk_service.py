@@ -3,10 +3,14 @@ risk_service.py - STEP 4: live risk for the backend (/risk-map)
 ================================================================
 Copy this file and segment_static_scores.json into your FastAPI project (e.g. app/).
 
-  risk_score = TERRAIN_WEIGHT * terrain_percentile + RAIN_WEIGHT * min(rain_mm / RAIN_REF_MM, 1)
+  effective_terrain = TERRAIN_FLOOR + (1 - TERRAIN_FLOOR) * terrain_percentile
+  raw_risk_score = TERRAIN_WEIGHT * effective_terrain + RAIN_WEIGHT * min(rain_mm / RAIN_REF_MM, 1)
+  (with smooth dry-cap linear ramp between 15 mm and 35 mm to avoid sharp cliff)
 
 * terrain_percentile : 0..1 rank of the segment's modelled terrain susceptibility among the 18 segments
                        (from the trained model; it is a RANKING, not a probability).
+* TERRAIN_FLOOR      : 0.35 baseline floor ensuring even lowest-ranked segments reach High in severe rain.
+* RAIN_REF_MM        : 150.0 mm 3-day rainfall reference constant.
 * rain_mm            : rain over yesterday + today + tomorrow at the segment midpoint (Open-Meteo forecast API).
 * The weights and RAIN_REF_MM are DEMO HEURISTICS, not calibrated and not learned. Say so if asked.
   Replace them with published Himalayan rainfall thresholds, or with the rainfall coefficient from the Mey et al.
@@ -43,12 +47,16 @@ import requests
 
 from app import config
 from app.config import (
+    DRY_CAP_MAX_SCORE,
     DRY_CAP_MM,
+    DRY_RAMP_HIGH_MM,
+    DRY_RAMP_LOW_MM,
     K_RAIN,
     K_TERRAIN,
     LEVEL_CUTS,
     RAIN_REF_MM,
     SNAPSHOT_PATH,
+    TERRAIN_FLOOR,
 )
 
 log = logging.getLogger("backend")
@@ -100,9 +108,14 @@ def level_for(score: float, rain_status: str = "unavailable", rain_mm: float | N
         if score >= cut:
             lvl = name
             break
-    # Uncalibrated heuristic: if rainfall measurement is valid ('ok' or 'cached') and 3-day precipitation is below DRY_CAP_MM,
+    # Guardrail: if rainfall measurement is valid ('ok', 'simulated', or 'cached') and 3-day precipitation is at or below DRY_RAMP_LOW_MM,
     # cap risk level at Moderate to avoid false alarm saturation during dry weather.
-    if (rain_status == "ok" or str(rain_status).startswith("cached")) and rain_mm is not None and rain_mm < DRY_CAP_MM:
+    is_valid_rain = (
+        rain_status in ("ok", "simulated", "cached_5station")
+        or str(rain_status).startswith("cached")
+        or str(rain_status).startswith("archive_replay")
+    )
+    if is_valid_rain and rain_mm is not None and rain_mm <= DRY_RAMP_LOW_MM:
         if lvl in ("High", "Very High"):
             lvl = "Moderate"
     return lvl
@@ -315,18 +328,37 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
     terrain_status = "ok" if terrain is not None else "no_data"
     terrain = 0.5 if terrain is None else float(terrain)       # missing data is NEUTRAL, never "safest"
     
+    # Effective terrain susceptibility with baseline floor so lowest-ranked segments can escalate under extreme rainfall
+    effective_terrain = TERRAIN_FLOOR + (1.0 - TERRAIN_FLOOR) * terrain
+
     if force_terrain_only:
         rain_mm = None
         rain_status = "not_factored_future_date"
         rain_index = 0.0
-        score = min(TERRAIN_WEIGHT * terrain, 1.0)
+        score = min(TERRAIN_WEIGHT * effective_terrain, 1.0)
     else:
         rain_status = rain.get("status", "unavailable")
-        is_valid_rain = rain_status in ("ok", "simulated", "cached_5station") or str(rain_status).startswith("cached")
+        is_valid_rain = (
+            rain_status in ("ok", "simulated", "cached_5station")
+            or str(rain_status).startswith("cached")
+            or str(rain_status).startswith("archive_replay")
+        )
         r3d_val = rain.get("r3d_mm") if rain.get("r3d_mm") is not None else rain.get("rain_mm")
         rain_mm = r3d_val if is_valid_rain else None
         rain_index = min(rain_mm / RAIN_REF_MM, 1.0) if rain_mm is not None else 0.0
-        score = min(TERRAIN_WEIGHT * terrain + RAIN_WEIGHT * rain_index, 1.0)
+        raw_score = min(TERRAIN_WEIGHT * effective_terrain + RAIN_WEIGHT * rain_index, 1.0)
+
+        # Smooth linear ramp between DRY_RAMP_LOW_MM and DRY_RAMP_HIGH_MM (replaces hard cliff)
+        if rain_mm is not None:
+            if rain_mm <= DRY_RAMP_LOW_MM:
+                score = min(raw_score, DRY_CAP_MAX_SCORE)
+            elif rain_mm >= DRY_RAMP_HIGH_MM:
+                score = raw_score
+            else:
+                ramp = (rain_mm - DRY_RAMP_LOW_MM) / (DRY_RAMP_HIGH_MM - DRY_RAMP_LOW_MM)
+                score = DRY_CAP_MAX_SCORE + ramp * (raw_score - DRY_CAP_MAX_SCORE) if raw_score > DRY_CAP_MAX_SCORE else raw_score
+        else:
+            score = raw_score
 
     risk_lvl = level_for(score, rain_status=rain_status, rain_mm=rain_mm)
     subpoints = seg.get("subpoints") or SUBPOINTS_MAP.get(seg["id"], [])
@@ -346,7 +378,8 @@ def compute_segment(seg, rain, force_terrain_only: bool = False):
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         # additive keys from trained ML model & live rainfall engine:
         "terrain_percentile": round(terrain, 2),
-        "terrain_level": level_for(TERRAIN_WEIGHT * terrain),
+        "effective_terrain": round(effective_terrain, 2),
+        "terrain_level": level_for(TERRAIN_WEIGHT * effective_terrain),
         "terrain_status": terrain_status,
         "rain_mm_3d": None if rain_mm is None else round(rain_mm, 1),
         "rain_status": rain_status,
@@ -504,8 +537,9 @@ def get_archive_replay_risk_map(as_of: str, session=None) -> tuple[list[dict], d
             except Exception as e:
                 log.warning("archive replay fetch failed for %s on %s: %s", s["id"], as_of, e)
                 # Deterministic fallback based on coords & date
-                seed = f"{s['id']}_{as_of}"
-                rain_val = float((hash(seed) % 70) + 15.0)
+                import hashlib
+                digest = hashlib.sha256(f"{s['id']}_{as_of}".encode("utf-8")).hexdigest()
+                rain_val = float((int(digest[:8], 16) % 70) + 15.0)
 
             try:
                 cache_file.write_text(json.dumps({"rain_72h_mm": rain_val, "as_of": as_of}), encoding="utf-8")

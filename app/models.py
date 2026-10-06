@@ -684,6 +684,7 @@ class ModelKWeights(BaseModel):
     k_rain: float = Field(..., description="Weight of rainfall term in composite relative risk index (0.0 to 1.0)")
     k_terrain: float = Field(..., description="Weight of static terrain percentile in composite relative risk index")
     rain_ref_mm: float = Field(..., description="3-day rainfall (mm) at which rainfall term reaches saturation")
+    terrain_floor: Optional[float] = Field(0.35, description="Baseline floor for terrain susceptibility")
 
 class ThresholdItem(BaseModel):
     threshold: float = Field(..., description="Minimum relative risk index for this warning tier")
@@ -736,6 +737,9 @@ class ModelInfoResponse(BaseModel):
     thresholds: List[ThresholdItem] = Field(..., description="Risk-level threshold boundaries")
     k: ModelKWeights = Field(..., description="Weights used in composite relative risk index")
     dry_cap: float = Field(..., description="Rainfall threshold below which risk is capped at Moderate during dry weather")
+    dry_ramp_low_mm: Optional[float] = Field(15.0, description="Lower bound of dry-cap linear ramp")
+    dry_ramp_high_mm: Optional[float] = Field(35.0, description="Upper bound of dry-cap linear ramp")
+    dry_cap_max_score: Optional[float] = Field(0.49, description="Maximum permitted score under dry conditions")
     limitations: List[str] = Field(..., description="Transparent scientific limitations and operational boundaries")
     data_sources: Dict[str, str] = Field(..., description="Citations and data sources for inventory, DEM, and meteorology")
     scope: str = Field(..., description="Evaluated geographical corridor scope")

@@ -3,14 +3,17 @@
 NH-7 Landslide Early Warning System - Automated Scripted Demo Runner
 ====================================================================
 Runs the complete scripted hackathon demonstration sequence against a live server:
+  0. Pre-warms & verifies zero-internet offline assets (rain snapshot, TTS cache, backtest cache)
   1. /risk-map at simulate_rain_mm=0, 40, and 100 mm
   2. /route-risk (Rishikesh to Joshimath) without depart_time
   3. /route-risk (Rishikesh to Joshimath) with depart_time (Time-Aware Planner)
   4. /priority-list (BRO Operational Pre-positioning Priority)
   5. Ground truth flywheel: submit field report -> admin validate -> check adjusted level
-  6. /voice-alert (bilingual gTTS audio / browser fallback)
+  6. /voice-alert (bilingual gTTS audio / cache verification)
+  7. /risk-map?as_of=2023-08-14 (Historical Monsoon Time Machine Replay)
+  8. /risk-map?simulate_rain_mm=140 (Extreme 140 mm Rain Cloudburst Scenario)
 
-Prints PASS/FAIL, latency, and diagnostics per step.
+Fails loudly if any offline asset is missing or any step fails.
 Zero external shell dependencies (pure standard library).
 """
 import os
@@ -19,6 +22,14 @@ import time
 import json
 import urllib.request
 import urllib.error
+from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 ADMIN_KEY = os.getenv("ADMIN_API_KEY", "dev-localhost")
@@ -76,6 +87,107 @@ def execute_request(method: str, path: str, body: dict = None, headers: dict = N
         }
 
 
+def prewarm_and_verify_offline_assets():
+    """
+    Pre-warms and verifies that all offline zero-internet demo assets are present:
+      1. data/rain_snapshot.json contains all 18 segments with valid metrics
+      2. data/tts_cache contains synthesized MP3 files for standard EN+HI phrases
+      3. data/backtest_cache contains all 18 segments for 2023-08-12..14
+    Fails loudly with sys.exit(1) if anything is missing or corrupt.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    data_dir = repo_root / "data"
+    snapshot_file = data_dir / "rain_snapshot.json"
+    tts_cache_dir = data_dir / "tts_cache"
+    backtest_cache_dir = data_dir / "backtest_cache"
+
+    print("=" * 76)
+    print("  PRE-WARMING & VERIFYING ZERO-INTERNET OFFLINE DEMO ASSETS")
+    print("=" * 76)
+
+    # 1. Verify / Pre-warm data/rain_snapshot.json
+    print("[1/3] Checking data/rain_snapshot.json ...")
+    if not snapshot_file.exists():
+        print(f"  -> {snapshot_file} not found. Attempting pre-warm from {BASE_URL}/risk-map ...")
+        res = execute_request("GET", "/risk-map")
+        if not snapshot_file.exists():
+            print(f"[FATAL OFFLINE ASSET FAILURE] {snapshot_file} is missing and could not be pre-warmed!", file=sys.stderr)
+            sys.exit(1)
+
+    try:
+        snap_content = json.loads(snapshot_file.read_text(encoding="utf-8"))
+        snap_data = snap_content.get("data", {})
+        all_18 = [f"seg_{i:02d}" for i in range(1, 19)]
+        missing_segs = [s for s in all_18 if s not in snap_data]
+        if missing_segs:
+            print(f"[FATAL OFFLINE ASSET FAILURE] data/rain_snapshot.json is missing segments: {missing_segs}", file=sys.stderr)
+            sys.exit(1)
+        print(f"  [OK] rain_snapshot.json valid (timestamp: {snap_content.get('timestamp')}, 18 segments verified)")
+    except Exception as e:
+        print(f"[FATAL OFFLINE ASSET FAILURE] Failed to parse data/rain_snapshot.json: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # 2. Verify / Pre-warm data/tts_cache
+    print("[2/3] Pre-warming & Verifying data/tts_cache for standard EN+HI phrases ...")
+    tts_cache_dir.mkdir(parents=True, exist_ok=True)
+    demo_phrases = [
+        {"desc": "seg_01 EN (Rishikesh)", "path": "/voice-alert?segment_id=seg_01&lang=en"},
+        {"desc": "seg_01 HI (Rishikesh)", "path": "/voice-alert?segment_id=seg_01&lang=hi"},
+        {"desc": "seg_08 EN (Sirobagarh)", "path": "/voice-alert?segment_id=seg_08&lang=en"},
+        {"desc": "seg_08 HI (Sirobagarh)", "path": "/voice-alert?segment_id=seg_08&lang=hi"},
+        {"desc": "seg_18 EN (Joshimath)", "path": "/voice-alert?segment_id=seg_18&lang=en"},
+        {"desc": "seg_18 HI (Joshimath)", "path": "/voice-alert?segment_id=seg_18&lang=hi"},
+        {"desc": "Full Route EN (01->18)", "path": "/voice-alert?from=seg_01&to=seg_18&lang=en"},
+        {"desc": "Full Route HI (01->18)", "path": "/voice-alert?from=seg_01&to=seg_18&lang=hi"},
+        {"desc": "Short Route EN (01->04)", "path": "/voice-alert?from=seg_01&to=seg_04&lang=en"},
+        {"desc": "Short Route HI (01->04)", "path": "/voice-alert?from=seg_01&to=seg_04&lang=hi"},
+    ]
+
+    for item in demo_phrases:
+        res = execute_request("GET", item["path"])
+        if not res["ok"] or "audio/mpeg" not in res.get("content_type", ""):
+            print(f"[FATAL OFFLINE ASSET FAILURE] TTS request failed for {item['desc']}: status={res['status']}, type={res.get('content_type')}", file=sys.stderr)
+            sys.exit(1)
+        cached_files = list(tts_cache_dir.glob("*.mp3"))
+        if not cached_files:
+            print(f"[FATAL OFFLINE ASSET FAILURE] No cached MP3 files found in {tts_cache_dir} after request {item['desc']}", file=sys.stderr)
+            sys.exit(1)
+        print(f"  [OK] {item['desc']:<26} -> {len(res['raw_bytes'])} bytes audio cached")
+
+    # 3. Verify data/backtest_cache for 2023-08-12..14
+    print("[3/3] Verifying data/backtest_cache for 2023-08-12..14 replay ...")
+    if not backtest_cache_dir.exists():
+        print(f"[FATAL OFFLINE ASSET FAILURE] {backtest_cache_dir} does not exist!", file=sys.stderr)
+        sys.exit(1)
+
+    target_dates = [
+        ("2023-08-12", "2023-08-10", "2023-08-12"),
+        ("2023-08-13", "2023-08-11", "2023-08-13"),
+        ("2023-08-14", "2023-08-12", "2023-08-14"),
+    ]
+    missing_backtest = []
+    for as_of, start_s, end_s in target_dates:
+        for sid in all_18:
+            fname = f"{sid}_{start_s}_{end_s}.json"
+            fpath = backtest_cache_dir / fname
+            if not fpath.exists():
+                missing_backtest.append(fname)
+            else:
+                try:
+                    cdata = json.loads(fpath.read_text(encoding="utf-8"))
+                    if "rain_72h_mm" not in cdata:
+                        missing_backtest.append(f"{fname} (missing rain_72h_mm)")
+                except Exception as e:
+                    missing_backtest.append(f"{fname} (corrupt: {e})")
+
+    if missing_backtest:
+        print(f"[FATAL OFFLINE ASSET FAILURE] Historical backtest cache incomplete! Missing/corrupt {len(missing_backtest)} files: {missing_backtest[:5]}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"  [OK] All 54 backtest cache files for 2023-08-12..14 verified.")
+    print("  >>> ALL OFFLINE ASSETS PRE-WARMED AND VERIFIED SUCCESSFULLY <<<\n")
+
+
 def run_demo():
     print("=" * 76)
     print("  NH-7 LANDSLIDE EARLY WARNING SYSTEM — SCRIPTED DEMO VERIFIER")
@@ -83,8 +195,11 @@ def run_demo():
     print("=" * 76)
     print()
 
+    # Pre-flight asset check (fails loudly if anything is missing)
+    prewarm_and_verify_offline_assets()
+
     steps_passed = 0
-    total_steps = 8
+    total_steps = 10
     start_total_time = time.perf_counter()
 
     # --------------------------------------------------------------------------
@@ -222,9 +337,8 @@ def run_demo():
         total_fly_ms = (time.perf_counter() - t0_fly) * 1000
         if val_res["ok"] and target_seg:
             adj_lvl = target_seg.get("adjusted_risk_level", target_seg.get("risk_level"))
-            reason = target_seg.get("adjustment_reason") or "Verified ground reports"
             print(f"[PASS] Step {step_num}: Flywheel (Submit->Validate->Adjust)   {total_fly_ms:>7.1f}ms  "
-              f"({target_seg['id']} escalated to '{adj_lvl}')")
+                  f"({target_seg['id']} escalated to '{adj_lvl}')")
             steps_passed += 1
         else:
             print(f"[PASS] Step {step_num}: Flywheel (Submit->Validate)          {total_fly_ms:>7.1f}ms  "
@@ -244,7 +358,7 @@ def run_demo():
     if res["ok"]:
         ctype = res["content_type"]
         if "audio/" in ctype:
-            details = f"MP3 stream ({res['content_len']} bytes)"
+            details = f"MP3 stream ({res['content_len']} bytes, cached)"
         else:
             tts_mode = res["data"].get("tts") if res["data"] else "browser"
             details = f"Browser speech fallback (tts: {tts_mode})"
@@ -253,6 +367,38 @@ def run_demo():
     else:
         print(f"[FAIL] Step {step_num}: GET {path:<42} {res['latency_ms']:>7.1f}ms  "
               f"({res.get('error') or 'Failed audio synthesis'})")
+
+    # --------------------------------------------------------------------------
+    # Step 9: Replay 14 Aug 2023 Monsoon (Time Machine Replay)
+    # --------------------------------------------------------------------------
+    step_num = 9
+    path = "/risk-map?as_of=2023-08-14"
+    res = execute_request("GET", path)
+    if res["ok"] and res["data"] and len(res["data"].get("segments", [])) == 18 and res["data"].get("mode") == "replay":
+        segs = res["data"]["segments"]
+        high_cnt = sum(1 for s in segs if s.get("risk_level") in ("High", "Very High"))
+        print(f"[PASS] Step {step_num}: GET {path:<42} {res['latency_ms']:>7.1f}ms  "
+              f"(Monsoon Replay: High/V.High: {high_cnt}/18, mode={res['data'].get('mode')})")
+        steps_passed += 1
+    else:
+        print(f"[FAIL] Step {step_num}: GET {path:<42} {res['latency_ms']:>7.1f}ms  "
+              f"({res.get('error') or 'Invalid replay response'})")
+
+    # --------------------------------------------------------------------------
+    # Step 10: Extreme Rain 140 mm Cloudburst Simulation
+    # --------------------------------------------------------------------------
+    step_num = 10
+    path = "/risk-map?simulate_rain_mm=140"
+    res = execute_request("GET", path)
+    if res["ok"] and res["data"] and len(res["data"].get("segments", [])) == 18 and res["data"].get("is_simulated"):
+        segs = res["data"]["segments"]
+        high_cnt = sum(1 for s in segs if s.get("risk_level") in ("High", "Very High"))
+        print(f"[PASS] Step {step_num}: GET {path:<42} {res['latency_ms']:>7.1f}ms  "
+              f"(Cloudburst 140mm: High/V.High: {high_cnt}/18, simulated=True)")
+        steps_passed += 1
+    else:
+        print(f"[FAIL] Step {step_num}: GET {path:<42} {res['latency_ms']:>7.1f}ms  "
+              f"({res.get('error') or 'Invalid simulation response'})")
 
     total_elapsed = (time.perf_counter() - start_total_time) * 1000
     print()

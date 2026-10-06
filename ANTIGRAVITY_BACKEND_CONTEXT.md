@@ -130,15 +130,17 @@ export const RISK_LEVELS = {
 - **Authoritative Deployed Baseline:** The sole official deployed model baseline is Random Forest v2 on Copernicus 30m DEM with Pooled Spatial Out-of-Fold ROC-AUC of **0.767** and spatial block mean AUC of **0.664**.
 
 ### 4.2 Dynamic Composite Hazard Formula
-At runtime, relative risk is evaluated using a **physics-constrained linear-capped coupling**:
+At runtime, relative risk is evaluated using a **physics-constrained linear-capped coupling with baseline terrain floor**:
 
-$$\text{risk\_score} = \min\left(0.60 \times \text{terrain\_percentile} + 0.40 \times \min\left(\frac{R_{3\text{d}}}{100.0}, 1.0\right), 1.0\right)$$
+$$\text{effective\_terrain} = \text{TERRAIN\_FLOOR} + (1.0 - \text{TERRAIN\_FLOOR}) \times \text{terrain\_percentile}$$
+$$\text{raw\_score} = \min\left(0.60 \times \text{effective\_terrain} + 0.40 \times \min\left(\frac{R_{3\text{d}}}{150.0}, 1.0\right), 1.0\right)$$
 
 - $K_{\text{terrain}} = 0.60$: Weight of static geomorphic susceptibility ranking.
 - $K_{\text{rain}} = 0.40$: Weight of hydrologic trigger.
+- $\text{TERRAIN\_FLOOR} = 0.35$: Baseline susceptibility floor ensuring even lowest-percentile segments escalate to High under severe rain.
 - $R_{3\text{d}}$: 3-day antecedent rainfall (yesterday + today + tomorrow) in mm.
-- $R_{\text{ref}} = 100.0\text{ mm}$: Rainfall reference saturation constant.
-- **Dry-Weather Guardrail:** If valid 3-day rainfall is below $25.0\text{ mm}$ (`DRY_CAP_MM = 25.0`), categorical risk cannot exceed **Moderate** ($\le 0.49$), preventing false alarms in dry, sunny weather.
+- $R_{\text{ref}} = 150.0\text{ mm}$ (`RAIN_REF_MM`): Rainfall reference saturation constant avoiding premature saturation at 100mm.
+- **Dry-Weather Guardrail & Linear Ramp (`DRY_RAMP_LOW_MM = 15.0`, `DRY_RAMP_HIGH_MM = 35.0`, `DRY_CAP_MAX_SCORE = 0.49`):** If valid 3-day rainfall is $\le 15.0\text{ mm}$, categorical risk cannot exceed **Moderate** ($\le 0.49$), preventing false alarms in dry, sunny weather. Between 15 mm and 35 mm, a continuous linear ramp smoothly transitions from the 0.49 ceiling to full uncapped response, eliminating step-discontinuities.
 
 ---
 

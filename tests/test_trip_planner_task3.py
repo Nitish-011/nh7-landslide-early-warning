@@ -207,10 +207,10 @@ def test_rain_peak_at_eta_changes_recommendation(monkeypatch):
             for i in range(1, 19)
         }
         mock_dry_segments = [
-            {"id": "seg_01", "risk_score": 0.15, "risk_level": "Low", "terrain_percentile": 0.2, "hourly": dry_weather["seg_01"]["hourly"]},
-            {"id": "seg_02", "risk_score": 0.15, "risk_level": "Low", "terrain_percentile": 0.2, "hourly": dry_weather["seg_02"]["hourly"]},
-            {"id": "seg_03", "risk_score": 0.18, "risk_level": "Low", "terrain_percentile": 0.2, "hourly": dry_weather["seg_03"]["hourly"]},
-            {"id": "seg_04", "risk_score": 0.22, "risk_level": "Low", "terrain_percentile": 0.2, "hourly": dry_weather["seg_04"]["hourly"]},
+            {"id": "seg_01", "risk_score": 0.15, "risk_level": "Low", "terrain_percentile": 0.05, "hourly": dry_weather["seg_01"]["hourly"]},
+            {"id": "seg_02", "risk_score": 0.15, "risk_level": "Low", "terrain_percentile": 0.05, "hourly": dry_weather["seg_02"]["hourly"]},
+            {"id": "seg_03", "risk_score": 0.18, "risk_level": "Low", "terrain_percentile": 0.05, "hourly": dry_weather["seg_03"]["hourly"]},
+            {"id": "seg_04", "risk_score": 0.22, "risk_level": "Low", "terrain_percentile": 0.05, "hourly": dry_weather["seg_04"]["hourly"]},
         ]
         mock_live.return_value = (mock_dry_segments, mock_meta)
 

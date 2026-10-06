@@ -575,6 +575,18 @@
           <p style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.4;">
             Fetches 18 highway segments with 30m DEM terrain baseline + live Open-Meteo multi-station rainfall aggregation.
           </p>
+          <div style="margin: 10px 0 12px 0; padding: 10px 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">
+            <label for="demo-scenario-select" style="font-size: 0.76rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span>🎭 Demo Scenarios</span>
+              <span style="font-size: 0.68rem; font-weight: 500; color: var(--text-muted); font-family: var(--font-mono);">Instant Presentation Presets</span>
+            </label>
+            <select id="demo-scenario-select" onchange="onDemoScenarioChange(this.value)" style="width: 100%; padding: 8px 10px; font-size: 0.78rem; font-weight: 600; background: #0b1222; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; color: #f8fafc; cursor: pointer;">
+              <option value="live">Live</option>
+              <option value="replay_14_aug_2023">Replay 14 Aug 2023 monsoon</option>
+              <option value="extreme_140">Extreme rain 140 mm</option>
+            </select>
+          </div>
+
           <div class="btn-row">
             <button id="btn-fetch-risk-map" class="btn-primary" onclick="loadCorridorRiskMap()">
               <span>⚡ Fetch Live Risk Map</span>
@@ -825,16 +837,18 @@
               <label>Rainfall Injection</label>
               <span id="slider-rain-val" style="font-family: var(--font-mono); font-weight:700; color:var(--accent);">Live Weather (No Override)</span>
             </div>
-            <input type="range" id="rain-slider" min="-1" max="150" value="-1" step="1" oninput="updateRainSlider(this.value)" />
+            <input type="range" id="rain-slider" min="-1" max="180" value="-1" step="1" oninput="updateRainSlider(this.value)" />
           </div>
 
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
             <span class="preset-pill active" onclick="applyPreset(-1, this)">Live API</span>
             <span class="preset-pill" onclick="applyPreset(0, this)">Dry (0 mm)</span>
-            <span class="preset-pill" onclick="applyPreset(15, this)">Below Dry Cap (15 mm)</span>
-            <span class="preset-pill" onclick="applyPreset(50, this)">Moderate Rain (50 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(15, this)">Dry Cap (15 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(35, this)">Moderate (35 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(85, this)">Severe (85 mm)</span>
             <span class="preset-pill" onclick="applyPreset(100, this)">Monsoon Downpour (100 mm)</span>
-            <span class="preset-pill" onclick="applyPreset(150, this)">Cloudburst (150 mm)</span>
+            <span class="preset-pill" onclick="applyPreset(140, this)">Extreme rainfall (140 mm / 3 days)</span>
+            <span class="preset-pill" onclick="applyPreset(150, this)">Peak Storm (150 mm)</span>
           </div>
 
           <div class="btn-row" style="margin-top: 8px;">
@@ -850,7 +864,8 @@
           <div style="font-size: 0.74rem; line-height: 1.6; color: var(--text-muted);">
             <div>Disk Snapshot: <code>data/rain_snapshot.json</code></div>
             <div>In-Memory Cache TTL: <strong>300 seconds (5 min)</strong></div>
-            <div>Dry Cap Safety Ceiling: <code>DRY_CAP_MM = 25.0 mm</code></div>
+            <div>Dry Cap Guardrail: <code>DRY_CAP_MM = 25.0 mm (Ramp 15–35 mm)</code></div>
+            <div>Model Thresholds: <code>RAIN_REF_MM = 150.0 mm | TERRAIN_FLOOR = 0.35</code></div>
             <div>DEMO_MODE Support: <strong>Zero internet dependency pinned snapshot</strong></div>
           </div>
         </div>
@@ -1139,6 +1154,7 @@
     let closureMarkersLayer = null;
     let corridorData = null;
     let activeSimulationRain = null; // null = use live weather
+    let activeAsOfDate = null; // null = live weather; 'YYYY-MM-DD' for historical replay
     let currentLanguage = "en"; // "en" | "hi"
     let mapClickMode = false;
     let clickMarker = null;
@@ -1343,10 +1359,56 @@
       }
     }
 
+    // --- Demo Scenarios Controller ---
+    function onDemoScenarioChange(val) {
+      const sel = document.getElementById("demo-scenario-select");
+      if (sel && sel.value !== val) {
+        sel.value = val;
+      }
+
+      if (val === "replay_14_aug_2023") {
+        activeSimulationRain = null;
+        activeAsOfDate = "2023-08-14";
+        const dateInput = document.getElementById("time-machine-date");
+        if (dateInput) dateInput.value = "2023-08-14";
+        const slider = document.getElementById("rain-slider");
+        const sliderVal = document.getElementById("slider-rain-val");
+        if (slider) slider.value = "-1";
+        if (sliderVal) sliderVal.textContent = "Live Weather (No Override)";
+        document.querySelectorAll(".preset-pill").forEach(p => p.classList.remove("active"));
+      } else if (val === "extreme_140") {
+        activeAsOfDate = null;
+        activeSimulationRain = 140.0;
+        const slider = document.getElementById("rain-slider");
+        const sliderVal = document.getElementById("slider-rain-val");
+        if (slider) slider.value = "140";
+        if (sliderVal) sliderVal.textContent = "140 mm (Severe Cloudburst)";
+        document.querySelectorAll(".preset-pill").forEach(p => {
+          if (p.textContent.includes("140 mm")) p.classList.add("active");
+          else p.classList.remove("active");
+        });
+      } else { // "live"
+        activeAsOfDate = null;
+        activeSimulationRain = null;
+        const slider = document.getElementById("rain-slider");
+        const sliderVal = document.getElementById("slider-rain-val");
+        if (slider) slider.value = "-1";
+        if (sliderVal) sliderVal.textContent = "Live Weather (No Override)";
+        document.querySelectorAll(".preset-pill").forEach(p => {
+          if (p.textContent.includes("Live API")) p.classList.add("active");
+          else p.classList.remove("active");
+        });
+      }
+
+      loadCorridorRiskMap();
+    }
+
     // --- Tab 1: Corridor Risk Map ---
     async function loadCorridorRiskMap() {
       let url = `/risk-map?lang=${currentLanguage}`;
-      if (activeSimulationRain !== null) {
+      if (activeAsOfDate) {
+        url += `&as_of=${encodeURIComponent(activeAsOfDate)}`;
+      } else if (activeSimulationRain !== null) {
         url += `&simulate_rain_mm=${activeSimulationRain}`;
       }
 
@@ -1479,17 +1541,23 @@
       const dateInput = document.getElementById("time-machine-date").value;
       if (!dateInput) return alert("Select a historical date.");
       activeSimulationRain = null;
-      const url = `/risk-map?as_of=${encodeURIComponent(dateInput)}&lang=${currentLanguage}`;
-      const res = await apiCall("GET", url);
-      if (!res.ok) return alert("Replay failed: " + (res.data?.detail || res.status));
-      corridorData = res.data;
-      updateFreshnessBanner(corridorData);
-      renderCorridorOnMap(corridorData.segments);
-      updateHUD(corridorData);
+      activeAsOfDate = dateInput;
+      const scenarioSel = document.getElementById("demo-scenario-select");
+      if (scenarioSel) {
+        if (dateInput === "2023-08-14") {
+          scenarioSel.value = "replay_14_aug_2023";
+        } else {
+          scenarioSel.value = "live";
+        }
+      }
+      loadCorridorRiskMap();
     }
 
     function resetToLiveRiskMap() {
       activeSimulationRain = null;
+      activeAsOfDate = null;
+      const scenarioSel = document.getElementById("demo-scenario-select");
+      if (scenarioSel) scenarioSel.value = "live";
       loadCorridorRiskMap();
     }
 
@@ -1815,10 +1883,16 @@
     }
 
     function applyPreset(val, elem) {
+      activeAsOfDate = null;
       document.querySelectorAll(".preset-pill").forEach(p => p.classList.remove("active"));
       if (elem) elem.classList.add("active");
       document.getElementById("rain-slider").value = val;
       updateRainSlider(val);
+      const scenarioSel = document.getElementById("demo-scenario-select");
+      if (scenarioSel) {
+        if (parseFloat(val) === 140) scenarioSel.value = "extreme_140";
+        else if (parseFloat(val) < 0) scenarioSel.value = "live";
+      }
       reRunCurrentWithRain();
     }
 
@@ -1827,6 +1901,9 @@
     }
 
     function resetRainSimulation() {
+      activeAsOfDate = null;
+      const scenarioSel = document.getElementById("demo-scenario-select");
+      if (scenarioSel) scenarioSel.value = "live";
       applyPreset(-1, document.querySelector(".preset-pill"));
     }
 

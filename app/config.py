@@ -26,8 +26,8 @@ WEATHER_POLL_MINUTES = int(os.getenv("WEATHER_POLL_MINUTES", "30"))
 # - Advanced Hourly Mode (true): 18-segment hourly forecast and peak detection pipeline (opt-in via env)
 PER_SEGMENT_WEATHER = os.getenv("PER_SEGMENT_WEATHER", "false").lower() in ("true", "1", "yes")
 
-# Task 2: Backtest harness and historical Time Machine replay feature flag (default false)
-BACKTEST_ENABLED = os.getenv("BACKTEST_ENABLED", "false").lower() in ("true", "1", "yes")
+# Task 2: Backtest harness and historical Time Machine replay feature flag (default true)
+BACKTEST_ENABLED = os.getenv("BACKTEST_ENABLED", "true").lower() in ("true", "1", "yes")
 BACKTEST_CACHE_DIR = Path(os.getenv("BACKTEST_CACHE_DIR", str(DATA_DIR / "backtest_cache"))).resolve()
 BACKTEST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -73,11 +73,20 @@ K_RAIN = 0.4
 # K_TERRAIN: Weight of static terrain susceptibility percentile in composite relative risk index
 K_TERRAIN = 0.6
 
-# RAIN_REF_MM: 3-day rainfall at which the rain term saturates to 1.0 (demo heuristic)
-RAIN_REF_MM = 100.0
+# RAIN_REF_MM: 3-day rainfall at which the rain term saturates to 1.0 (150.0 mm avoids premature saturation)
+RAIN_REF_MM = float(os.getenv("RAIN_REF_MM", "150.0"))
 
-# DRY_CAP_MM: 3-day rainfall threshold below which risk is capped at Moderate under dry conditions
-DRY_CAP_MM = 25.0
+# TERRAIN_FLOOR: Baseline terrain susceptibility floor so low-rank segments can escalate under extreme rainfall
+# effective_terrain = TERRAIN_FLOOR + (1.0 - TERRAIN_FLOOR) * terrain_percentile
+TERRAIN_FLOOR = float(os.getenv("TERRAIN_FLOOR", "0.35"))
+
+# DRY_CAP_MM: 3-day rainfall reference threshold for dry condition heuristics (25.0 mm)
+DRY_CAP_MM = float(os.getenv("DRY_CAP_MM", "25.0"))
+
+# Dry-cap linear ramp parameters (smooth transition between 15 mm and 35 mm to avoid sharp cliff):
+DRY_RAMP_LOW_MM = float(os.getenv("DRY_RAMP_LOW_MM", "15.0"))
+DRY_RAMP_HIGH_MM = float(os.getenv("DRY_RAMP_HIGH_MM", "35.0"))
+DRY_CAP_MAX_SCORE = float(os.getenv("DRY_CAP_MAX_SCORE", "0.49"))
 
 # Risk-level thresholds: maps relative risk index (0.0 to 1.0) to categorical warning tiers
 RISK_LEVEL_THRESHOLDS = [

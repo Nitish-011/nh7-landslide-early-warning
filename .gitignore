@@ -40,6 +40,7 @@ model/dem_cache/
 .DS_Store
 Thumbs.db
 
-# TTS Cache
-data/tts_cache/*.mp3
+# TTS Cache (committed pre-warmed demo audio files)
+!data/tts_cache/*.mp3
 !data/tts_cache/.gitkeep
+

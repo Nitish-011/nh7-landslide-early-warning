@@ -116,8 +116,19 @@ def extract_rain_at_eta(
 def compute_risk_at_eta(terrain_percentile: Optional[float], rain_72h_mm: float) -> Tuple[float, str]:
     """Computes composite landslide risk score and categorical tier at a specific ETA."""
     terrain = 0.5 if terrain_percentile is None else float(terrain_percentile)
+    effective_terrain = config.TERRAIN_FLOOR + (1.0 - config.TERRAIN_FLOOR) * terrain
     rain_index = min(rain_72h_mm / config.RAIN_REF_MM, 1.0)
-    score = min(config.K_TERRAIN * terrain + config.K_RAIN * rain_index, 1.0)
+    raw_score = min(config.K_TERRAIN * effective_terrain + config.K_RAIN * rain_index, 1.0)
+
+    # Smooth linear ramp between DRY_RAMP_LOW_MM and DRY_RAMP_HIGH_MM
+    if rain_72h_mm <= config.DRY_RAMP_LOW_MM:
+        score = min(raw_score, config.DRY_CAP_MAX_SCORE)
+    elif rain_72h_mm >= config.DRY_RAMP_HIGH_MM:
+        score = raw_score
+    else:
+        ramp = (rain_72h_mm - config.DRY_RAMP_LOW_MM) / (config.DRY_RAMP_HIGH_MM - config.DRY_RAMP_LOW_MM)
+        score = config.DRY_CAP_MAX_SCORE + ramp * (raw_score - config.DRY_CAP_MAX_SCORE) if raw_score > config.DRY_CAP_MAX_SCORE else raw_score
+
     risk_lvl = level_for(score, rain_status="ok", rain_mm=rain_72h_mm)
     return round(score, 2), risk_lvl
 
