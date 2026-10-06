@@ -55,7 +55,20 @@ def build_twiml_response(text: str) -> Response:
     return Response(content=twiml, media_type="application/xml")
 
 
-@router.post("/webhook/sms", summary="Twilio Inbound SMS Webhook")
+@router.post(
+    "/webhook/sms",
+    summary="Twilio Inbound SMS Webhook",
+    responses={
+        200: {
+            "content": {
+                "application/xml": {
+                    "example": '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n    <Message>NH7 Srinagar to Sirobagarh: HIGH RISK. 3-day rain: 38.2 mm. Travel with caution.</Message>\n</Response>'
+                }
+            },
+            "description": "TwiML XML response containing formatted SMS reply (max 320 chars)"
+        }
+    }
+)
 async def inbound_sms_webhook(request: Request):
     """
     Handles inbound SMS messages sent to the Twilio number.

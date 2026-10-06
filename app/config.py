@@ -28,9 +28,12 @@ BACKTEST_ENABLED = os.getenv("BACKTEST_ENABLED", "false").lower() in ("true", "1
 BACKTEST_CACHE_DIR = Path(os.getenv("BACKTEST_CACHE_DIR", str(DATA_DIR / "backtest_cache"))).resolve()
 BACKTEST_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Task 3: Time-aware forecast-based trip planning feature flag (default false)
-TIME_AWARE_PLANNER = os.getenv("TIME_AWARE_PLANNER", "false").lower() in ("true", "1", "yes")
+# Task 3: Time-aware forecast-based trip planning feature flag (default true)
+TIME_AWARE_PLANNER = os.getenv("TIME_AWARE_PLANNER", "true").lower() in ("true", "1", "yes")
 DEFAULT_SPEED_KMPH = float(os.getenv("DEFAULT_SPEED_KMPH", "30.0"))
+
+# Task 10: Demo Mode (pins weather to local snapshot so demo is 100% reproducible and never depends on live internet)
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "yes")
 
 # Logging configuration
 LOG_FILE = LOGS_DIR / "backend.log"

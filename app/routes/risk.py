@@ -597,7 +597,27 @@ def get_priority_list(
         raise HTTPException(status_code=500, detail=f"Failed to generate priority list: {e}")
 
 
-@router.get("/voice-alert")
+@router.get(
+    "/voice-alert",
+    summary="Generate Localized Spoken Voice Alert (MP3 / Browser fallback)",
+    responses={
+        200: {
+            "content": {
+                "audio/mpeg": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "application/json": {
+                    "example": {
+                        "text": "मार्ग सलाह - ऋषिकेश to शिवपुरी: मध्यम ढलान नमी और फिसलन भरी सड़क स्थिति।",
+                        "tts": "browser",
+                        "lang": "hi"
+                    }
+                }
+            },
+            "description": "Returns synthesized MP3 audio stream or Web Speech API fallback JSON"
+        }
+    }
+)
 @limiter.limit("60/minute")
 def get_voice_alert(
     request: Request,

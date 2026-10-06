@@ -196,8 +196,9 @@ def test_maximum_one_step_cap():
     target_seg = "seg_12"
     now_str = datetime.now(timezone.utc).isoformat()
 
-    # Insert 5 fresh validated reports for seg_12
+    # Clear prior reports on target_seg so the count is strictly isolated
     with get_db() as conn:
+        conn.execute("DELETE FROM field_reports WHERE segment_id = ?", (target_seg,))
         for i in range(5):
             conn.execute("""
                 INSERT INTO field_reports (

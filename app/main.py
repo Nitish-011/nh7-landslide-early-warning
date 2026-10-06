@@ -28,6 +28,7 @@ from app.routes.reports import router as reports_router
 from app.routes.history import router as history_router
 from app.routes.closures import router as closures_router
 from app.routes.webhooks import router as webhooks_router
+from app.models import HealthResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -138,7 +139,7 @@ async def serve_service_worker():
         return FileResponse(sw_file, media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
     return Response(content="// SW not found", media_type="application/javascript")
 
-@app.get("/health", tags=["System"])
+@app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
     """
     Sub-second health check endpoint for container probes, uptime pingers, and load balancers.

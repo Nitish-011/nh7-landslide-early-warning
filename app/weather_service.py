@@ -315,6 +315,18 @@ def fetch_weather_pipeline(
         }
         return sim_data, meta
 
+    # Task 10: DEMO_MODE pins weather strictly to snapshot when simulate_rain_mm is absent
+    if getattr(config, "DEMO_MODE", False) and simulate_rain_mm is None:
+        snap_data, snap_time = load_snapshot_data(segments)
+        if snap_data is not None:
+            return snap_data, {
+                "weather_source": "snapshot",
+                "weather_fetched_at": snap_time or now_iso,
+                "weather_age_minutes": 0.0,
+                "is_simulated": False,
+                "stale_warning": None,
+            }
+
     now = time.time()
 
     # 2. In-Memory Cache Check

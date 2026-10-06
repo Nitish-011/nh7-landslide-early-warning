@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.database import get_db
 from app.logger import logger
 from app.limiter import limiter
-from app.models import RoadClosureCreate, RoadClosureResponse
+from app.models import RoadClosureCreate, RoadClosureResponse, ClosureDeleteResponse
 from app.routes.reports import verify_admin_key
 
 router = APIRouter(tags=["Road Closures"])
@@ -88,6 +88,7 @@ def create_road_closure(
 
 @router.delete(
     "/admin/closure/{closure_id}",
+    response_model=ClosureDeleteResponse,
     summary="Delete / reopen official road closure (Admin only)"
 )
 def delete_road_closure(

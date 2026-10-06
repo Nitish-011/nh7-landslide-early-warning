@@ -190,6 +190,10 @@ def fetch_rainfall_with_metadata(segments, session=None, simulate_rain_mm=None) 
         from app.weather_service import fetch_weather_pipeline
         return fetch_weather_pipeline(segments, session=session, simulate_rain_mm=simulate_rain_mm)
 
+    # Task 10: DEMO_MODE pins weather strictly to snapshot when simulate_rain_mm is absent
+    if getattr(config, "DEMO_MODE", False) and simulate_rain_mm is None:
+        return load_snapshot_with_metadata(segments)
+
     if simulate_rain_mm is not None:
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rain = {s["id"]: {"rain_mm": float(simulate_rain_mm), "status": "simulated"} for s in segments}
