@@ -2,6 +2,9 @@
 
 This guide documents **every backend feature**, details **how to test every endpoint** (via the interactive testbench, `curl`, and automated tests), explains **how to replace the test frontend**, and directly addresses the core question: **What is static vs. dynamic in the backend?**
 
+> [!TIP]
+> **Looking for the browser UI testing walkthrough?** See [FRONTEND_TESTING_GUIDE.md](FRONTEND_TESTING_GUIDE.md) for a step-by-step tour of all 9 frontend tabs, live storm simulator, voice warnings, and PWA offline tests.
+
 ---
 
 ## 1. Deep Dive: "Is Nothing Static in Our Backend Right Now?"
