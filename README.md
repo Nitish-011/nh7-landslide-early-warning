@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/PyTest-119%20Passed%20(100%25)-success.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/PyTest-121%20Passed%20(100%25)-success.svg)](https://pytest.org/)
 [![GIS](https://img.shields.io/badge/DEM-Copernicus%2030m-green.svg)](https://spacedata.copernicus.eu/)
 [![PWA](https://img.shields.io/badge/PWA-Offline%20Ready-orange.svg)](https://web.dev/progressive-web-apps/)
 [![Hackathon](https://img.shields.io/badge/Hackathon-IBM%20x%20Jigyasa-purple.svg)]()
@@ -89,7 +89,7 @@ Our backend is built around a hybrid physical-statistical model: **Static Topogr
                                                     v
 +-----------------------+  Hourly Rainfall  +---------------------------------+
 |   Open-Meteo API      | ----------------> |     DYNAMIC HAZARD ENGINE       |
-| 5 Virtual Stations on |                   |  P_hazard = P_terrain * (1-e^-kR)
+| 5 Virtual Stations on |                   |  Risk = min(0.65*T + 0.35*R_norm)
 | NH-7 (5-min circuit)  |                   |  Dry cap (25mm) + Storm Sim     |
 +-----------------------+                   +---------------+-----------------+
                                                             |
@@ -198,12 +198,14 @@ Here are the most important endpoints you can try right now via `curl` or in you
 
 ## 🤖 Model Performance Snapshot
 
+- **Official Validated Deployed Model:** Copernicus 30m DEM + Random Forest v2 (`model/nh7_static_model_v2.joblib`).
 - **Trained On:** 309 field-mapped road-blocking landslide scars along NH-7 from published research (*Mey et al., 2024, Natural Hazards and Earth System Sciences*).
-- **Spatial Resolution:** 30-meter Copernicus DEM features (Slope, Local Relief 300m, Curvature, TPI, Proximity to Drainage).
-- **Pooled Out-of-Fold ROC-AUC:** **0.767** (Random Forest on Copernicus 30m DEM, 95% CI: `[0.680, 0.802]`).
+- **Spatial Resolution:** 30-meter Copernicus DEM features (Slope, Local Relief 300m, Curvature, TPI, Aspect).
+- **Pooled Out-of-Fold ROC-AUC:** **0.767** (Leave-One-Block-Out spatial CV, 95% CI: `[0.680, 0.802]`).
 - **Spatial Block Mean AUC:** **0.664** (across 6 spatial blocks with 2.0 km exclusion buffer).
 - **Average Precision (PR-AUC):** **0.533**, **Top-20% Highway Capture Rate:** **43.0%**.
-- **Spearman Rank Correlation:** **0.653** ($p = 0.0033$), verifying strong statistical concordance with ground-truth landslide frequency.
+- **Spearman Rank Correlation ($\rho$):** **0.653** ($p = 0.0033$), verifying strong statistical concordance with ground-truth landslide frequency.
+- **Dynamic Meteorological Layer:** Weighted linear-capped live rainfall heuristic ($\text{score} = \min(0.65 \times \text{terrain} + 0.35 \times \min(R_{3\text{d}}/100, 1.0), 1.0)$, with $25\text{ mm}$ dry-weather cap).
 - **Inference Latency:** `< 12 ms` to evaluate the entire 247 km highway corridor.
 
 👉 *For the complete model card, confusion matrices, and backtest results, check [MODEL_PERFORMANCE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/MODEL_PERFORMANCE.md).*
@@ -215,7 +217,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 Our test suite guarantees that no regressions occur across API contracts, guardrails, or physics calculations:
 
 ```bash
-# Run all 119 automated tests
+# Run all 121 automated tests
 python -m pytest
 ```
 
@@ -223,26 +225,26 @@ Output:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.14.6, pytest-9.0.3
-collected 119 items
+collected 121 items
 
-tests/contract/test_contract.py ..................                       [ 15%]
+tests/contract/test_contract.py ..................                       [ 14%]
 tests/contract/test_golden_schema.py .........                           [ 22%]
 tests/test_alert_delivery_task6.py ......                                [ 27%]
 tests/test_backtest_task2.py ......                                      [ 32%]
 tests/test_closures_and_flywheel_task5.py .......                        [ 38%]
-tests/test_consequence_task4.py ......                                   [ 43%]
-tests/test_freshness_f2.py .......                                       [ 49%]
-tests/test_localization_and_voice_task7.py .......                       [ 55%]
-tests/test_model_info_f3.py ........                                     [ 62%]
-tests/test_offline_pack_task8.py .......                                 [ 68%]
-tests/test_production_f5.py ......                                       [ 73%]
-tests/test_risk_resilience.py ...                                        [ 75%]
+tests/test_consequence_task4.py ......                                   [ 42%]
+tests/test_freshness_f2.py .......                                       [ 48%]
+tests/test_localization_and_voice_task7.py .......                       [ 54%]
+tests/test_model_info_f3.py ........                                     [ 61%]
+tests/test_offline_pack_task8.py .......                                 [ 66%]
+tests/test_production_f5.py ......                                       [ 71%]
+tests/test_risk_resilience.py .....                                      [ 76%]
 tests/test_security_f1.py .............                                  [ 86%]
-tests/test_trip_planner_task3.py ....                                    [ 89%]
-tests/test_validation_audit_f4.py ......                                 [ 94%]
+tests/test_trip_planner_task3.py ....                                    [ 90%]
+tests/test_validation_audit_f4.py ......                                 [ 95%]
 tests/test_weather_upgrade_task1.py ......                               [100%]
 
-====================== 119 passed in 17.50s ======================
+====================== 121 passed in 18.50s ======================
 ```
 
 ---
@@ -261,14 +263,17 @@ ADMIN_API_KEY=admin-dev-secret-key-nh7
 # Twilio SMS Credentials (Optional for live SMS delivery)
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
+TWILIO_FROM=                          # E.164 phone or shortcode (e.g. +1234567890; TWILIO_PHONE_NUMBER also supported)
 
 # Telegram Bot Credentials (Optional for live bot polling)
 TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
+ENABLE_TELEGRAM_BOT=false
 
-# Background Scheduler Interval (seconds)
-ALERT_CHECK_INTERVAL=600
+# Alert Dispatcher Polling Interval (in minutes, default: 10; ALERT_CHECK_INTERVAL in sec also supported)
+ALERT_DISPATCH_INTERVAL_MINUTES=10
+
+# Safe Mode: True simulates delivery in logs without hitting external messaging APIs
+DRY_RUN=true
 ```
 
 ---

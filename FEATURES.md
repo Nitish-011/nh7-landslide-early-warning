@@ -27,7 +27,7 @@ The platform bridges cutting-edge machine learning with operational field disast
 +---------------------------------------------------------------------------------------------------+
 |                                  INTELLIGENCE & HAZARD ENGINE                                      |
 |  - Static Susceptibility (Random Forest + XGBoost v2)        - Antecedent 3-Day Wetting [R_3d]    |
-|  - Exponential Triggering: P_hazard = P_terrain * (1 - e^-kR)  - Fallback Circuit Breaker (5m TTL)|
+|  - Dynamic Risk: score = min(w_t*terrain + w_r*min(R/100, 1), 1) - Fallback Circuit Breaker (5m TTL)|
 +-------------------------------------------------+-------------------------------------------------+
                                                   |
                                                   v
@@ -75,9 +75,9 @@ The platform bridges cutting-edge machine learning with operational field disast
   - Uses a **Copernicus 30m DEM** baseline calculating slope, local relief (300m radius), Topographic Position Index (TPI), and proximity to waterways.
   - Queries 5 virtual weather stations spanning the corridor (Rishikesh, Devprayag, Srinagar, Rudraprayag, Chamoli) via Open-Meteo.
   - Computes the 3-day antecedent rainfall $R_{3\text{d}} = R_{\text{yesterday}} + R_{\text{today}} + R_{\text{tomorrow}}$.
-  - Integrates physics-informed exponential wetting:
-    $$P_{\text{hazard}} = P_{\text{terrain}} \times \left(1 - e^{-k \cdot R_{3\text{d}}}\right)$$
-    where $k = 0.40$ (standard Himalayan trigger coefficient).
+  - Integrates transparent weighted linear-capped dynamic hazard formula:
+    $$\text{risk\_score} = \min\left(K_{\text{terrain}} \times \text{terrain\_percentile} + K_{\text{rain}} \times \min\left(\frac{R_{3\text{d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
+    where $K_{\text{terrain}} = 0.65$, $K_{\text{rain}} = 0.35$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (calibrated operational heuristics).
   - **Dry Condition Guardrail (`DRY_CAP_MM = 25.0`):** If $R_{3\text{d}} < 25\text{ mm}$, risk is physically capped at "Moderate", preventing false alarms during dry sunny weather.
   - **Circuit Breaker:** If the live weather API fails or times out, the engine gracefully falls back to `data/rain_snapshot.json` with a 5-minute memory cache, returning in under 20ms and tagging `rain_status: "cached"`.
   - **Simulation Override:** Supports `?simulate_rain_mm=120.0` to instantly stress-test the entire highway under simulated cloudburst or monsoon downpour conditions.

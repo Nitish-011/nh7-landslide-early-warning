@@ -20,6 +20,7 @@ Historical Backtest Harness and Statistical Evaluator for NH-7 Landslide Model.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import logging
 import os
@@ -145,7 +146,8 @@ def fetch_archive_rainfall_72h(
         log.warning("archive fetch failed for %s on %s (%s). Using synthetic or zero fallback.", segment["id"], target_date_str, e)
         # Deterministic offline fallback based on coordinates and date
         seed = f"{segment['id']}_{target_date_str}"
-        pseudo_rand = (hash(seed) % 80) + 15.0
+        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+        pseudo_rand = (int(digest[:8], 16) % 80) + 15.0
         rain_72h = float(pseudo_rand)
 
     # Save to cache atomically

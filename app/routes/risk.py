@@ -36,14 +36,10 @@ from app.limiter import limiter
 router = APIRouter(tags=["Risk Assessment"])
 
 def calculate_risk_level(score: float) -> str:
-    """Classifies risk score into standardized categories."""
-    if score >= 0.80:
-        return "Very High"
-    if score >= 0.60:
-        return "High"
-    if score >= 0.35:
-        return "Moderate"
-    return "Low"
+    """Classifies risk score into standardized categories using central LEVEL_CUTS."""
+    from app.risk_service import level_for
+    return level_for(score)
+
 
 def compute_deterministic_score(seed_str: str, base_score: float) -> float:
     """

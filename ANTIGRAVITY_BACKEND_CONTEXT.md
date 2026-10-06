@@ -25,7 +25,7 @@ When building a frontend for this repository, you do **not** need to simulate or
 +---------------------------------------------------------------------------------------------------+
 |               DYNAMIC REAL-TIME ENGINE (Live State & Weather)                                     |
 |  - Live 3-Day Multi-Station Rainfall (Open-Meteo across 5 corridor stations, 5-min cache TTL)      |
-|  - Real-Time Exponential Triggering: P_hazard = P_terrain * (1 - e^-0.4*R)                        |
+|  - Dynamic Risk Formula: score = min(0.65*terrain + 0.35*min(R_3d/100, 1.0), 1.0)                 |
 |  - Dynamic Storm Simulation Overrides (?simulate_rain_mm=...)                                     |
 |  - Time-Aware Arrival-Hour Trip Forecasting (POST /trip-planner)                                  |
 |  - Active Road Closures & Bypass Routing (GET /closures)                                          |

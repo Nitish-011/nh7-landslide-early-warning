@@ -19,7 +19,7 @@ Standard machine learning models applied to landslide prediction in mountainous 
 
 Our system solves both flaws through a **physics-constrained statistical architecture**:
 - A **high-resolution 30m geomorphological baseline** ($P_{\text{terrain}}$) evaluating slope steepness, 300m local relief, Topographic Position Index (TPI), curvature, and elevation.
-- A **dynamic exponential wetting function** ($1 - e^{-k \cdot R_{3\text{d}}}$) driven by live 3-day antecedent rainfall across 5 highway weather stations with a dry-weather cap ($R_{3\text{d}} < 25\text{ mm} \implies \text{capped at Moderate}$).
+- A **dynamic weighted linear-capped rainfall heuristic** ($R_{\text{index}} = \min(R_{3\text{d}} / 100\text{ mm}, 1.0)$, composite score $= \min(0.65 \times P_{\text{terrain}} + 0.35 \times R_{\text{index}}, 1.0)$) driven by live 3-day antecedent rainfall across 5 highway weather stations with a dry-weather cap ($R_{3\text{d}} < 25\text{ mm} \implies \text{capped at Moderate}$). This transparent heuristic avoids uncalibrated non-linear parameter overfitting while ensuring predictable operational alerts.
 - Strict evaluation via **Leave-One-Block-Out (LOBO) Spatial Cross-Validation** with a 2.0 km exclusion buffer, guaranteeing genuine out-of-sample generalization.
 
 ### Headline Performance Summary (Official Audited Benchmark)
@@ -149,9 +149,14 @@ To eliminate spatial auto-correlation leakage:
 
 ---
 
-## 6. Historical Disaster Backtesting (August 2023 Monsoon)
+## 6. Synthetic Demonstration Backtest — Not Empirical Multi-Year Validation
 
-We evaluated the dynamic hazard engine on the historical **August 12–14, 2023 Uttarakhand Monsoon Disaster** using archived ERA5 reanalysis precipitation (`outputs/backtest_summary.json`):
+> [!WARNING]
+> **Synthetic Demonstration Mode Notice:**  
+> As recorded in `outputs/backtest_summary.json` (`"synthetic_mode": true`, `"events_count": 12`, `"negatives_count": 36`), when fewer than 10 empirical verified disaster events exist in the historical backtest table, the evaluation harness generates 12 deterministic synthetic demonstration disaster events (and 36 negative controls) keyed to target date seeds. This exercises statistical pipeline plumbing, confusion matrix metrics, and offline execution without claiming multi-year empirical historical validation.
+
+The metrics below demonstrate the evaluation harness executing against synthetic August 12–14, 2023 disaster events with archived ERA5 reanalysis precipitation:
+
 
 ```
 Backtest ROC Performance

@@ -63,6 +63,23 @@ def mask_contact(contact: str) -> str:
     _, _, masked = validate_and_normalize_contact(contact)
     return masked
 
+def mask_subscriber_name(name: str) -> str:
+    """
+    Masks subscriber name for unauthenticated public alert queries
+    to prevent subscriber enumeration and privacy leakage (e.g. 'R***h N***').
+    """
+    if not name or not name.strip():
+        return "Subscriber"
+    words = name.strip().split()
+    masked_words = []
+    for w in words:
+        if len(w) <= 2:
+            masked_words.append(w[0] + "*")
+        else:
+            masked_words.append(w[0] + "*" * (len(w) - 2) + w[-1])
+    return " ".join(masked_words)
+
+
 @router.post("/subscribe", response_model=SubscribeResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def create_subscription(request: Request, req: SubscribeRequest):
@@ -260,7 +277,7 @@ def get_alerts(
 
     return AlertsResponse(
         user_id=sub["id"],
-        subscriber_name=sub["name"],
+        subscriber_name=mask_subscriber_name(sub["name"]),
         subscribed_segment=sub_seg_display,
         subscribed_segment_en=sub_seg_en if is_hi else None,
         active_alerts_count=len(alerts),

@@ -110,10 +110,18 @@ VALIDATED_REPORTS_CSV_PATH = Path(os.getenv("VALIDATED_REPORTS_CSV_PATH", str(DA
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
-TWILIO_FROM = os.getenv("TWILIO_FROM", "").strip()
+TWILIO_FROM = os.getenv("TWILIO_FROM", os.getenv("TWILIO_PHONE_NUMBER", "")).strip()
 DRY_RUN = os.getenv("DRY_RUN", "true").lower() in ("true", "1", "yes")
 ENABLE_TELEGRAM_BOT = os.getenv("ENABLE_TELEGRAM_BOT", "false").lower() in ("true", "1", "yes")
-ALERT_DISPATCH_INTERVAL_MINUTES = int(os.getenv("ALERT_DISPATCH_INTERVAL_MINUTES", "10"))
+
+# Dispatch interval: prefers ALERT_DISPATCH_INTERVAL_MINUTES (minutes), falls back to ALERT_CHECK_INTERVAL (seconds // 60)
+_interval_min_str = os.getenv("ALERT_DISPATCH_INTERVAL_MINUTES")
+if not _interval_min_str and os.getenv("ALERT_CHECK_INTERVAL"):
+    try:
+        _interval_min_str = str(max(1, int(os.getenv("ALERT_CHECK_INTERVAL")) // 60))
+    except (ValueError, TypeError):
+        _interval_min_str = "10"
+ALERT_DISPATCH_INTERVAL_MINUTES = int(_interval_min_str or "10")
 ALERT_COOLDOWN_HOURS = float(os.getenv("ALERT_COOLDOWN_HOURS", "3.0"))
 
 # --- Task 7: Localization & Voice Alert Configuration ---

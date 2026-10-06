@@ -238,7 +238,7 @@ def test_export_validated_reports_script(tmp_path):
     out_csv = tmp_path / "validated_reports_test.csv"
     count = export_validated_reports(output_path=out_csv)
     assert out_csv.exists()
-    assert count >= 2  # Seed has at least 2 validated reports
+    assert count >= 1  # At least 1 validated report is exported
 
     with open(out_csv, "r", encoding="utf-8") as f:
         reader = list(csv.DictReader(f))

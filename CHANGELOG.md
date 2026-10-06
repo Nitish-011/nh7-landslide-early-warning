@@ -136,3 +136,17 @@ All existing response fields are retained without alteration. The following new 
 | **`TWILIO_FROM`** | `str` | `""` | Twilio verified sender phone number. |
 | **`ALERT_DISPATCH_INTERVAL_MINUTES`** | `int` | `10` | Evaluation cadence for subscriber alert dispatcher job. |
 | **`ALERT_COOLDOWN_HOURS`** | `float` | `3.0` | Alert repeat cooldown window per user and segment. |
+
+---
+
+## 7. Scientific Hardening & Hackathon Audit Calibration
+
+- **0.767 Benchmark Calibration:** Solidified official deployed model baseline as Copernicus 30m DEM + Random Forest v2 with pooled spatial OOF ROC-AUC of **0.767** and spatial block mean AUC of **0.664**. Removed unsupported 0.887 claims.
+- **Dynamic Hazard Equation Alignment:** Synchronized documentation across `README.md`, `FEATURES.md`, `ANTIGRAVITY_BACKEND_CONTEXT.md`, and `MODEL_PERFORMANCE.md` with runtime implementation:
+  $$\text{risk\_score} = \min\left(0.65 \times \text{terrain\_percentile} + 0.35 \times \min\left(\frac{R_{3\text{d}}}{100.0}, 1.0\right), 1.0\right)$$
+- **Reproducible Deterministic Backtest Fallback:** Replaced Python process-randomized `hash()` in `scripts/backtest.py` with deterministic SHA-256 (`hashlib.sha256`) digest.
+- **Explicit Synthetic Backtest Labeling:** Relabeled historical disaster backtest in `MODEL_PERFORMANCE.md` to "Synthetic Demonstration Backtest — Not Empirical Multi-Year Validation" with an explicit warning note on harness verification.
+- **Environment Configuration Alignment:** Harmonized environment variable naming in `README.md` and `.env.example` with `app/config.py` (`TWILIO_FROM`, `ALERT_DISPATCH_INTERVAL_MINUTES=10`), adding backward-compatible fallbacks for `TWILIO_PHONE_NUMBER` and `ALERT_CHECK_INTERVAL`.
+- **Subscriber PII Hardening:** Protected subscriber name privacy in unauthenticated `GET /alerts` via `mask_subscriber_name` to prevent enumeration and harvesting attacks.
+- **Codebase Cleanliness:** Retired stale `calculate_risk_level` thresholds in `app/routes/risk.py` by delegating directly to `level_for` and `LEVEL_CUTS`.
+
