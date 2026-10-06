@@ -115,3 +115,21 @@ ALERT_COOLDOWN_HOURS = float(os.getenv("ALERT_COOLDOWN_HOURS", "3.0"))
 # --- Task 7: Localization & Voice Alert Configuration ---
 TTS_CACHE_DIR = Path(os.getenv("TTS_CACHE_DIR", str(DATA_DIR / "tts_cache"))).resolve()
 TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+# --- Task 8: Offline Pack & Emergency Contacts Configuration ---
+# National emergency number 112 is included by default; other numbers left blank for manual configuration.
+DEFAULT_EMERGENCY_CONTACTS = [
+    {"name": "National Emergency Helpline", "number": "112"},
+    {"name": "State Disaster Management (SDMA Uttarakhand)", "number": ""},
+    {"name": "Highway Police Control Room", "number": ""},
+    {"name": "Border Roads Organisation (BRO) Control Room", "number": ""},
+    {"name": "Ambulance / Medical Emergency", "number": ""},
+]
+
+try:
+    _env_contacts = os.getenv("EMERGENCY_CONTACTS")
+    EMERGENCY_CONTACTS = json.loads(_env_contacts) if _env_contacts else DEFAULT_EMERGENCY_CONTACTS
+except Exception:
+    EMERGENCY_CONTACTS = DEFAULT_EMERGENCY_CONTACTS
+
+OFFLINE_PACK_SIMPLIFY_TOLERANCE = float(os.getenv("OFFLINE_PACK_SIMPLIFY_TOLERANCE", "0.0005"))

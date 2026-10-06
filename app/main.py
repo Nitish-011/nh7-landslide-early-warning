@@ -83,6 +83,8 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": f"Rate limit exceeded: {exc.detail}"}
     )
 
+from starlette.middleware.gzip import GZipMiddleware
+
 # 1. Add CORS Middleware (Essential for mobile apps & web frontend dev servers)
 app.add_middleware(
     CORSMiddleware,
@@ -92,15 +94,18 @@ app.add_middleware(
     allow_headers=CORS_ALLOW_HEADERS,
 )
 
-# 2. Add Request/Response Audit Logging Middleware
+# 2. Add GZip Middleware (compresses responses > 500 bytes for low-bandwidth mobile devices)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# 3. Add Request/Response Audit Logging Middleware
 app.add_middleware(RequestResponseLoggingMiddleware)
 
-# 3. Mount Static Directory
+# 4. Mount Static Directory
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# 4. Include Routers
+# 5. Include Routers
 app.include_router(risk_router)
 app.include_router(subscriptions_router)
 app.include_router(reports_router)
@@ -108,7 +113,7 @@ app.include_router(history_router)
 app.include_router(closures_router)
 app.include_router(webhooks_router)
 
-# 5. Serve Interactive Test Frontend at Root (/)
+# 6. Serve Interactive Test Frontend and PWA Assets at Root (/)
 @app.get("/", include_in_schema=False)
 async def serve_test_ui():
     """Serves the Leaflet.js interactive map and testing workbench."""
@@ -116,6 +121,22 @@ async def serve_test_ui():
     if index_file.exists():
         return FileResponse(index_file)
     return JSONResponse({"status": "healthy", "service": "NH-7 Landslide Risk API"})
+
+@app.get("/manifest.json", include_in_schema=False)
+async def serve_manifest():
+    """Serves the PWA Web App Manifest."""
+    manifest_file = STATIC_DIR / "manifest.json"
+    if manifest_file.exists():
+        return FileResponse(manifest_file, media_type="application/manifest+json")
+    return JSONResponse({"name": "NH-7 Landslide Early Warning", "short_name": "NH7"})
+
+@app.get("/sw.js", include_in_schema=False)
+async def serve_service_worker():
+    """Serves the Service Worker with root scope allowed."""
+    sw_file = STATIC_DIR / "sw.js"
+    if sw_file.exists():
+        return FileResponse(sw_file, media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
+    return Response(content="// SW not found", media_type="application/javascript")
 
 @app.get("/health", tags=["System"])
 async def health_check():

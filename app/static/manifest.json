@@ -1,0 +1,17 @@
+{
+  "name": "NH-7 Landslide Early Warning System",
+  "short_name": "NH-7 Warning",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#0284c7",
+  "description": "Real-time landslide hazard early warning, time-aware trip planner, and offline emergency pack for NH-7 Rishikesh-Joshimath corridor.",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

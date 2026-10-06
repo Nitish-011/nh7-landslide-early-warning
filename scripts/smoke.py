@@ -81,6 +81,9 @@ def main():
         ("GET", "/route-risk?from_segment=seg_01&to_segment=seg_05&date=2026-10-06&lang=hi", None),
         ("GET", "/alerts?user_id=1&lang=hi", None),
         ("GET", "/voice-alert?segment_id=seg_01&lang=hi", None),
+        ("GET", "/offline-pack", None),
+        ("GET", "/manifest.json", None),
+        ("GET", "/sw.js", None),
     ]
 
     all_passed = True

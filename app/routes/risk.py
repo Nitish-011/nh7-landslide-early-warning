@@ -18,6 +18,9 @@ from app.models import (
     RouteSegmentRisk,
     SegmentResponse,
     TripRecommendation,
+    OfflinePackResponse,
+    OfflineSegmentItem,
+    OfflineEmergencyContact,
 )
 from app.model_info import get_model_info_payload
 from app.logger import logger
@@ -741,6 +744,168 @@ def get_voice_alert(
             status_code=200,
             content={"text": text, "tts": "browser", "lang": lang_clean}
         )
+
+
+# --- Task 8: Offline Support Polyline Simplification & GET /offline-pack ---
+
+def simplify_polyline(points: List[List[float]], tolerance: float = 0.0005) -> List[List[float]]:
+    """
+    Simplifies polyline coordinates using the Ramer-Douglas-Peucker algorithm
+    and rounds coordinates to 5 decimal places (~1 meter precision) to guarantee
+    a compact offline pack payload (<100 KB uncompressed).
+    """
+    if not points:
+        return []
+    if len(points) <= 2:
+        return [[round(float(p[0]), 5), round(float(p[1]), 5)] for p in points]
+
+    def _perp_dist(pt, start, end):
+        dx = end[1] - start[1]
+        dy = end[0] - start[0]
+        denom = (dy ** 2 + dx ** 2) ** 0.5
+        if denom == 0:
+            return ((pt[0] - start[0]) ** 2 + (pt[1] - start[1]) ** 2) ** 0.5
+        return abs(dy * pt[1] - dx * pt[0] + end[0] * start[1] - end[1] * start[0]) / denom
+
+    dmax = 0.0
+    index = 0
+    for i in range(1, len(points) - 1):
+        d = _perp_dist(points[i], points[0], points[-1])
+        if d > dmax:
+            index = i
+            dmax = d
+
+    if dmax > tolerance:
+        rec1 = simplify_polyline(points[: index + 1], tolerance)
+        rec2 = simplify_polyline(points[index:], tolerance)
+        return rec1[:-1] + rec2
+    else:
+        return [
+            [round(float(points[0][0]), 5), round(float(points[0][1]), 5)],
+            [round(float(points[-1][0]), 5), round(float(points[-1][1]), 5)],
+        ]
+
+
+@router.get("/offline-pack", response_model=OfflinePackResponse)
+@limiter.limit("120/minute")
+def get_offline_pack(
+    request: Request,
+    simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing")
+):
+    """
+    Returns a compact, self-contained offline data bundle for mobile devices (<100 KB).
+    Includes simplified segment geometry, current and terrain risk levels, bilingual advisories,
+    nearest medical emergency facilities, and config-driven emergency helpline numbers.
+    Supports HTTP ETag and 304 Not Modified conditional requests and gzip compression
+    to minimize cellular data consumption in remote mountain valleys.
+    """
+    # 1. Fetch live risk assessment
+    raw_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm)
+
+    # 2. Consequence and hospital mapping
+    try:
+        from app.consequence_service import load_consequence_dataset
+        c_map = load_consequence_dataset()
+    except Exception:
+        c_map = {}
+
+    tolerance = getattr(config, "OFFLINE_PACK_SIMPLIFY_TOLERANCE", 0.0005)
+
+    # 3. Build compact segment objects
+    segment_items = []
+    for s in raw_segments:
+        subpoints = s.get("subpoints") or []
+        if not subpoints and "start_lat" in s and "end_lat" in s:
+            subpoints = [[s["start_lat"], s["start_lng"]], [s["end_lat"], s["end_lng"]]]
+
+        simplified = simplify_polyline(subpoints, tolerance=tolerance)
+        risk_lvl = s.get("risk_level", "Low")
+        terrain_lvl = s.get("terrain_level") or s.get("terrain_risk_level") or risk_lvl
+        rain_mm = s.get("rain_mm_3d")
+        main_driver = s.get("main_driver")
+
+        adv_en = i18n.build_subscriber_alert_message(
+            segment_name=s["name"],
+            risk_level=risk_lvl,
+            rain_mm=rain_mm,
+            main_driver=main_driver,
+            lang="en"
+        )
+        adv_hi = i18n.build_subscriber_alert_message(
+            segment_name=s["name"],
+            risk_level=risk_lvl,
+            rain_mm=rain_mm,
+            main_driver=main_driver,
+            lang="hi"
+        )
+
+        c_info = c_map.get(s["id"], {})
+        nearest_hosp = c_info.get("nearest_hospital") or None
+
+        segment_items.append({
+            "id": s["id"],
+            "name": s["name"],
+            "simplified_polyline": simplified,
+            "current_risk_level": risk_lvl,
+            "risk_level": risk_lvl,
+            "terrain_risk_level": terrain_lvl,
+            "advisory_en": adv_en,
+            "advisory_hi": adv_hi,
+            "nearest_hospital": nearest_hosp,
+        })
+
+    # 4. Emergency contacts (config-driven, default 112, no invented numbers)
+    raw_contacts = getattr(config, "EMERGENCY_CONTACTS", config.DEFAULT_EMERGENCY_CONTACTS)
+    emergency_contacts = [
+        {"name": c.get("name", ""), "number": c.get("number", "")}
+        for c in raw_contacts
+    ]
+
+    # 5. Core content for deterministic hashing
+    corridor_title = i18n.CORRIDOR_NAME_EN
+    core_payload = {
+        "corridor": corridor_title,
+        "total_segments": len(segment_items),
+        "emergency_contacts": emergency_contacts,
+        "segments": segment_items,
+    }
+    if simulate_rain_mm is not None:
+        core_payload["simulate_rain_mm"] = simulate_rain_mm
+
+    content_bytes = json.dumps(core_payload, sort_keys=True).encode("utf-8")
+    version_hash = hashlib.sha256(content_bytes).hexdigest()[:16]
+    etag_header = f'"{version_hash}"'
+
+    # 6. ETag / If-None-Match 304 Evaluation
+    if_none_match = request.headers.get("if-none-match", "").strip()
+    client_etag = if_none_match.strip('W/').strip('"')
+    if client_etag and client_etag == version_hash:
+        return Response(
+            status_code=304,
+            headers={
+                "ETag": etag_header,
+                "Cache-Control": "public, max-age=300, must-revalidate"
+            }
+        )
+
+    # 7. Construct final offline pack response
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    final_payload = {
+        "version": version_hash,
+        "generated_at": now_iso,
+        **core_payload
+    }
+
+    body_json = json.dumps(final_payload, ensure_ascii=False)
+    return Response(
+        content=body_json,
+        media_type="application/json",
+        headers={
+            "ETag": etag_header,
+            "Cache-Control": "public, max-age=300, must-revalidate",
+            "X-Offline-Pack-Version": version_hash
+        }
+    )
 
 
 

@@ -391,3 +391,29 @@ class PriorityListResponse(BaseModel):
     segments: List[PrioritySegmentItem]
 
 
+# --- Task 8: Offline Pack Models ---
+
+class OfflineEmergencyContact(BaseModel):
+    name: str
+    number: str = ""
+
+class OfflineSegmentItem(BaseModel):
+    id: str
+    name: str
+    simplified_polyline: List[List[float]] = []
+    current_risk_level: str
+    risk_level: Optional[str] = None
+    terrain_risk_level: str
+    advisory_en: str
+    advisory_hi: str
+    nearest_hospital: Optional[str] = None
+
+class OfflinePackResponse(BaseModel):
+    version: str
+    generated_at: str
+    corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
+    total_segments: int
+    emergency_contacts: List[OfflineEmergencyContact]
+    segments: List[OfflineSegmentItem]
+
+

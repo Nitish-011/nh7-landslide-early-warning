@@ -12,6 +12,8 @@
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- PWA Web App Manifest -->
+  <link rel="manifest" href="/manifest.json" />
 
   <style>
     :root {
@@ -451,6 +453,11 @@
 </head>
 <body>
 
+  <!-- Offline Status Banner -->
+  <div id="offline-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:99999; background:#dc2626; color:#ffffff; padding:10px 16px; font-weight:700; font-size:0.85rem; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.6); letter-spacing:0.02em;">
+    ⚠️ Offline: last updated <strong id="offline-last-updated">-</strong>
+  </div>
+
   <!-- Map Viewport -->
   <div id="map-container">
     <div id="map"></div>
@@ -508,6 +515,7 @@
       <div class="nav-tab" onclick="switchTab('tab-weather')">🌧️ Weather Sim</div>
       <div class="nav-tab" onclick="switchTab('tab-alerts')">🔔 Alerts</div>
       <div class="nav-tab" onclick="switchTab('tab-reports')">📢 Field Reports</div>
+      <div class="nav-tab" onclick="switchTab('tab-offline')">📦 Offline Pack</div>
     </div>
 
     <!-- Tab Contents -->
@@ -860,6 +868,35 @@
         </div>
       </div>
 
+      <!-- TAB 7: OFFLINE PACK & EMERGENCY CONTACTS -->
+      <div id="tab-offline" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>Offline Pack & Helplines</span>
+            <span class="endpoint-pill">GET /offline-pack</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">
+            Self-contained offline bundle (&lt; 100 KB) with simplified segment geometries, bilingual advisories, hospital links, and emergency helplines. Supports ETag conditional requests (304) and PWA service worker caching.
+          </p>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="fetchOfflinePackUI()">
+              <span>📥 Fetch Offline Pack</span>
+            </button>
+            <button onclick="simulateOfflineMode()">
+              <span>🔌 Toggle Offline Simulation</span>
+            </button>
+          </div>
+          <div id="offline-pack-details" style="display:none; margin-top:12px; font-size:0.75rem; line-height:1.6; background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <div><strong>Version (Hash):</strong> <span id="op-version" style="font-family:var(--font-mono); color:var(--accent);">-</span></div>
+            <div><strong>Generated At:</strong> <span id="op-generated">-</span></div>
+            <div><strong>Payload Size:</strong> <span id="op-size">-</span></div>
+            <div><strong>ETag Header:</strong> <span id="op-etag" style="font-family:var(--font-mono); color:#10b981;">-</span></div>
+            <div style="margin-top:8px; font-weight:700; color:var(--text-main);">Emergency Helplines:</div>
+            <div id="op-contacts" style="margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Live JSON Response Console -->
@@ -995,7 +1032,7 @@
       document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
       document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
       
-      const idx = ["tab-corridor", "tab-router", "tab-priority", "tab-weather", "tab-alerts", "tab-reports"].indexOf(tabId);
+      const idx = ["tab-corridor", "tab-router", "tab-priority", "tab-weather", "tab-alerts", "tab-reports", "tab-offline"].indexOf(tabId);
       if (idx !== -1) {
         document.querySelectorAll(".nav-tab")[idx].classList.add("active");
         document.getElementById(tabId).classList.add("active");
@@ -1756,6 +1793,99 @@
       } catch (err) {
         console.error("Route voice alert error:", err);
         if (statusEl) statusEl.textContent = `❌ Route voice error: ${err.message}`;
+      }
+    }
+
+    // --- Task 8: PWA Service Worker Registration & Offline Support ---
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js")
+          .then(reg => console.log("Service Worker registered with scope:", reg.scope))
+          .catch(err => console.warn("Service Worker registration failed:", err));
+      });
+    }
+
+    // Network Status Handlers: Show "Offline: last updated X" when network is lost
+    function updateNetworkStatus() {
+      const banner = document.getElementById("offline-banner");
+      const timeSpan = document.getElementById("offline-last-updated");
+      if (!banner || !timeSpan) return;
+
+      if (!navigator.onLine) {
+        banner.style.display = "block";
+        const lastUpdated = localStorage.getItem("nh7_last_updated") || "Pre-cached baseline";
+        timeSpan.textContent = lastUpdated;
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
+    window.addEventListener("online", updateNetworkStatus);
+    window.addEventListener("offline", updateNetworkStatus);
+
+    let simulatedOffline = false;
+    function simulateOfflineMode() {
+      simulatedOffline = !simulatedOffline;
+      const banner = document.getElementById("offline-banner");
+      const timeSpan = document.getElementById("offline-last-updated");
+      if (simulatedOffline) {
+        banner.style.display = "block";
+        const lastUpdated = localStorage.getItem("nh7_last_updated") || new Date().toISOString();
+        timeSpan.textContent = `${lastUpdated} (Simulated Offline Mode)`;
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
+    async function fetchOfflinePackUI() {
+      const detailsEl = document.getElementById("offline-pack-details");
+      try {
+        const t0 = performance.now();
+        const res = await fetch("/offline-pack");
+        const latency = (performance.now() - t0).toFixed(1);
+        const etag = res.headers.get("etag") || "N/A";
+        const text = await res.text();
+        const sizeBytes = new Blob([text]).size;
+        const sizeKb = (sizeBytes / 1024).toFixed(2);
+        const data = JSON.parse(text);
+
+        localStorage.setItem("nh7_last_updated", data.generated_at);
+
+        document.getElementById("op-version").textContent = data.version;
+        document.getElementById("op-generated").textContent = data.generated_at;
+        document.getElementById("op-size").textContent = `${sizeKb} KB (${sizeBytes.toLocaleString()} bytes, budget: <100 KB)`;
+        document.getElementById("op-etag").textContent = etag;
+
+        const contactsEl = document.getElementById("op-contacts");
+        contactsEl.innerHTML = "";
+        (data.emergency_contacts || []).forEach(c => {
+          const row = document.createElement("div");
+          row.style.display = "flex";
+          row.style.justifyContent = "space-between";
+          row.style.padding = "4px 0";
+          row.style.borderBottom = "1px solid rgba(255,255,255,0.06)";
+          const numDisplay = c.number
+            ? `<a href="tel:${c.number}" style="color:#38bdf8; text-decoration:none; font-weight:700;">📞 ${c.number}</a>`
+            : `<span style="color:#64748b;">(Not configured)</span>`;
+          row.innerHTML = `<span>${c.name}</span>${numDisplay}`;
+          contactsEl.appendChild(row);
+        });
+
+        if (detailsEl) detailsEl.style.display = "block";
+
+        const conMethod = document.getElementById("con-method");
+        const conUrl = document.getElementById("con-url");
+        const conLat = document.getElementById("con-latency");
+        const conStat = document.getElementById("con-status");
+        const conPre = document.getElementById("json-viewer");
+        if (conMethod) conMethod.textContent = "GET";
+        if (conUrl) conUrl.textContent = "/offline-pack";
+        if (conLat) conLat.textContent = `${latency} ms`;
+        if (conStat) conStat.textContent = `200 OK (${sizeKb} KB)`;
+        if (conPre) conPre.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error("fetchOfflinePackUI error:", err);
+        alert("Failed fetching offline pack: " + err.message);
       }
     }
   </script>
