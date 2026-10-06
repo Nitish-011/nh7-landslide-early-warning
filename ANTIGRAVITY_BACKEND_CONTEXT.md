@@ -18,7 +18,7 @@ When building a frontend for this repository, you do **not** need to simulate or
 |  - 30-meter Copernicus DEM Topography (Slope, 300m Local Relief, TPI, Curvature)                  |
 |  - 247.37 km NH-7 Highway Alignment (Rishikesh to Joshimath, geojson/nh7_route.geojson)          |
 |  - 18 Sequence-Ordered Segments (seg_01 to seg_18)                                                |
-|  - Random Forest + XGBoost v2 Trained Ensemble (model/nh7_static_model_v2.joblib, ROC-AUC 0.887)  |
+|  - Random Forest v2 Trained Ensemble (model/nh7_static_model_v2.joblib, Spatial OOF ROC-AUC 0.767)  |
 +-------------------------------------------------+-------------------------------------------------+
                                                   |
                                                   v

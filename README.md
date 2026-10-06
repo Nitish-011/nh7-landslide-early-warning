@@ -200,8 +200,9 @@ Here are the most important endpoints you can try right now via `curl` or in you
 
 - **Trained On:** 309 field-mapped road-blocking landslide scars along NH-7 from published research (*Mey et al., 2024, Natural Hazards and Earth System Sciences*).
 - **Spatial Resolution:** 30-meter Copernicus DEM features (Slope, Local Relief 300m, Curvature, TPI, Proximity to Drainage).
-- **Validation Scheme:** Leave-One-Block-Out Spatial Cross-Validation across 6 highway partitions with a 2.0 km exclusion buffer to prevent spatial autocorrelation leakage.
-- **Pooled Out-of-Fold ROC-AUC:** **0.767** (Terrain Baseline) ➔ **0.887** (Dynamic Meteorological Ensemble v2).
+- **Pooled Out-of-Fold ROC-AUC:** **0.767** (Random Forest on Copernicus 30m DEM, 95% CI: `[0.680, 0.802]`).
+- **Spatial Block Mean AUC:** **0.664** (across 6 spatial blocks with 2.0 km exclusion buffer).
+- **Average Precision (PR-AUC):** **0.533**, **Top-20% Highway Capture Rate:** **43.0%**.
 - **Spearman Rank Correlation:** **0.653** ($p = 0.0033$), verifying strong statistical concordance with ground-truth landslide frequency.
 - **Inference Latency:** `< 12 ms` to evaluate the entire 247 km highway corridor.
 

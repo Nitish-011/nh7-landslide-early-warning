@@ -178,6 +178,11 @@ def get_model_info_payload() -> Dict[str, Any]:
             "negative_separation_distance_m": 250,
             "spatial_evaluation": "6 spatial contiguous blocks with 2.0 km exclusion buffer (out-of-fold)",
         },
+        "runtime_scoring_artifact": {
+            "source_file": "app/segment_static_scores.json",
+            "type": "final_refit_production_model",
+            "description": "Fitted on the complete 1,236 point dataset across all 18 segments for live operational inference. Held-out generalization benchmarks are reported under validation_metrics (out-of-fold spatial CV).",
+        },
         "thresholds": RISK_LEVEL_THRESHOLDS,
         "k": {
             "k_rain": K_RAIN,

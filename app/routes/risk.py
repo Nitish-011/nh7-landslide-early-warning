@@ -291,7 +291,10 @@ def get_route_risk(
         if target_date > tomorrow:
             is_beyond_tomorrow = True
     except ValueError:
-        pass
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid date format. Expected YYYY-MM-DD."
+        )
 
     try:
         live_segments, meta = get_live_risk_map_with_metadata(simulate_rain_mm=simulate_rain_mm, force_terrain_only=is_beyond_tomorrow)

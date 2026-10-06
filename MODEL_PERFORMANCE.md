@@ -1,10 +1,11 @@
 # 📊 NH-7 Landslide Prediction Model: Empirical Performance & Validation Report
 
-> **Model Identifier:** `nh7_static_model_v2.joblib` + Dynamic Meteorological Assimilation Engine  
+> **Model Identifier:** `nh7_static_model_v2.joblib` (Random Forest on Copernicus 30m DEM)  
 > **Geographic Domain:** National Highway 7 (Rishikesh to Joshimath, Uttarakhand, India — 247.37 km, 18 Segments)  
 > **Training Inventory:** Mey et al. (2024), *Natural Hazards and Earth System Sciences* ($N = 309$ surveyed road-blocking landslides)  
 > **Terrain Resolution:** 30-meter European Space Agency (ESA) Copernicus Digital Elevation Model (DEM)  
-> **Meteorological Source:** Open-Meteo Multi-Station Assimilation (5 corridor stations) & ECMWF ERA5-Land Reanalysis
+> **Meteorological Source:** Open-Meteo Multi-Station Assimilation (5 corridor stations) & ECMWF ERA5-Land Reanalysis  
+> **Official Cross-Validation Benchmark:** **Pooled Spatial Out-of-Fold ROC-AUC = 0.767** (95% CI: `[0.680, 0.802]`)
 
 ---
 
@@ -16,25 +17,52 @@ Standard machine learning models applied to landslide prediction in mountainous 
 1. **Spatial Overfitting / Data Leakage:** Random k-fold cross-validation inflates accuracy by placing geographically adjacent points in both train and test splits.
 2. **Static vs. Dynamic Disconnect:** A purely static terrain model cannot predict *when* a slope fails, while a purely weather-driven rain gauge threshold generates excessive false alarms in low-slope valleys.
 
-Our system solves both flaws through a **physics-constrained statistical ensemble**:
-- A **high-resolution 30m geomorphological baseline** ($P_{\text{terrain}}$) evaluating slope steepness, 300m local relief, drainage proximity, and road-cut excavation scars.
-- A **dynamic exponential wetting function** ($1 - e^{-k \cdot R_{3\text{d}}}$) driven by live 3-day antecedent rainfall across 5 highway weather stations.
-- Strict evaluation via **Leave-One-Block-Out Spatial Cross-Validation** with a 2.0 km exclusion buffer, guaranteeing genuine out-of-sample generalization.
+Our system solves both flaws through a **physics-constrained statistical architecture**:
+- A **high-resolution 30m geomorphological baseline** ($P_{\text{terrain}}$) evaluating slope steepness, 300m local relief, Topographic Position Index (TPI), curvature, and elevation.
+- A **dynamic exponential wetting function** ($1 - e^{-k \cdot R_{3\text{d}}}$) driven by live 3-day antecedent rainfall across 5 highway weather stations with a dry-weather cap ($R_{3\text{d}} < 25\text{ mm} \implies \text{capped at Moderate}$).
+- Strict evaluation via **Leave-One-Block-Out (LOBO) Spatial Cross-Validation** with a 2.0 km exclusion buffer, guaranteeing genuine out-of-sample generalization.
 
-### Headline Performance Summary
+### Headline Performance Summary (Official Audited Benchmark)
 
-| Metric | Baseline (90m DEM + LR) | V1 Model (30m DEM + RF) | Production V2 Ensemble | Status / Interpretation |
-|---|:---:|:---:|:---:|---|
-| **Spatial Out-of-Fold ROC-AUC** | 0.728 | 0.767 | **0.887** | Statistically significant improvement |
-| **Precision-Recall AUC (PR-AUC)**| 0.460 | 0.533 | **0.864** | High precision in steep hazard classes |
-| **Top-20% Spatial Capture Rate** | 42.7% | 43.0% | **68.5%** | 68.5% of landslides occur in top 20% risk zones |
-| **Spearman Rank Correlation ($\rho$)**| 0.481 | 0.653 ($p=0.0033$) | **0.784** ($p<0.0001$) | Ranks all 18 segments with high real-world accuracy |
-| **Inference Latency (All 18 Segments)**| 4.2 ms | 6.8 ms | **11.2 ms** | Real-time edge/API feasible (<15 ms) |
-| **Brier Calibration Score** | 0.184 | 0.112 | **0.082** | Well-calibrated probabilistic output |
+| Metric | Baseline (90m DEM + LR) | Baseline (90m DEM + RF) | Copernicus 30m DEM + LR | **Deployed Model (30m DEM + RF v2)** | Evaluation Methodology |
+|---|:---:|:---:|:---:|:---:|---|
+| **Pooled Spatial OOF ROC-AUC** | 0.729 | 0.708 | 0.756 | **0.767** | Block-bootstrap ($B=1,000$ resamples) |
+| **Spatial Block Mean AUC** | 0.620 ± 0.060 | 0.602 ± 0.079 | 0.673 ± 0.043 | **0.664 ± 0.043** | Unweighted average across 6 spatial blocks |
+| **95% Bootstrap Confidence Interval** | [0.638, 0.771] | [0.615, 0.752] | [0.671, 0.793] | **[0.680, 0.802]** | 2.0 km exclusion buffer between train/test |
+| **Precision-Recall AUC (PR-AUC)**| 0.460 | 0.450 | 0.525 | **0.533** | Out-of-fold average precision |
+| **Top-20% Spatial Capture Rate** | 42.7% | 39.2% | 43.4% | **43.0%** | Captures 43% of slides in top 20% riskiest road area |
+| **Corridor Spearman Correlation ($\rho$)**| 0.481 | 0.462 | 0.621 | **0.653** ($p = 0.0033$) | Statistically significant rank agreement with ground truth |
+| **Inference Latency (All 18 Segments)**| 4.2 ms | 5.1 ms | 4.8 ms | **~11 ms** | Measured in FastAPI runtime |
 
 ---
 
-## 2. Training Data & Inventory Analysis
+## 2. Clarification: Runtime Refit Model vs. Out-of-Fold Validation Report
+
+A crucial distinction in data science and geospatial modeling is the difference between **Cross-Validation Evaluation Scores** and **Final Deployed Refit Model Scores**:
+
+```
++-------------------------------------------------------------+-------------------------------------------------------------+
+|             OUT-OF-FOLD (OOF) VALIDATION REPORT             |             FINAL REFIT DEPLOYED RUNTIME MODEL             |
+|                  (outputs/validation_report.md)             |                (app/segment_static_scores.json)             |
++-------------------------------------------------------------+-------------------------------------------------------------+
+| • Purpose: Unbiased scientific performance evaluation.      | • Purpose: Operational production scoring.                  |
+| • Training Data: Evaluated in 6 spatial cross-validation    | • Training Data: Retrained on ALL 1,236 points across all   |
+|   folds. When evaluating Block k, the model was trained      |   6 blocks so the model benefits from the complete          |
+|   ONLY on the other 5 blocks (2.0 km buffer excluded).      |   available geographical survey data along NH-7.            |
+| • seg_08 Score: OOF p90 = 0.600 (Rank #7, 64.7th pctile).   | • seg_08 Score: Refit p90 = 0.285 (Rank #17, 5.9th pctile). |
++-------------------------------------------------------------+-------------------------------------------------------------+
+```
+
+### Why does Sirobagarh (`seg_08`) score differently between the two?
+- In Uttarakhand highway history and folklore, Sirobagarh (`seg_08` to `seg_09`) is notorious as a chronic debris choke point.
+- However, in the peer-reviewed Mey et al. (2024) single-season post-monsoon 2022 inventory, `seg_08` registered only **one single road-blocking slide** ($0.11\text{ slides/km}$, ranking #17 of 18).
+- In the **final refit model** (trained on all 1,236 points), the decision trees directly observe that `seg_08` had only 1 slide in 2022 alongside lower river valley elevations at Srinagar, scoring its terrain percentile at $0.0588$ ($5.9\%$).
+- In contrast, in **out-of-fold validation**, when Block 3 (containing `seg_08`) was held out, the model trained on other steep gorge blocks predicted a higher potential susceptibility ($p_{90} = 0.600$, rank #7, $64.7\%$).
+- **Conclusion:** Both artifacts are scientifically valid and represent their respective intended purposes: `validation_report.md` measures held-out generalization, while `segment_static_scores.json` represents the fully refitted production model.
+
+---
+
+## 3. Training Data & Inventory Analysis
 
 ### Ground-Truth Landslide Inventory ($N = 309$)
 The primary ground-truth dataset was surveyed following the intense 2022 monsoon season along NH-7 (*Mey et al., 2024*):
@@ -68,98 +96,96 @@ seg_15 (Chamoli to Birahi)          [0.00 slides/km]                      0
 
 ---
 
-## 3. Feature Engineering & Importance Rankings
+## 4. Feature Engineering & Importance Rankings
 
-A total of **14 geomorphological and hydrological features** were engineered from the 30-meter Copernicus DEM and hydrological networks:
+The model uses **8 topographic features** derived from the 30-meter Copernicus DEM (`model/pipeline_meta_static_v2.json`):
 
 ```
 +------------------------------------+------------------------------------+
-|  Topographic Position Index (TPI)  |  Slope Gradient (Degrees)          |
-|  Local Relief (300m circular radius)|  Plan & Profile Curvature          |
-|  Euclidean Distance to Riverbed    |  Perpendicular Distance to Road Cut|
-|  Antecedent 3-Day Wetting [R_3d]   |  24h Forecast Rainfall Peak Rate   |
+|  dem_slope_deg (Slope Gradient)    |  dem_elev_m (Elevation)            |
+|  dem_relief_300m (Local Relief)    |  dem_slope_max_210m (Max Slope)    |
+|  dem_tpi_300m (Topographic Index)  |  dem_curvature (Surface Curvature) |
+|  dem_aspect_sin (East-West Aspect) |  dem_aspect_cos (North-South Aspect|
 +------------------------------------+------------------------------------+
 ```
 
-### Feature Importance (Random Forest Gini Impurity + SHAP Values)
+### Feature Importance (Random Forest Gini Impurity)
 
 ```
-Feature                              Importance   Relative Impact
+Feature                              Importance   Relative Share
 ----------------------------------------------------------------------
-1. Slope Gradient (degrees)             0.284     ████████████████████
-2. Antecedent 3-Day Rainfall (mm)       0.241     █████████████████
-3. Local Relief (300m radius)           0.147     ██████████
-4. Proximity to Road Excavation Cut     0.112     ███████▉
-5. Topographic Position Index (TPI)     0.078     █████▌
-6. Distance to Drainage / Waterways     0.056     ████
-7. Plan / Profile Curvature             0.049     ███▍
-8. Peak Hourly Rainfall Rate            0.033     ██▎
+1. dem_elev_m (Elevation)               0.1957    ████████████████████ (19.6%)
+2. dem_slope_deg (Slope Gradient)       0.1954    ████████████████████ (19.5%)
+3. dem_aspect_cos (Aspect North-South)  0.1545    ███████████████▉     (15.4%)
+4. dem_relief_300m (Local Relief)       0.1429    ██████████████▋      (14.3%)
+5. dem_slope_max_210m (Max Cut Slope)   0.0993    ██████████▏          (9.9%)
+6. dem_aspect_sin (Aspect East-West)    0.0766    ███████▉             (7.7%)
+7. dem_tpi_300m (Ridge/Valley Index)    0.0700    ███████▏             (7.0%)
+8. dem_curvature (Surface Curvature)    0.0657    ██████▋              (6.6%)
 ----------------------------------------------------------------------
-Total                                   1.000     100.0%
+Total                                   1.0000    100.0%
 ```
-
-**Key Scientific Takeaway:** Terrain slope ($> 32^\circ$) and antecedent 3-day rainfall are the two dominant drivers of slope failure along NH-7, together accounting for **52.5% of model predictive power**.
 
 ---
 
-## 4. Rigorous Spatial Validation Protocol
+## 5. Spatial Cross-Validation Protocol
 
-To prevent the spatial data leakage common in spatial AI benchmarks, we utilized **Leave-One-Block-Out (LOBO) Spatial Cross-Validation**:
+To eliminate spatial auto-correlation leakage:
 - The 247.37 km highway corridor was partitioned into **6 contiguous spatial blocks** ($k = 6$).
-- A **2.0 km spatial exclusion buffer** was enforced around each block during testing. Training points within 2.0 km of the test fold were discarded to eliminate spatial autocorrelation.
+- A **2.0 km spatial exclusion buffer** was enforced around each block during testing. Training points within 2.0 km of the test fold were discarded.
 - $B = 1,000$ block-bootstrap resamples were performed to compute 95% confidence intervals.
 
-### Spatial Cross-Validation Benchmark Table
+### Per-Block Cross-Validation Breakdown (Random Forest, 30m DEM)
 
-| Model Architecture & Data Input | Pooled Out-of-Fold AUC | 95% Bootstrap CI | Per-Block Mean AUC | Top-20% Capture |
-|---|:---:|:---:|:---:|:---:|
-| **A. 90m Open-Meteo DEM + Logistic Regression** | 0.729 | [0.638, 0.771] | 0.620 ± 0.060 | 42.7% |
-| **A. 90m Open-Meteo DEM + Random Forest** | 0.708 | [0.615, 0.752] | 0.602 ± 0.079 | 39.2% |
-| **B. 30m Copernicus DEM + Logistic Regression** | 0.756 | [0.671, 0.793] | 0.673 ± 0.043 | 43.4% |
-| **B. 30m Copernicus DEM + Random Forest (v1)** | 0.767 | [0.682, 0.800] | 0.664 ± 0.043 | 43.0% |
-| **C. 30m DEM + River Drainage Layers + RF** | 0.770 | [0.689, 0.804] | 0.649 ± 0.063 | 42.7% |
-| **D. Full Geomorphic + Mey Road-Cut Layers + LR** | 0.757 | [0.674, 0.792] | 0.671 ± 0.035 | 44.7% |
-| **E. V2 Production Ensemble (Physical + Weather)** | **0.887** | **[0.824, 0.918]** | **0.812 ± 0.031** | **68.5%** |
+| Block ID | Geographic Section | Route Chainage | Sample Count ($N$) | Out-of-Fold AUC |
+|:---:|---|:---:|:---:|:---:|
+| **Block 1** | Foothills & Lower Alaknanda (Rishikesh to Shivpuri) | km 0.0 - 41.2 | 206 | **0.619** |
+| **Block 2** | Gorge Transition (Shivpuri to Kaudiyala) | km 41.2 - 82.5 | 206 | **0.674** |
+| **Block 3** | Devprayag & Srinagar Valley | km 82.5 - 123.7 | 206 | **0.616** |
+| **Block 4** | Rudraprayag to Karnaprayag | km 123.7 - 164.9 | 206 | **0.720** |
+| **Block 5** | Upper Alaknanda (Chamoli to Pipalkoti) | km 164.9 - 206.1 | 206 | **0.641** |
+| **Block 6** | High Altitude Canyons (Helang to Joshimath) | km 206.1 - 247.4 | 206 | **0.716** |
+| **Pooled** | **Full 247.37 km Highway Corridor** | **km 0.0 - 247.4** | **1,236** | **0.767** |
 
 ---
 
-## 5. Historical Disaster Event Backtest (August 2023 Cloudburst)
+## 6. Historical Disaster Backtesting (August 2023 Monsoon)
 
-We backtested the system on the deadly **August 12–14, 2023 Uttarakhand Monsoon Disaster**, during which catastrophic cloudbursts blocked NH-7 at multiple choke points:
+We evaluated the dynamic hazard engine on the historical **August 12–14, 2023 Uttarakhand Monsoon Disaster** using archived ERA5 reanalysis precipitation (`outputs/backtest_summary.json`):
 
 ```
-August 2023 Backtest ROC Curves
+Backtest ROC Performance
 ====================================================================
-Production Combined Engine   (AUC = 0.618 - 0.887 depending on station resolution)
-Terrain-Only Model           (AUC = 0.578)
-Rain-Only Model              (AUC = 0.549)
+Production Combined Engine   (AUC = 0.618, 95% CI: [0.401, 0.815])
+Terrain-Only Model           (AUC = 0.578, 95% CI: [0.372, 0.762])
+Rain-Only Model              (AUC = 0.549, 95% CI: [0.354, 0.723])
 ```
 
-### Empirical Backtest Confusion Matrix (Production Engine @ Severe Threshold)
+### Empirical Backtest Confusion Matrix
 
-| Risk Classification Tier | Hazard Threshold | Predicted Segments | True Ground Failures | Precision | Recall |
+| Risk Classification Tier | Threshold | Predicted Segments | True Ground Failures | Precision | Recall |
 |---|:---:|:---:|:---:|:---:|:---:|
 | **Low** | $0.00 - 0.25$ | 48 | 12 | 25.0% | **100.0%** |
 | **Moderate** | $0.25 - 0.50$ | 38 | 10 | 26.3% | **83.3%** |
 | **High** | $0.50 - 0.75$ | 14 | 5 | **35.7%** | **41.7%** |
-| **Very High (Severe)** | $\ge 0.75$ | 1 | 0 | 0.0%* | 0.0% |
+| **Very High** | $\ge 0.75$ | 1 | 0 | 0.0%* | 0.0% |
 
-*\*Note on Very High: In synthetic evaluation mode, only 1 segment breached the 0.75 threshold. In full multi-station weather simulation mode with cloudburst rain (140mm), 7 segments breach the Severe threshold, capturing 91.7% of historical failures.*
+*\*Note: In synthetic single-day backtest mode with coarse ERA5 reanalysis, 1 segment breached 0.75. When simulating localized cloudburst rainfall (140mm), 7 segments breach the Severe threshold, capturing 91.7% of historical failures.*
 
 ### Optimization of Rainfall Scaling Coefficient ($k_{\text{rain}}$)
-We evaluated the optimal exponential scaling parameter $k$ across values from $0.1$ to $0.9$:
+Evaluating $k$ across values from $0.1$ to $0.9$:
 - $k = 0.1$: AUC = 0.5972
-- **$k = 0.2$: AUC = 0.6227 (Empirical Optimum)**
+- **$k = 0.2$: AUC = 0.6227 (Empirical Optimum on backtest data)**
 - $k = 0.3$: AUC = 0.6227
 - **$k = 0.4$: AUC = 0.6065 (Production Preserved for Safety Margin)**
 - $k = 0.5$: AUC = 0.5625
 - $k = 0.8$: AUC = 0.4861
 
-Production preserves $k = 0.40$ to maintain stability and ensure early warning alarms are issued with adequate lead time before slopes fully saturate.
+Production preserves $k_{\text{rain}} = 0.40$ to maintain stability and ensure early warning alarms are issued with adequate lead time before slopes fully saturate.
 
 ---
 
-## 6. Sensitivity to Segment Aggregation Strategy
+## 7. Sensitivity to Segment Aggregation Strategy
 
 Segment hazard is computed by pooling point predictions within segment boundaries. We tested whether ranking results change if using **90th percentile ($p_{90}$)**, **75th percentile ($p_{75}$)**, **spatial mean**, or **spatial maximum**:
 
@@ -173,20 +199,6 @@ Segment hazard is computed by pooling point predictions within segment boundarie
 | **$p_{75}$ vs. Spatial Mean**| **0.9174** | $p < 0.0001$ | Near-perfect concordance |
 
 **Scientific Conclusion:** Pairwise correlations all exceed $0.87$ ($p < 10^{-5}$), proving that the highway segment danger hierarchy is structurally robust and not an artifact of arbitrary percentile tuning.
-
----
-
-## 7. Computational Benchmarks & Edge Viability
-
-To ensure the model can be deployed in resource-constrained environments (e.g. edge microservers, disaster control vans, or battery-operated mountain nodes), we measured computational latency and resource utilization:
-
-| Performance Metric | Benchmark Result | Operational Standard |
-|---|:---:|:---:|
-| **End-to-End Corridor Inference (All 18 Segments)** | **11.2 ms** | Target: $< 50\text{ ms}$ |
-| **Single Segment Scoring Latency** | **0.62 ms** | Target: $< 5\text{ ms}$ |
-| **Model Joblib File Size on Disk** | **5.3 MB** | Target: $< 50\text{ MB}$ |
-| **Active Python Process Memory Footprint** | **~42 MB** | Target: $< 256\text{ MB}$ |
-| **Cold Startup / Joblib Model Load Time** | **140 ms** | Target: $< 1.0\text{ s}$ |
 
 ---
 
@@ -205,8 +217,6 @@ The model incorporates an automated **Ground-Truth Retraining Flywheel**:
 +---------------------------------------------------------------------------------------------------+
 ```
 
-This ensures the prediction model automatically learns and refines its weights as new landslides alter the physical geometry of the highway over time.
-
 ---
 
-*Report generated from out-of-fold validation artifacts in `model/cv_report_static_v2.json`, `outputs/validation_audit.md`, and `outputs/backtest_summary.json`.*
+*Report derived directly from audited repository artifacts: `model/pipeline_meta_static_v2.json`, `outputs/validation_report.md`, and `outputs/backtest_summary.json`.*

@@ -97,20 +97,26 @@ Runs the resilience and API contract tests (`test_risk_resilience.py`).
 
 ## 4. Feature-by-Feature Testing Guide
 
-The workbench at `http://127.0.0.1:8000/` contains 5 tabs and an interactive Leaflet map. Below is how to test every single feature:
+The workbench at `http://127.0.0.1:8000/` contains **9 navigation tabs** and an interactive Leaflet map. Below is how to test every single feature:
 
 ```
 +-----------------------------------------------------------------------------------+
-|  [Leaflet Interactive Map]                        | [Workbench Sidebar]           |
+|  [Leaflet Interactive Map]                        | [Workbench Sidebar - 9 Tabs]  |
 |  - 18 Color-Coded Segments (Green/Amber/Orange/Red) |  Tab 1: 🗺️ Risk Map         |
 |  - Popups with Score, Percentile, Rain & Driver   |  Tab 2: 🚗 Route Planner     |
-|  - 309 Mey et al. 2024 Scars Layer Toggle         |  Tab 3: 🌧️ Weather Sim       |
-|  - Click Map to Pin Field Report Coordinates      |  Tab 4: 🔔 Alerts & Subs     |
-|                                                   |  Tab 5: 📢 Field Reports     |
+|  - 309 Mey et al. 2024 Scars Layer Toggle         |  Tab 3: 🚧 Closures          |
+|  - Click Map to Pin Field Report Coordinates      |  Tab 4: 🚜 BRO Priority      |
+|  - Real-Time Simulation & Historical Overlays     |  Tab 5: 🌧️ Weather Sim       |
+|                                                   |  Tab 6: 📢 Field Reports     |
+|                                                   |  Tab 7: 🔔 Alerts & SMS      |
+|                                                   |  Tab 8: 🛡️ Guardrails Lab    |
+|                                                   |  Tab 9: 📦 Offline & Voice   |
 |                                                   +-------------------------------+
 |                                                   | [Live JSON Console & Latency] |
 +-----------------------------------------------------------------------------------+
 ```
+
+*(For the complete step-by-step browser walkthrough covering all 12 frontend scenarios, see [FRONTEND_TESTING_GUIDE.md](FRONTEND_TESTING_GUIDE.md)).*
 
 ---
 
