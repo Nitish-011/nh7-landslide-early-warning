@@ -13,7 +13,7 @@
 
 ---
 
-## 🚀 Quickstart for Friends (Up and Running in 60 Seconds)
+## 🚀 Quickstart for Friends (Up and Running)
 
 You don't need complicated setups or cloud accounts. Everything runs locally on your machine with a single command!
 
@@ -54,7 +54,7 @@ When you open **[http://localhost:8000](http://localhost:8000)**, you'll see our
 |  2. 🔊 TAB 9: HEAR HINDI NEURAL VOICE WARNINGS                                                    |
 |     Go to "Offline & Voice" tab, or toggle the language switcher at the top right (EN ➔ HI).       |
 |     Click "Play Localized Voice Audio". The server generates real-time audio speech alerts in      |
-|     natural Hindi via gTTS with sub-10ms cached streaming!                                        |
+|     natural Hindi via cached/local voice delivery with gTTS and browser fallback!                  |
 +---------------------------------------------------------------------------------------------------+
 |  3. 🚗 TAB 2: SMART TRIP SAFE PLANNER                                                             |
 |     Click "Route Planner". Set your departure from Rishikesh to Badrinath. Hit "Analyze Route".   |
@@ -213,7 +213,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 
 ## 🧪 Running the Automated Tests
 
-Our test suite guarantees that no regressions occur across API contracts, guardrails, or physics calculations:
+Our test suite provides strong validation against regressions across API contracts, guardrails, and physics calculations:
 
 ```bash
 # Run all 122 automated tests
@@ -243,7 +243,7 @@ tests/test_trip_planner_task3.py ....                                    [ 89%]
 tests/test_validation_audit_f4.py ......                                 [ 94%]
 tests/test_weather_upgrade_task1.py .......                              [100%]
 
-====================== 122 passed in 28.40s ======================
+======================== 122 tests passing ========================
 ```
 
 ---

@@ -12,7 +12,7 @@ This guide documents **every backend feature**, details **how to test every endp
 **Short Answer:**  
 The backend combines a **scientifically grounded static physical baseline** with a **100% dynamic, real-time hazard evaluation and alerting engine**.
 
-If *everything* were dynamic (including topography), the model would violate the laws of physics. Mountain geology does not change overnight; weather changes constantly. Here is the exact architectural breakdown:
+If *everything* were dynamic (including topography), the model would ignore the fundamental terrain-derived susceptibility baseline. Mountain geology does not change overnight; weather changes constantly. Here is the exact architectural breakdown:
 
 ```
 +-------------------------------------------------------------+
@@ -49,7 +49,7 @@ If *everything* were dynamic (including topography), the model would violate the
 1. **Live Meteorology:** Real-time 3-day antecedent rainfall is dynamically requested from the Open-Meteo API across 5 corridor weather stations (`fetch_rainfall`).
 2. **Fault-Tolerant Fallback & Circuit Breaker:** If the live weather API experiences timeouts or goes offline, the backend dynamically falls back to `data/rain_snapshot.json` with a 5-minute memory circuit breaker, serving requests in under 100 milliseconds and tagging `rain_status: "cached"`.
 3. **Dynamic Hazard Combination Engine:** Each request computes the real-time hazard score on the fly:
-   $$P_{\text{hazard}} = P_{\text{terrain}} \times \left(1 - e^{-k \cdot R_{\text{3d}}}\right)$$
+   $$\text{Risk} = \min(0.60 \times P_{\text{terrain}} + 0.40 \times \min(R_{\text{3d}}/100.0, 1.0), 1.0)$$
    and applies the `DRY_CAP_MM = 25.0` heuristic (capping risk at "Moderate" if dry).
 4. **Simulation Overrides (`simulate_rain_mm`):** Any caller or UI user can supply `?simulate_rain_mm=85` to immediately simulate a monsoon downpour or cloudburst across `/risk-map`, `/route-risk`, and `/alerts`.
 5. **Date-Aware Route Analysis:** If a travel date is beyond tomorrow (> 48 hours), the backend dynamically detects that rainfall forecasts are unreliable, evaluates risk using terrain susceptibility, and emits a clear travel advisory banner.
@@ -317,7 +317,7 @@ Response:
 
 ---
 
-## 5. Offline Resilience & Sub-Second Fallback Verification
+## 5. Offline Resilience & Fallback Verification
 
 A major engineering requirement is that **the backend must never hang or crash if the Open-Meteo external weather API fails**.
 
@@ -325,7 +325,7 @@ A major engineering requirement is that **the backend must never hang or crash i
 1. **4-Second Timeout:** The HTTP call to Open-Meteo will never block longer than 4.0 seconds.
 2. **5-Minute Memory Failure Cache:** Once a fetch fails, subsequent calls immediately skip external network requests for 300 seconds, responding instantly.
 3. **Local Disk Snapshot Fallback:** When live calls fail, the backend reads the last successful weather state from `data/rain_snapshot.json` and marks `rain_status: "cached"`.
-4. **Sub-Second Guaranteed Response:** If neither live nor snapshot is available, it gracefully returns terrain-only susceptibility scores with `rain_status: "unavailable"`.
+4. **Graceful Degradation:** If neither live nor snapshot is available, it gracefully returns terrain-only susceptibility scores with `rain_status: "unavailable"`.
 
 ### How to Verify Resilience:
 Run the automated resilience test suite:
