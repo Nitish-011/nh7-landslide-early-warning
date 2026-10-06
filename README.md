@@ -274,6 +274,8 @@ ALERT_CHECK_INTERVAL=600
 
 ## 📖 Additional Documentation Guides
 
+- [ANTIGRAVITY_BACKEND_CONTEXT.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/ANTIGRAVITY_BACKEND_CONTEXT.md) — 🧠 Comprehensive AI Agent specification with every route, request schema, and response payload.
+- [AGENTS.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/AGENTS.md) — Antigravity IDE & CLI agent instructions and engineering guidelines.
 - [FEATURES.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/FEATURES.md) — Exhaustive accounting of all 12 feature domains and database schemas.
 - [MODEL_PERFORMANCE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/MODEL_PERFORMANCE.md) — In-depth data science report, spatial CV benchmarks, and model card.
 - [FRONTEND_TESTING_GUIDE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/FRONTEND_TESTING_GUIDE.md) — Step-by-step browser walkthrough to test every button and tab from the UI.
