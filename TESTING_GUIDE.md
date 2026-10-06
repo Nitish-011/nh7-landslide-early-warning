@@ -130,10 +130,10 @@ Returns risk assessments for all 18 segments along NH-7 (Rishikesh to Joshimath)
 2. Click the **"🗺️ Risk Map"** tab.
 3. Click **"⚡ Fetch Live Risk Map"**.
 4. The map renders the 18 segments color-coded:
-   - 🟢 **Low** ($< 0.35$)
-   - 🟡 **Moderate** ($0.35 - 0.65$)
-   - 🟠 **High** ($0.65 - 0.85$)
-   - 🔴 **Very High** ($\ge 0.85$)
+   - 🟢 **Low** ($< 0.25$)
+   - 🟡 **Moderate** ($0.25 - 0.49$)
+   - 🟠 **High** ($0.50 - 0.74$)
+   - 🔴 **Very High** ($\ge 0.75$)
 5. Click any segment on the map or choose from the **"Segment Inspector"** dropdown to see:
    - Primary physical driver (e.g., `Steep 30.2° cut slope, high 300m relief (122m)`)
    - Terrain Percentile (e.g., `92nd (Critical)`)

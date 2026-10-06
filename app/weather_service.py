@@ -319,10 +319,17 @@ def fetch_weather_pipeline(
     if getattr(config, "DEMO_MODE", False) and simulate_rain_mm is None:
         snap_data, snap_time = load_snapshot_data(segments)
         if snap_data is not None:
+            snap_age_min = 0.0
+            if snap_time and snap_time != "unknown":
+                try:
+                    dt = datetime.fromisoformat(snap_time.replace("Z", "+00:00"))
+                    snap_age_min = round(max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 60.0), 1)
+                except Exception:
+                    pass
             return snap_data, {
                 "weather_source": "snapshot",
                 "weather_fetched_at": snap_time or now_iso,
-                "weather_age_minutes": 0.0,
+                "weather_age_minutes": snap_age_min,
                 "is_simulated": False,
                 "stale_warning": "DEMO_MODE active: using pinned offline snapshot.",
             }

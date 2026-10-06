@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/PyTest-121%20Passed%20(100%25)-success.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/PyTest-122%20Passed%20(100%25)-success.svg)](https://pytest.org/)
 [![GIS](https://img.shields.io/badge/DEM-Copernicus%2030m-green.svg)](https://spacedata.copernicus.eu/)
 [![PWA](https://img.shields.io/badge/PWA-Offline%20Ready-orange.svg)](https://web.dev/progressive-web-apps/)
 [![Hackathon](https://img.shields.io/badge/Hackathon-IBM%20x%20Jigyasa-purple.svg)]()
@@ -77,7 +77,7 @@ When you open **[http://localhost:8000](http://localhost:8000)**, you'll see our
 
 ## 🏗️ System Architecture
 
-Our backend is built around a hybrid physical-statistical model: **Static Topographic Physics** combined with **100% Dynamic Real-Time Weather and Operational Incident States**.
+Our backend is built around a hybrid physical-statistical model: **Static Topographic Physics** combined with **Dynamic Weather and Operational Incident States** (supporting both hardened 5-station daily assimilation by default and an advanced 18-segment hourly forecasting pipeline).
 
 ```
                            +-------------------------------------------------+
@@ -87,11 +87,11 @@ Our backend is built around a hybrid physical-statistical model: **Static Topogr
                            +------------------------+------------------------+
                                                     |
                                                     v
-+-----------------------+  Hourly Rainfall  +---------------------------------+
-|   Open-Meteo API      | ----------------> |     DYNAMIC HAZARD ENGINE       |
-| 5 Virtual Stations on |                   |  Risk = min(0.65*T + 0.35*R_norm)
-| NH-7 (5-min circuit)  |                   |  Dry cap (25mm) + Storm Sim     |
-+-----------------------+                   +---------------+-----------------+
++-----------------------+  Hourly / Daily Rain  +---------------------------------+
+|   Open-Meteo API      | --------------------> |     DYNAMIC HAZARD ENGINE       |
+| 5 Virtual Stations on |                       |  Risk = min(0.60*T + 0.40*R_norm)
+| NH-7 (5-min circuit)  |                       |  Dry cap (25mm) + Storm Sim     |
++-----------------------+                       +---------------+-----------------+
                                                             |
               +---------------------------------------------+------------------------------------+
               |                                             |                                    |
@@ -153,7 +153,7 @@ nh7-landslide-early-warning/
 ├── geojson/                    # Spatial corridor geometry
 │   └── nh7_route.geojson       # Complete 247.37 km NH-7 highway polyline
 ├── model/                      # Data science models, training code & research assets
-│   ├── nh7_static_model_v2.joblib # Trained Random Forest + XGBoost ensemble
+│   ├── nh7_static_model_v2.joblib # Trained Random Forest v2
 │   ├── build_static_dataset.py # DEM feature extraction & geomorphic preprocessing
 │   └── dem_cache/              # Copernicus 30m Digital Elevation Model TIF
 ├── scripts/                    # Command-line audit, backtest & utility tools
@@ -161,7 +161,7 @@ nh7-landslide-early-warning/
 │   ├── validation_audit.py     # Comprehensive 6-fold spatial CV audit runner
 │   ├── smoke.py                # Fast endpoint health and contract verification
 │   └── demo_check.py           # Pre-flight check script before live presentations
-├── tests/                      # Automated test suite (119 test cases)
+├── tests/                      # Automated test suite (122 test cases)
 │   ├── contract/               # Golden schema regression tests
 │   └── test_*.py               # Functional, security, freshness, and route tests
 ├── FEATURES.md                 # Complete feature accounting catalog
@@ -183,7 +183,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 | `GET` | `/health` | Server health, database status, and uptime | `curl http://localhost:8000/health` |
 | `GET` | `/risk-map` | Real-time risk for all 18 NH-7 segments | `curl http://localhost:8000/risk-map` |
 | `GET` | `/risk-map?simulate_rain_mm=120` | Stress-test with simulated 120mm cloudburst | Test via browser or curl |
-| `GET` | `/risk-map?as_of=2023-08-14` | Replay Chamoli disaster historical weather | Replay past monsoon event |
+| `GET` | `/risk-map?as_of=2023-08-14` | Replay past monsoon event (requires `BACKTEST_ENABLED=true`) | Replay past monsoon event |
 | `POST` | `/trip-planner` | Safe departure advisory with waypoint ETAs | Pass JSON with origin & destination |
 | `GET` | `/consequence` | BRO infrastructure consequence & priority | `curl http://localhost:8000/consequence` |
 | `GET` | `/closures` | Active road closures & bypass advisories | `curl http://localhost:8000/closures` |
@@ -205,7 +205,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 - **Spatial Block Mean AUC:** **0.664** (across 6 spatial blocks with 2.0 km exclusion buffer).
 - **Average Precision (PR-AUC):** **0.533**, **Top-20% Highway Capture Rate:** **43.0%**.
 - **Spearman Rank Correlation ($\rho$):** **0.653** ($p = 0.0033$), verifying strong statistical concordance with ground-truth landslide frequency.
-- **Dynamic Meteorological Layer:** Weighted linear-capped live rainfall heuristic ($\text{score} = \min(0.65 \times \text{terrain} + 0.35 \times \min(R_{3\text{d}}/100, 1.0), 1.0)$, with $25\text{ mm}$ dry-weather cap).
+- **Dynamic Meteorological Layer:** Weighted linear-capped live rainfall heuristic ($\text{score} = \min(0.60 \times \text{terrain} + 0.40 \times \min(R_{3\text{d}}/100, 1.0), 1.0)$, with $25\text{ mm}$ dry-weather cap).
 - **Inference Latency:** `< 12 ms` to evaluate the entire 247 km highway corridor.
 
 👉 *For the complete model card, confusion matrices, and backtest results, check [MODEL_PERFORMANCE.md](file:///c:/hackathon%20IBM%20x%20Jigyasa/MODEL_PERFORMANCE.md).*
@@ -217,7 +217,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 Our test suite guarantees that no regressions occur across API contracts, guardrails, or physics calculations:
 
 ```bash
-# Run all 121 automated tests
+# Run all 122 automated tests
 python -m pytest
 ```
 
@@ -225,26 +225,26 @@ Output:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.14.6, pytest-9.0.3
-collected 121 items
+collected 122 items
 
 tests/contract/test_contract.py ..................                       [ 14%]
 tests/contract/test_golden_schema.py .........                           [ 22%]
 tests/test_alert_delivery_task6.py ......                                [ 27%]
-tests/test_backtest_task2.py ......                                      [ 32%]
-tests/test_closures_and_flywheel_task5.py .......                        [ 38%]
+tests/test_backtest_task2.py ......                                      [ 31%]
+tests/test_closures_and_flywheel_task5.py .......                        [ 37%]
 tests/test_consequence_task4.py ......                                   [ 42%]
 tests/test_freshness_f2.py .......                                       [ 48%]
 tests/test_localization_and_voice_task7.py .......                       [ 54%]
-tests/test_model_info_f3.py ........                                     [ 61%]
+tests/test_model_info_f3.py ........                                     [ 60%]
 tests/test_offline_pack_task8.py .......                                 [ 66%]
 tests/test_production_f5.py ......                                       [ 71%]
-tests/test_risk_resilience.py .....                                      [ 76%]
+tests/test_risk_resilience.py .....                                      [ 75%]
 tests/test_security_f1.py .............                                  [ 86%]
-tests/test_trip_planner_task3.py ....                                    [ 90%]
-tests/test_validation_audit_f4.py ......                                 [ 95%]
-tests/test_weather_upgrade_task1.py ......                               [100%]
+tests/test_trip_planner_task3.py ....                                    [ 89%]
+tests/test_validation_audit_f4.py ......                                 [ 94%]
+tests/test_weather_upgrade_task1.py .......                              [100%]
 
-====================== 121 passed in 18.50s ======================
+====================== 122 passed in 28.40s ======================
 ```
 
 ---

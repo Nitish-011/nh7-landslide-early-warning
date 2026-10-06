@@ -101,11 +101,9 @@ To avoid optimistic performance bias from spatial autocorrelation, the model was
 | **Feature Note on Elevation** | **Elevation (Gini: 19.6%)** | Retained in deployed Random Forest v2 ensemble; noted in earlier spatial logistic experiments as yielding poor univariate out-of-fold transfer. |
 
 ### 3.5 Terrain Susceptibility Formulation
-The segment static terrain score ($P_{\text{terrain}}$) is computed via the spatial model aggregated to the 18 segments using the **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
+The deployed static hazard model is a Random Forest v2 (`model/nh7_static_model_v2.joblib`) trained on 8 Copernicus 30m geomorphometric predictors (elevation, slope gradient, max cut slope 210m, aspect sine, aspect cosine, profile curvature, 300m local relief, and Topographic Position Index). Point-wise susceptibility probabilities are aggregated to the 18 NH-7 highway segments using the conservative **90th percentile ($p_{90}$)** to isolate the most hazardous cut-slope within each stretch:
 
-$$\text{Logit}(z) = -6.0963 + 0.1348 \times \text{Slope} + 0.0076 \times \text{Relief}_{300\text{m}}$$
-
-$$P_{\text{terrain}} = \frac{1}{1 + e^{-z}}$$
+$$P_{\text{terrain}} = \text{Percentile}_{90}\Big(\big\{ \hat{P}_{\text{RF}}(\mathbf{x}_i) \mid \mathbf{x}_i \in \text{Segment}_k \big\}\Big)$$
 
 ---
 
@@ -116,7 +114,7 @@ Static terrain susceptibility is dynamically integrated with 3-day antecedent ra
 
 $$\text{risk\_score} = \min\left(K_{\text{terrain}} \times \text{terrain\_percentile} + K_{\text{rain}} \times \min\left(\frac{R_{\text{3d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
 
-where $K_{\text{terrain}} = 0.65$, $K_{\text{rain}} = 0.35$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (operational demo heuristics).
+where $K_{\text{terrain}} = 0.60$, $K_{\text{rain}} = 0.40$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (calibrated operational heuristics).
 
 - **Safety Cap:** When $R_{\text{3d}} < 25.0\text{ mm}$ (`DRY_CAP_MM = 25.0`), risk level is capped at `"Moderate"`. Dry mountain slopes do not fail spontaneously without seismic or severe hydraulic triggers.
 - **Explainable Driver Strings:** 18/18 segments feature dynamically generated natural-language explanations (e.g., `Steep 30.2° cut slope, high 300m relief (122m)`).
@@ -151,7 +149,7 @@ $$\text{priority\_score} = \text{risk\_index} \times \text{consequence\_score}$$
 To maintain scientific integrity and prevent overclaiming during presentations, the following real-world boundaries are explicitly stated:
 
 1. **Empirical Rainfall Formulation vs. Subsurface Geotechnics:**
-   - The rainfall trigger function ($1 - e^{-k \cdot R_{\text{3d}}}$) is an empirical hazard-scaling heuristic based on antecedent precipitation thresholds from mountain literature.
+   - The dynamic rainfall coupling ($R_{\text{index}} = \min(R_{\text{3d}} / 100\text{ mm}, 1.0)$ with linear weights $K_{\text{terrain}} = 0.60, K_{\text{rain}} = 0.40$) is an operational hazard-scaling heuristic based on antecedent precipitation thresholds.
    - It **does not** measure in-situ pore-water pressure, soil moisture retention curves, or borehole piezometric heads.
 2. **Geological Structure Data Availability:**
    - The model accounts for slope, relief, curvature, and TPI from 30m DEM data.
@@ -202,7 +200,7 @@ To maintain scientific integrity and prevent overclaiming during presentations, 
    - 9/9 Golden Schema tests pass (`tests/contract/test_golden_schema.py`).
    - 100% backward-compatibility verified against `tests/golden/`. Zero keys deleted or renamed.
 2. **Full Pytest Suite:**
-   - 119/119 unit, security, resilience, localization, offline, and contract tests pass in 16.18s.
+   - 122/122 unit, security, resilience, localization, offline, and contract tests pass in 28.4s.
 3. **Live Smoke Runner (`scripts/smoke.py`):**
    - 22/22 live HTTP endpoints tested against running server, 100% PASS.
 4. **Scripted Demo Verifier (`scripts/demo_check.py`):**

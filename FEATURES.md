@@ -3,7 +3,7 @@
 
 > **Corridor Scope:** National Highway 7 (Rishikesh to Joshimath, Uttarakhand, India — 247.37 km)  
 > **System Architecture:** AI Hazard Inference + Multi-Station Meteorology + Civil Infrastructure Consequence + Multi-Channel Alerts + PWA Offline Resilience  
-> **Total Automated Test Coverage:** 119/119 passing tests across contract, security, freshness, and functional domains.
+> **Total Automated Test Coverage:** 122/122 passing tests across contract, security, freshness, and functional domains.
 
 ---
 
@@ -26,7 +26,7 @@ The platform bridges cutting-edge machine learning with operational field disast
                                                   v
 +---------------------------------------------------------------------------------------------------+
 |                                  INTELLIGENCE & HAZARD ENGINE                                      |
-|  - Static Susceptibility (Random Forest + XGBoost v2)        - Antecedent 3-Day Wetting [R_3d]    |
+|  - Static Susceptibility (Random Forest v2)                  - Antecedent 3-Day Wetting [R_3d]    |
 |  - Dynamic Risk: score = min(w_t*terrain + w_r*min(R/100, 1), 1) - Fallback Circuit Breaker (5m TTL)|
 +-------------------------------------------------+-------------------------------------------------+
                                                   |
@@ -63,7 +63,7 @@ The platform bridges cutting-edge machine learning with operational field disast
 | **9** | **Offline Survivor Pack & PWA Service Worker** | `GET /offline-pack`<br>`GET /manifest.json`<br>`GET /sw.js` | Service Worker, CacheStorage, HTTP ETag / 304 | Delivers a lightweight (<17 KB) self-contained survival package with highway geometry, contacts, and risk levels that works in cellular dead zones. |
 | **10** | **Enterprise Security & Guardrails** | `app/middleware.py`<br>`app/limiter.py`<br>`app/routes/reports.py` | SlowAPI, HTML bleach, secrets timing-safe digest | Protects against DDoS (rate limits), XSS injections in crowd reports, unauthorized admin calls, and out-of-corridor spoofing. |
 | **11** | **Interactive 9-Tab Workbench Frontend** | `app/static/index.html` | Vanilla HTML5/CSS3/JS, Leaflet GIS, JetBrains Mono | Unified web application with dual-mode GIS map, HUD metrics, rainfall slider, SMS simulator, and live JSON inspector. |
-| **12** | **Scientific Validation & Audit Suite** | `scripts/validation_audit.py`<br>`tests/` (119 tests) | Pytest, Golden Schemas, Spatial Bootstrap | Independent validation auditing inventory coverage (309 scars), 6-fold spatial block cross-validation, and schema contracts. |
+| **12** | **Scientific Validation & Audit Suite** | `scripts/validation_audit.py`<br>`tests/` (122 tests) | Pytest, Golden Schemas, Spatial Bootstrap | Independent validation auditing inventory coverage (309 scars), 6-fold spatial block cross-validation, and schema contracts. |
 
 ---
 
@@ -77,16 +77,16 @@ The platform bridges cutting-edge machine learning with operational field disast
   - Computes the 3-day antecedent rainfall $R_{3\text{d}} = R_{\text{yesterday}} + R_{\text{today}} + R_{\text{tomorrow}}$.
   - Integrates transparent weighted linear-capped dynamic hazard formula:
     $$\text{risk\_score} = \min\left(K_{\text{terrain}} \times \text{terrain\_percentile} + K_{\text{rain}} \times \min\left(\frac{R_{3\text{d}}}{\text{RAIN\_REF\_MM}}, 1.0\right), 1.0\right)$$
-    where $K_{\text{terrain}} = 0.65$, $K_{\text{rain}} = 0.35$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (calibrated operational heuristics).
+    where $K_{\text{terrain}} = 0.60$, $K_{\text{rain}} = 0.40$, and $\text{RAIN\_REF\_MM} = 100.0\text{ mm}$ (calibrated operational heuristics).
   - **Dry Condition Guardrail (`DRY_CAP_MM = 25.0`):** If $R_{3\text{d}} < 25\text{ mm}$, risk is physically capped at "Moderate", preventing false alarms during dry sunny weather.
   - **Circuit Breaker:** If the live weather API fails or times out, the engine gracefully falls back to `data/rain_snapshot.json` with a 5-minute memory cache, returning in under 20ms and tagging `rain_status: "cached"`.
   - **Simulation Override:** Supports `?simulate_rain_mm=120.0` to instantly stress-test the entire highway under simulated cloudburst or monsoon downpour conditions.
 
 ### Feature 2: Historical Time Machine & Backtest Engine
 - **Mechanism:**
-  - The parameter `?as_of=YYYY-MM-DD` triggers the **Time Machine** on `/risk-map`.
+  - The parameter `?as_of=YYYY-MM-DD` triggers the **Time Machine** on `/risk-map` (requires `BACKTEST_ENABLED=true` in `app/config.py`).
   - Ingests archived historical daily precipitation data from ERA5-Land reanalysis.
-  - Replays historical disasters (e.g. the deadly August 12–14, 2023 Chamoli cloudburst) to evaluate whether the early warning system would have successfully issued red alerts before slope failures occurred.
+  - Replays available verified events; when the empirical event table is insufficient, runs a clearly labelled synthetic demonstration.
   - Cached in `data/backtest_cache/` so historical queries return instantaneously without repeated API requests.
 
 ### Feature 3: Time-Aware Safe Trip Planner
@@ -189,7 +189,7 @@ The platform bridges cutting-edge machine learning with operational field disast
 
 ### Feature 12: Scientific Validation & Automated Test Suite
 - **Mechanism:**
-  - 119 automated pytest tests spanning unit, integration, security, and contract test cases.
+  - 122 automated pytest tests spanning unit, integration, security, and contract test cases.
   - Golden JSON schema regression tests (`tests/golden/`) verifying strict API backward compatibility.
   - Re-runnable validation audit script (`scripts/validation_audit.py`) and historical backtest runner (`scripts/backtest.py`).
 

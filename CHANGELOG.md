@@ -143,10 +143,17 @@ All existing response fields are retained without alteration. The following new 
 
 - **0.767 Benchmark Calibration:** Solidified official deployed model baseline as Copernicus 30m DEM + Random Forest v2 with pooled spatial OOF ROC-AUC of **0.767** and spatial block mean AUC of **0.664**. Removed unsupported 0.887 claims.
 - **Dynamic Hazard Equation Alignment:** Synchronized documentation across `README.md`, `FEATURES.md`, `ANTIGRAVITY_BACKEND_CONTEXT.md`, and `MODEL_PERFORMANCE.md` with runtime implementation:
-  $$\text{risk\_score} = \min\left(0.65 \times \text{terrain\_percentile} + 0.35 \times \min\left(\frac{R_{3\text{d}}}{100.0}, 1.0\right), 1.0\right)$$
+  $$\text{risk\_score} = \min\left(0.60 \times \text{terrain\_percentile} + 0.40 \times \min\left(\frac{R_{3\text{d}}}{100.0}, 1.0\right), 1.0\right)$$
 - **Reproducible Deterministic Backtest Fallback:** Replaced Python process-randomized `hash()` in `scripts/backtest.py` with deterministic SHA-256 (`hashlib.sha256`) digest.
 - **Explicit Synthetic Backtest Labeling:** Relabeled historical disaster backtest in `MODEL_PERFORMANCE.md` to "Synthetic Demonstration Backtest — Not Empirical Multi-Year Validation" with an explicit warning note on harness verification.
 - **Environment Configuration Alignment:** Harmonized environment variable naming in `README.md` and `.env.example` with `app/config.py` (`TWILIO_FROM`, `ALERT_DISPATCH_INTERVAL_MINUTES=10`), adding backward-compatible fallbacks for `TWILIO_PHONE_NUMBER` and `ALERT_CHECK_INTERVAL`.
 - **Subscriber PII Hardening:** Protected subscriber name privacy in unauthenticated `GET /alerts` via `mask_subscriber_name` to prevent enumeration and harvesting attacks.
 - **Codebase Cleanliness:** Retired stale `calculate_risk_level` thresholds in `app/routes/risk.py` by delegating directly to `level_for` and `LEVEL_CUTS`.
+- **Pre-Freeze Hackathon Audit Reconciliation:**
+  - **Unified Weight Authority:** Authoritative live weights set to $K_{\text{terrain}} = 0.60, K_{\text{rain}} = 0.40$ across all documentation, tests, and backtest configurations.
+  - **Single Authoritative Test Count:** Verified 122 collected automated test cases (100% pass rate).
+  - **Deployed Model Identity:** Unified references to Copernicus 30m DEM + Random Forest v2 (`nh7_static_model_v2.joblib`), retiring legacy "RF + XGBoost" wording and logistic equation artifacts.
+  - **Testing Guide Thresholds:** Corrected risk tier cuts in `TESTING_GUIDE.md` to match runtime configuration: Low (< 0.25), Moderate (0.25–0.49), High (0.50–0.74), Very High ($\ge$ 0.75).
+  - **Geofence Boundary Hardening:** Bounded corridor validation check to regional coordinates when polyline is uninitialized.
+  - **Telemetry Precision:** Calculated genuine `weather_age_minutes` in `DEMO_MODE` snapshots.
 

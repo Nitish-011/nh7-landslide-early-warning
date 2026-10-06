@@ -44,7 +44,8 @@ def get_corridor_line() -> Optional[LineString]:
 def check_within_corridor(lat: float, lng: float, max_dist_km: float = 3.0) -> bool:
     line = get_corridor_line()
     if line is None:
-        return True  # Fallback if file missing
+        # Fallback to NH-7 corridor bounding box if geometry uninitialized, preventing fail-open global acceptance
+        return 29.9 <= lat <= 30.7 and 78.1 <= lng <= 79.7
     lat0, lon0 = 30.2, 78.5
     cos_lat = math.cos(math.radians(lat0))
     p = Point(((lng - lon0) * 111.0 * cos_lat, (lat - lat0) * 111.0))

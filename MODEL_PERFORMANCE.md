@@ -19,7 +19,7 @@ Standard machine learning models applied to landslide prediction in mountainous 
 
 Our system solves both flaws through a **physics-constrained statistical architecture**:
 - A **high-resolution 30m geomorphological baseline** ($P_{\text{terrain}}$) evaluating slope steepness, 300m local relief, Topographic Position Index (TPI), curvature, and elevation.
-- A **dynamic weighted linear-capped rainfall heuristic** ($R_{\text{index}} = \min(R_{3\text{d}} / 100\text{ mm}, 1.0)$, composite score $= \min(0.65 \times P_{\text{terrain}} + 0.35 \times R_{\text{index}}, 1.0)$) driven by live 3-day antecedent rainfall across 5 highway weather stations with a dry-weather cap ($R_{3\text{d}} < 25\text{ mm} \implies \text{capped at Moderate}$). This transparent heuristic avoids uncalibrated non-linear parameter overfitting while ensuring predictable operational alerts.
+- A **dynamic weighted linear-capped rainfall heuristic** ($R_{\text{index}} = \min(R_{3\text{d}} / 100\text{ mm}, 1.0)$, composite score $= \min(0.60 \times P_{\text{terrain}} + 0.40 \times R_{\text{index}}, 1.0)$) driven by live 3-day antecedent rainfall across 5 highway weather stations with a dry-weather cap ($R_{3\text{d}} < 25\text{ mm} \implies \text{capped at Moderate}$). This transparent heuristic avoids uncalibrated non-linear parameter overfitting while ensuring predictable operational alerts.
 - Strict evaluation via **Leave-One-Block-Out (LOBO) Spatial Cross-Validation** with a 2.0 km exclusion buffer, guaranteeing genuine out-of-sample generalization.
 
 ### Headline Performance Summary (Official Audited Benchmark)
@@ -166,7 +166,7 @@ Terrain-Only Model           (AUC = 0.578, 95% CI: [0.372, 0.762])
 Rain-Only Model              (AUC = 0.549, 95% CI: [0.354, 0.723])
 ```
 
-### Empirical Backtest Confusion Matrix
+### Synthetic Demonstration Confusion Matrix
 
 | Risk Classification Tier | Threshold | Predicted Segments | True Ground Failures | Precision | Recall |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -175,7 +175,7 @@ Rain-Only Model              (AUC = 0.549, 95% CI: [0.354, 0.723])
 | **High** | $0.50 - 0.75$ | 14 | 5 | **35.7%** | **41.7%** |
 | **Very High** | $\ge 0.75$ | 1 | 0 | 0.0%* | 0.0% |
 
-*\*Note: In synthetic single-day backtest mode with coarse ERA5 reanalysis, 1 segment breached 0.75. When simulating localized cloudburst rainfall (140mm), 7 segments breach the Severe threshold, capturing 91.7% of historical failures.*
+*\*Note: In synthetic single-day backtest mode with coarse ERA5 reanalysis, 1 segment breached 0.75. When simulating localized cloudburst rainfall (140mm), 7 segments breach the Severe threshold, capturing 91.7% of synthetic failure scenarios.*
 
 ### Optimization of Rainfall Scaling Coefficient ($k_{\text{rain}}$)
 Evaluating $k$ across values from $0.1$ to $0.9$:
