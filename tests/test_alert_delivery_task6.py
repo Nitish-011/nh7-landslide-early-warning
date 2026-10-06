@@ -302,3 +302,22 @@ def test_alert_dispatcher_dedupe_and_cooldown(monkeypatch):
         log_rows = conn.execute("SELECT * FROM alert_log WHERE subscription_id = 901").fetchall()
         assert len(log_rows) == 2
         assert log_rows[1]["risk_level"] == "Very High"
+
+    # --- Run 5: Risk downgrades to Moderate after cooldown -> NO alert sent ---
+    four_hours_ago_2 = (datetime.now(timezone.utc) - timedelta(hours=4)).isoformat()
+    with get_db() as conn:
+        conn.execute("UPDATE alert_state SET last_sent_at = ? WHERE subscription_id = 901", (four_hours_ago_2,))
+
+    def mock_risk_downgraded(simulate_rain_mm=None):
+        return [
+            {"id": "seg_01", "name": "Rishikesh to Shivpuri", "risk_level": "Low"},
+            {"id": "seg_03", "name": "Byasi to Kaudiyala", "risk_level": "Moderate"},
+        ], {}
+
+    monkeypatch.setattr(alert_dispatcher, "get_live_risk_map_with_metadata", mock_risk_downgraded)
+    fake.sent_messages.clear()
+    sent_count_5 = dispatch_alerts()
+    # Risk downgraded to Moderate -> MUST NOT dispatch alert!
+    assert sent_count_5 == 0
+    assert len(fake.sent_messages) == 0
+

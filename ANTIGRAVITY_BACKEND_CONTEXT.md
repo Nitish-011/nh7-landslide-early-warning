@@ -10,7 +10,7 @@
 
 ## 1. Core Mental Model for AI Agents
 
-When building a frontend for this repository, you do **not** need to simulate or mock the backend logic. The backend is a fully functional, production-hardened FastAPI application with real machine learning inference and real-time weather integration.
+When building a frontend for this repository, you do **not** need to simulate or mock the backend logic. The backend is a hackathon-ready, resilience-oriented FastAPI backend with real machine learning inference and real-time weather integration.
 
 ```
 +---------------------------------------------------------------------------------------------------+
@@ -18,14 +18,14 @@ When building a frontend for this repository, you do **not** need to simulate or
 |  - 30-meter Copernicus DEM Topography (Slope, 300m Local Relief, TPI, Curvature)                  |
 |  - 247.37 km NH-7 Highway Alignment (Rishikesh to Joshimath, geojson/nh7_route.geojson)          |
 |  - 18 Sequence-Ordered Segments (seg_01 to seg_18)                                                |
-|  - Random Forest v2 Trained Ensemble (model/nh7_static_model_v2.joblib, Spatial OOF ROC-AUC 0.767)  |
+|  - Random Forest v2 (model/nh7_static_model_v2.joblib, Spatial OOF ROC-AUC 0.767)                 |
 +-------------------------------------------------+-------------------------------------------------+
                                                   |
                                                   v
 +---------------------------------------------------------------------------------------------------+
 |               DYNAMIC REAL-TIME ENGINE (Live State & Weather)                                     |
-|  - Live 3-Day Multi-Station Rainfall (Open-Meteo across 5 corridor stations, 5-min cache TTL)      |
-|  - Dynamic Risk Formula: score = min(0.65*terrain + 0.35*min(R_3d/100, 1.0), 1.0)                 |
+|  - Live Multi-Station Rainfall (Open-Meteo across 5 stations, 30-min cache, 5-min circuit breaker)  |
+|  - Dynamic Risk Formula: score = min(0.60*terrain + 0.40*min(R_3d/100, 1.0), 1.0)                 |
 |  - Dynamic Storm Simulation Overrides (?simulate_rain_mm=...)                                     |
 |  - Time-Aware Arrival-Hour Trip Forecasting (POST /trip-planner)                                  |
 |  - Active Road Closures & Bypass Routing (GET /closures)                                          |
@@ -73,30 +73,30 @@ export const RISK_COLORS = {
   Low: {
     label: "Low",
     minScore: 0.00,
-    maxScore: 0.34,
+    maxScore: 0.24,
     color: "#10b981",       // Emerald Green
     bgLight: "rgba(16, 185, 129, 0.15)",
     border: "rgba(16, 185, 129, 0.35)",
   },
   Moderate: {
     label: "Moderate",
-    minScore: 0.35,
-    maxScore: 0.59,
+    minScore: 0.25,
+    maxScore: 0.49,
     color: "#f59e0b",       // Warm Amber
     bgLight: "rgba(245, 158, 11, 0.15)",
     border: "rgba(245, 158, 11, 0.35)",
   },
   High: {
     label: "High",
-    minScore: 0.60,
-    maxScore: 0.79,
+    minScore: 0.50,
+    maxScore: 0.74,
     color: "#f97316",       // Vivid Orange
     bgLight: "rgba(249, 115, 22, 0.15)",
     border: "rgba(249, 115, 22, 0.35)",
   },
   VeryHigh: {
     label: "Very High / Severe",
-    minScore: 0.80,
+    minScore: 0.75,
     maxScore: 1.00,
     color: "#ef4444",       // Danger Crimson Red
     bgLight: "rgba(239, 68, 68, 0.15)",
@@ -138,10 +138,9 @@ export const RISK_COLORS = {
 - **Method:** `GET`
 - **Path:** `/risk-map`
 - **Query Parameters:**
-  - `simulate_rain_mm` (*float*, optional): Injects synthetic rainfall (e.g. `40`, `100`, `140`). Overrides live weather for storm stress-testing.
-  - `as_of` (*string YYYY-MM-DD*, optional): Replays historical date weather from ERA5-Land reanalysis archive (e.g. `2023-08-14`).
+  - `simulate_rain_mm` (*float*, optional): Injects synthetic rainfall (0.0 to 1000.0 mm). Overrides live weather for storm stress-testing.
+  - `as_of` (*string YYYY-MM-DD*, optional): Replays historical date weather from ERA5-Land reanalysis archive (e.g. `2023-08-14`; requires `BACKTEST_ENABLED=true`).
   - `lang` (*string*, optional, default `"en"`): Pass `"hi"` for Hindi Devanagari translation.
-  - `refresh_weather` (*bool*, optional, default `false`): Bypasses 5-min cache to force fresh Open-Meteo fetch.
 - **Response (200 OK):**
 ```json
 {
@@ -184,10 +183,57 @@ export const RISK_COLORS = {
   ]
 }
 ```
+- **Degraded Fallback Disclosure:** If the live weather pipeline encounters unhandled exceptions, the endpoint returns database fallback state with explicit metadata: `"mode": "degraded"`, `"weather_source": "database_fallback"`, `"stale_warning": "Live risk computation failed; serving last-known database state."`.
 
 ---
 
-### 3. `POST /trip-planner` — Time-Aware Route & Safe Departure Advisor
+### 3. `GET /route-risk` — Route Segment Risk Assessment
+- **Method:** `GET`
+- **Path:** `/route-risk`
+- **Description:** Evaluates landslide hazard between any two corridor segments for a target travel date, calculating physical terrain risk, live weather, and polyline subpoints.
+- **Query Parameters:**
+  - `from_segment` (*string*, required): Starting segment ID (e.g. `seg_01`).
+  - `to_segment` (*string*, required): Destination segment ID (e.g. `seg_09`).
+  - `date` (*string YYYY-MM-DD*, required): Travel date.
+  - `simulate_rain_mm` (*float*, optional): Rainfall override (0.0 to 1000.0 mm).
+  - `depart_time` (*string ISO*, optional): Departure timestamp in IST (e.g. `2026-10-06T08:00:00`).
+  - `speed_kmph` (*float*, optional, default `30.0`): Travel speed in km/h.
+  - `lang` (*string*, optional, default `"en"`): `"en"` or `"hi"`.
+- **Response (200 OK):**
+```json
+{
+  "from_segment": "seg_01",
+  "to_segment": "seg_09",
+  "date": "2026-10-06",
+  "route_risk_level": "High",
+  "route_risk_score": 0.58,
+  "segments_count": 9,
+  "route_segments": [
+    {
+      "id": "seg_01",
+      "name": "Rishikesh to Shivpuri",
+      "sequence_order": 1,
+      "subpoints": [
+        [30.0869, 78.2676],
+        [30.1157, 78.3245],
+        [30.1357, 78.3892]
+      ],
+      "subpoint_risk_scores": [0.18, 0.19, 0.20],
+      "visualized_subpoint_risk": [0.18, 0.19, 0.20],
+      "risk_level": "Low",
+      "risk_score": 0.18,
+      "terrain_percentile": 0.76,
+      "rain_mm_3d": 11.8,
+      "main_driver": "Mild slope gradient (14°)"
+    }
+  ]
+}
+```
+> **Subpoint Methodology Disclosure:** Subpoints along polyline segments are visualization vertices. `subpoint_risk_scores` (also exposed as `visualized_subpoint_risk`) are deterministic spatial interpolations calculated directly from the segment's calibrated Random Forest terrain percentile and live rainfall, enabling smooth client-side polyline gradient rendering without requiring multi-gigabyte raster DEM lookups per API request.
+
+---
+
+### 4. `POST /trip-planner` — Time-Aware Route & Safe Departure Advisor
 - **Method:** `POST`
 - **Path:** `/trip-planner`
 - **Description:** Analyzes journey between two segments at a specified departure time. Calculates progressive arrival ETAs for every intermediate sector and checks forecasted storm intensity at each ETA.
@@ -248,7 +294,7 @@ export const RISK_COLORS = {
 
 ---
 
-### 4. `GET /priority-list` & `GET /consequence` — BRO Clearing Priorities
+### 5. `GET /priority-list` & `GET /consequence` — BRO Clearing Priorities
 - **Method:** `GET`
 - **Path:** `/priority-list` or `/consequence`
 - **Description:** Pre-positioning priority list for Border Roads Organisation (BRO) and disaster response teams.
@@ -282,7 +328,7 @@ export const RISK_COLORS = {
 
 ---
 
-### 5. `GET /closures` & `POST /admin/closure` — Highway Road Closures
+### 6. `GET /closures` & `POST /admin/closure` — Highway Road Closures
 - **`GET /closures`**
   - **Query Params:** `active_only` (*bool*, default `true`), `segment_id` (*string*, optional)
   - **Response (200 OK):**
@@ -325,7 +371,7 @@ export const RISK_COLORS = {
 
 ---
 
-### 6. `POST /field-report` — Crowd-Sourced Field Hazard Report
+### 7. `POST /field-report` — Crowd-Sourced Field Hazard Report
 - **Method:** `POST`
 - **Path:** `/field-report`
 - **Rate Limit:** `5 requests / minute` per IP
@@ -360,7 +406,7 @@ export const RISK_COLORS = {
 
 ---
 
-### 7. `POST /admin/validate-report` — Admin Report Validation & Flywheel
+### 8. `POST /admin/validate-report` — Admin Report Validation & Flywheel
 - **Method:** `POST`
 - **Path:** `/admin/validate-report`
 - **Headers:** `X-Admin-Key: admin-dev-secret-key-nh7`
@@ -385,7 +431,7 @@ export const RISK_COLORS = {
 
 ---
 
-### 8. `GET /voice-alert` & `GET /alerts/voice/{id}` — Neural Voice Audio Streaming
+### 9. `GET /voice-alert` & `GET /alerts/voice/{id}` — Neural Voice Audio Streaming
 - **Method:** `GET`
 - **Path:** `/voice-alert` or `/alerts/voice/{alert_id}`
 - **Query Parameters:**
@@ -402,7 +448,7 @@ audio.play();
 
 ---
 
-### 9. `GET /offline-pack` — Mobile Disaster Survivor Pack
+### 10. `GET /offline-pack` — Mobile Disaster Survivor Pack
 - **Method:** `GET`
 - **Path:** `/offline-pack`
 - **Headers Supported:** `If-None-Match: "<etag>"`
@@ -436,7 +482,7 @@ audio.play();
 
 ---
 
-### 10. `POST /webhook/sms` — Two-Way Twilio SMS Query Interface
+### 11. `POST /webhook/sms` — Two-Way Twilio SMS Query Interface
 - **Method:** `POST`
 - **Path:** `/webhook/sms`
 - **Headers:** `X-Twilio-Signature` (HMAC verification when `TWILIO_AUTH_TOKEN` is set)

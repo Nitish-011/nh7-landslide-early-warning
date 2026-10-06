@@ -300,7 +300,14 @@ class RouteSegmentRisk(BaseModel):
     end_lat: float
     end_lng: float
     subpoints: List[List[float]] = []
-    subpoint_risk_scores: List[float] = []
+    subpoint_risk_scores: List[float] = Field(
+        default_factory=list,
+        description="Deterministic spatial visualization interpolation along polyline geometry derived from segment RF terrain & live rainfall"
+    )
+    visualized_subpoint_risk: Optional[List[float]] = Field(
+        default=None,
+        description="Alias for subpoint_risk_scores providing transparently labelled visualization gradient interpolation"
+    )
     risk_level: str
     risk_score: float = Field(..., description="Legacy relative risk score (0.0 to 1.0)")
     risk_index: Optional[float] = Field(None, ge=0.0, le=1.0, description="Relative risk index (0.0 to 1.0; 0=lowest relative hazard, 1=highest)")

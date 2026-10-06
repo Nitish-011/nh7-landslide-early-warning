@@ -156,4 +156,8 @@ All existing response fields are retained without alteration. The following new 
   - **Testing Guide Thresholds:** Corrected risk tier cuts in `TESTING_GUIDE.md` to match runtime configuration: Low (< 0.25), Moderate (0.25–0.49), High (0.50–0.74), Very High ($\ge$ 0.75).
   - **Geofence Boundary Hardening:** Bounded corridor validation check to regional coordinates when polyline is uninitialized.
   - **Telemetry Precision:** Calculated genuine `weather_age_minutes` in `DEMO_MODE` snapshots.
+  - **ANTIGRAVITY_BACKEND_CONTEXT.md Synchronized:** Updated weights to $0.60/0.40$, calibrated risk bands, 30m cache / 5m circuit breaker, removed nonexistent `refresh_weather`, and added full `GET /route-risk` specification.
+  - **Alert Dispatcher Downgrade Guardrail:** Enforced severity ranking preventing Low/Moderate alerts from triggering after High alerts, with dynamic hazard messaging.
+  - **Subpoint Calculation Grounding & Transparency:** Subpoints along `/route-risk` polylines now compute risk directly from the segment's Random Forest terrain percentile, live rainfall, and dry-weather cap, with transparent methodology disclosure and additive `visualized_subpoint_risk` alias.
+  - **Degraded State Metadata:** `/risk-map` returns explicit `mode: "degraded"`, `weather_source: "database_fallback"`, and `stale_warning` if live computation fails.
 

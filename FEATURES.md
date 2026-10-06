@@ -138,7 +138,7 @@ The platform bridges cutting-edge machine learning with operational field disast
     - Text `NH7 SEG08`: Returns real-time status and risk level for Segment 8 (Srinagar to Sirobagarh).
     - Text `NH7 ROUTE RISHIKESH JOSHIMATH`: Returns route clearance status and high-risk warnings via TwiML XML response (< 320 characters).
   - **Telegram Bot Integration:** Interactive bot supporting `/start`, `/status`, `/alert`, `/help` with direct link to the live map.
-  - **Automated Dispatcher Worker:** 10-minute periodic background scheduler evaluates corridor hazard scores. If any segment breaches `risk_score > 0.65`, automated push alerts are dispatched to registered phone numbers and chat IDs.
+  - **Automated Dispatcher Worker:** 10-minute periodic background scheduler evaluates corridor hazard scores. Automated alerts are dispatched when a subscriber's segment reaches High or Very High risk (risk score $\ge 0.50$), subject to escalation state and 3-hour cooldown constraints.
 
 ### Feature 8: Vernacular Localization & Neural Voice Alerts
 - **Mechanism:**

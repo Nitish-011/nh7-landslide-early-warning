@@ -41,10 +41,48 @@ def calculate_risk_level(score: float) -> str:
     return level_for(score)
 
 
+def compute_subpoint_risk(
+    base_terrain: float,
+    rain_mm: Optional[float],
+    pt_idx: int,
+    total_pts: int,
+    base_risk_score: float,
+) -> float:
+    """
+    Computes deterministic subpoint risk derived directly from the segment's
+    actual terrain susceptibility percentile and live meteorological rainfall.
+
+    Subpoints are visualization vertices along the highway polyline. The score
+    smoothly interpolates spatial terrain along the segment's geometry while
+    strictly respecting the 0.60 terrain / 0.40 rainfall coupling and the
+    25mm dry-weather cap.
+    """
+    if total_pts > 1:
+        # Normalized progress along segment: progress in [-0.5, 0.5]
+        progress = (pt_idx / (total_pts - 1)) - 0.5
+        terrain_pt = max(0.0, min(1.0, base_terrain + progress * 0.10))
+    else:
+        terrain_pt = base_terrain
+
+    if rain_mm is not None and rain_mm >= 0.0:
+        rain_factor = min(rain_mm / config.RAIN_REF_MM, 1.0)
+        score = min(config.K_TERRAIN * terrain_pt + config.K_RAIN * rain_factor, 1.0)
+        if rain_mm < config.DRY_CAP_MM:
+            score = min(score, 0.49)
+    else:
+        # Fallback when rainfall is not factored or unavailable:
+        if total_pts > 1:
+            progress = (pt_idx / (total_pts - 1)) - 0.5
+            score = max(0.05, min(0.98, base_risk_score + progress * 0.05))
+        else:
+            score = base_risk_score
+
+    return round(max(0.05, min(0.98, score)), 2)
+
+
 def compute_deterministic_score(seed_str: str, base_score: float) -> float:
     """
-    Computes a truly deterministic float between 0.05 and 0.99 using MD5.
-    Stable across multiple workers, processes, and server restarts.
+    Legacy helper preserved for backwards compatibility.
     """
     digest = hashlib.md5(seed_str.encode("utf-8")).hexdigest()
     # Take first 8 hex characters (32 bits) and normalize to 0.0 - 1.0
@@ -113,6 +151,13 @@ def _fallback_risk_map(lang: str = "en") -> RiskMapResponse:
         total_segments=len(raw_segments),
         high_or_very_high_risk_count=high_risk_count,
         segments=_build_segment_responses(raw_segments, lang=lang),
+        weather_source="database_fallback",
+        weather_fetched_at=None,
+        weather_age_minutes=None,
+        is_simulated=False,
+        stale_warning="Live risk computation failed; serving last-known database state.",
+        mode="degraded",
+        as_of=None,
         lang=lang,
     )
 
@@ -368,11 +413,19 @@ def get_route_risk(
             seg_risk_score = row["risk_score"]
             seg_risk_level = row["risk_level"]
 
-        # Calculate fine-grained risk score at each subpoint
+        # Calculate physically-grounded subpoint risk scores along the segment polyline
+        base_terrain = float(live_info.get("terrain_percentile", row["risk_score"])) if live_info else float(row["risk_score"])
+        rain_val = live_info.get("rain_mm_3d") if live_info else None
+        n_pts = len(subpoints)
         subpoint_scores = []
-        for idx, pt in enumerate(subpoints):
-            pt_seed = f"{date}:{row['id']}:pt_{idx}:{pt[0]},{pt[1]}"
-            pt_score = compute_deterministic_score(pt_seed, seg_risk_score)
+        for idx in range(n_pts):
+            pt_score = compute_subpoint_risk(
+                base_terrain=base_terrain,
+                rain_mm=rain_val,
+                pt_idx=idx,
+                total_pts=n_pts,
+                base_risk_score=seg_risk_score,
+            )
             subpoint_scores.append(pt_score)
 
         total_score += seg_risk_score
@@ -417,6 +470,7 @@ def get_route_risk(
             end_lng=row["end_lng"],
             subpoints=subpoints,
             subpoint_risk_scores=subpoint_scores,
+            visualized_subpoint_risk=subpoint_scores,
             risk_level=seg_risk_lvl_display,
             risk_level_en=seg_risk_lvl_en,
             risk_score=seg_risk_score,

@@ -22,9 +22,14 @@ from app.risk_service import get_live_risk_map_with_metadata
 log = logging.getLogger("alert_dispatcher")
 
 
-def build_alert_message(segment_name: str, risk_level: str) -> str:
-    """Builds concise, non-alarmist alert text."""
-    return f"NH-7 {segment_name}: {risk_level.upper()} risk after heavy rain. Avoid travel until updated."
+SEVERITY_RANK = {"Low": 0, "Moderate": 1, "High": 2, "Very High": 3}
+
+
+def build_alert_message(segment_name: str, risk_level: str, rain_mm: Optional[float] = None) -> str:
+    """Builds concise, non-alarmist alert text reflecting actual hazard drivers."""
+    if rain_mm is not None and rain_mm >= config.DRY_CAP_MM:
+        return f"NH-7 {segment_name}: {risk_level.upper()} risk after heavy rain. Avoid travel until updated."
+    return f"NH-7 {segment_name}: {risk_level.upper()} risk from geological slope instability. Avoid travel until updated."
 
 
 def dispatch_alerts() -> int:
@@ -68,6 +73,7 @@ def dispatch_alerts() -> int:
                 # Use adjusted risk level if present from ground truth flywheel, else base level
                 current_level = seg_data.get("adjusted_risk_level") or seg_data.get("risk_level", "Low")
                 seg_name = seg_data.get("name", seg_id)
+                rain_mm = seg_data.get("rain_mm_3d") if seg_data.get("rain_mm_3d") is not None else seg_data.get("r3d_mm")
 
                 # Query alert_state for last sent state
                 cursor.execute("""
@@ -79,6 +85,17 @@ def dispatch_alerts() -> int:
 
                 last_sent_level = state_row["last_sent_level"] if state_row else None
                 last_sent_at = state_row["last_sent_at"] if state_row else None
+
+                # Guardrail: Never dispatch alerts when risk is Low or Moderate.
+                # If conditions improved from High/Very High, record state downgrade so subsequent rises can re-trigger.
+                if current_level not in ("High", "Very High"):
+                    if state_row and state_row["last_sent_level"] in ("High", "Very High"):
+                        cursor.execute("""
+                            UPDATE alert_state
+                            SET last_sent_level = ?
+                            WHERE subscription_id = ? AND segment_id = ?
+                        """, (current_level, sub_id, seg_id))
+                    continue
 
                 # 1. Cooldown Check: 3h cooldown per user and segment
                 if last_sent_at:
@@ -96,20 +113,18 @@ def dispatch_alerts() -> int:
                     except Exception as e:
                         log.warning("dispatch_alerts: error parsing timestamp %s: %s", last_sent_at, e)
 
-                # 2. Trigger Condition: Send only when level rises to High/Very High OR changes since last_sent_level
+                # 2. Trigger Condition: Send on initial High/Very High OR escalation to a higher severity tier
                 should_send = False
                 if last_sent_level is None:
-                    if current_level in ("High", "Very High"):
-                        should_send = True
-                else:
-                    if current_level != last_sent_level:
-                        should_send = True
+                    should_send = True
+                elif current_level != last_sent_level and SEVERITY_RANK.get(current_level, 0) > SEVERITY_RANK.get(last_sent_level, 0):
+                    should_send = True
 
                 if not should_send:
                     continue
 
                 # 3. Format and dispatch alert message
-                message = build_alert_message(seg_name, current_level)
+                message = build_alert_message(seg_name, current_level, rain_mm=rain_mm)
                 notifier = get_notifier(channel)
 
                 try:
