@@ -535,7 +535,7 @@ def get_route_risk(
         status_label = "One-way movement" if first_restricted.closure.status == "one_way" else "Traffic restriction"
         closure_msg = f"{status_label} active on {first_restricted.id} ({first_restricted.name}): {first_restricted.closure.reason} (Source: {first_restricted.closure.source})"
         from app.models import TripRecommendation
-        current_action = recommendation_payload.action if recommendation_payload else "GO"
+        current_action = recommendation_payload.action if recommendation_payload else "LOW RISK – proceed with caution"
         if current_action not in ("AVOID", "DELAY"):
             recommendation_payload = TripRecommendation(
                 action="CAUTION",
@@ -574,7 +574,7 @@ def get_route_risk(
             "and culverts."
         )
     else:
-        advisory_body = f"NORMAL CONDITIONS for {date}: Favorable road conditions anticipated across the corridor."
+        advisory_body = f"LOW RISK CONDITIONS for {date}: Low landslide hazard modeled across the corridor. Proceed with caution. Low risk does not mean safe."
 
     advisory_en = f"{advisory_prefix}{advisory_body}".strip()
     advisory = advisory_en
@@ -805,7 +805,7 @@ def get_voice_alert(
             max_lvl = start_row["risk_level"]
             closed_any = False
 
-        action = "AVOID" if closed_any else ("CAUTION" if max_lvl in ("High", "Very High") else "GO")
+        action = "AVOID" if closed_any else ("CAUTION" if max_lvl in ("High", "Very High") else "LOW RISK – proceed with caution")
 
         text = i18n.build_route_voice_script(
             from_name=start_row["name"],
@@ -890,7 +890,7 @@ def simplify_polyline(points: List[List[float]], tolerance: float = 0.0005) -> L
         denom = (dy ** 2 + dx ** 2) ** 0.5
         if denom == 0:
             return ((pt[0] - start[0]) ** 2 + (pt[1] - start[1]) ** 2) ** 0.5
-        return abs(dy * pt[1] - dx * pt[0] + end[0] * start[1] - end[1] * start[0]) / denom
+        return abs(dx * (start[0] - pt[0]) - dy * (start[1] - pt[1])) / denom
 
     dmax = 0.0
     index = 0
@@ -996,6 +996,9 @@ def get_offline_pack(
     core_payload = {
         "corridor": corridor_title,
         "total_segments": len(segment_items),
+        "disclaimer": i18n.DISCLAIMER_EN,
+        "disclaimer_en": i18n.DISCLAIMER_EN,
+        "disclaimer_hi": i18n.DISCLAIMER_HI,
         "emergency_contacts": emergency_contacts,
         "segments": segment_items,
     }

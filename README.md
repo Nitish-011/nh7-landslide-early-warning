@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/PyTest-122%20Passed%20(100%25)-success.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/PyTest-130%20Passed%20(100%25)-success.svg)](https://pytest.org/)
 [![GIS](https://img.shields.io/badge/DEM-Copernicus%2030m-green.svg)](https://spacedata.copernicus.eu/)
 [![PWA](https://img.shields.io/badge/PWA-Offline%20Ready-orange.svg)](https://web.dev/progressive-web-apps/)
 [![Hackathon](https://img.shields.io/badge/Hackathon-IBM%20x%20Jigyasa-purple.svg)]()
@@ -56,10 +56,11 @@ When you open **[http://localhost:8000](http://localhost:8000)**, you'll see our
 |     Click "Play Localized Voice Audio". The server generates real-time audio speech alerts in      |
 |     natural Hindi via cached/local voice delivery with gTTS and browser fallback!                  |
 +---------------------------------------------------------------------------------------------------+
-|  3. 🚗 TAB 2: SMART TRIP SAFE PLANNER                                                             |
+|  3. 🚗 TAB 2: TIME-AWARE TRIP RISK PLANNER                                                         |
 |     Click "Route Planner". Set your departure from Rishikesh to Badrinath. Hit "Analyze Route".   |
 |     The engine checks progressive arrival ETAs for every mountain sector and recommends whether   |
-|     to GO, exercise CAUTION, or AVOID due to upcoming storm peaks!                                 |
+|     to proceed with caution ("LOW RISK – proceed with caution"), exercise CAUTION, DELAY, or     |
+|     AVOID due to upcoming storm peaks or road blockages!                                          |
 +---------------------------------------------------------------------------------------------------+
 |  4. 📱 TAB 7: TRY THE IN-BROWSER SMS SIMULATOR                                                    |
 |     Go to "Alerts & SMS". In the interactive Twilio SMS Simulator widget, type "NH7 HELP" or      |
@@ -72,6 +73,8 @@ When you open **[http://localhost:8000](http://localhost:8000)**, you'll see our
 |     the dashboard and highway map keep working seamlessly in mountain dead zones!                 |
 +---------------------------------------------------------------------------------------------------+
 ```
+
+> **📱 Mobile Phone Testing Note (HTTPS Tunnel):** Service Workers require a secure context (`localhost` or HTTPS). To test offline PWA mode on a physical smartphone over Wi-Fi, expose port 8000 using `cloudflared tunnel --url http://localhost:8000` or `ngrok http 8000` (mobile browsers block Service Workers on unencrypted LAN IPs like `http://<LAN-IP>:8000`).
 
 ---
 
@@ -97,9 +100,9 @@ Our backend is built around a hybrid physical-statistical model: **Static Topogr
               |                                             |                                    |
               v                                             v                                    v
 +---------------------------+                 +---------------------------+        +---------------------------+
-|    TRIP SAFE PLANNER      |                 |    BRO ASSET PRIORITY     |        |   ROAD CLOSURES & DETOURS |
+|    TRIP RISK PLANNER      |                 |    BRO ASSET PRIORITY     |        |   ROAD CLOSURES & DETOURS |
 | Route waypoint ETAs &     |                 | Hazard x Bridge / Hospital|        | Active blockages, bypass  |
-| safe departure windows    |                 | Consequence Pre-staging   |        | routing & crowd reports   |
+| lowest-risk windows       |                 | Consequence Pre-staging   |        | routing & crowd reports   |
 +-------------+-------------+                 +-------------+-------------+        +-------------+-------------+
               |                                             |                                    |
               +---------------------------------------------+------------------------------------+
@@ -184,7 +187,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 | `GET` | `/risk-map` | Real-time risk for all 18 NH-7 segments | `curl http://localhost:8000/risk-map` |
 | `GET` | `/risk-map?simulate_rain_mm=120` | Stress-test with simulated 120mm cloudburst | Test via browser or curl |
 | `GET` | `/risk-map?as_of=2023-08-14` | Replay past monsoon event (requires `BACKTEST_ENABLED=true`) | Replay past monsoon event |
-| `GET` | `/route-risk` | Safe departure advisory with waypoint ETAs | `curl "http://localhost:8000/route-risk?from_segment=...&to_segment=..."` |
+| `GET` | `/route-risk` | Journey risk assessment & time-aware planner | `curl "http://localhost:8000/route-risk?from_segment=...&to_segment=..."` |
 | `GET` | `/priority-list` | BRO infrastructure consequence & priority | `curl http://localhost:8000/priority-list` |
 | `GET` | `/closures` | Active road closures & bypass advisories | `curl http://localhost:8000/closures` |
 | `POST` | `/field-report` | Crowd-sourced hazard report (3km geofence) | Submit road condition report |
@@ -193,6 +196,31 @@ Here are the most important endpoints you can try right now via `curl` or in you
 | `POST` | `/webhook/sms` | Twilio SMS inbound query webhook (TwiML) | Test SMS commands (`NH7 HELP`) |
 
 *Full interactive documentation and testing sandbox available at [http://localhost:8000/docs](http://localhost:8000/docs).*
+
+---
+
+## 🧭 Trip Recommendation Enum & Decision Rules
+
+To maintain rigorous safety integrity and avoid false assurances of safety in active Himalayan landslide territory, the recommendation engine follows strict canonical rules across the Backend, UI, and Alerts.
+
+> **⚠️ Persistent Safety Disclaimer:**  
+> *"Decision-support prototype, not an official warning. Low risk does not mean safe. Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112"*  
+> *(Devanagari: "निर्णय-समर्थन प्रोटोटाइप, आधिकारिक चेतावनी नहीं। कम जोखिम का अर्थ सुरक्षित नहीं है। सूखे मौसम में भी भूस्खलन हो सकता है। बीआरओ/एसडीआरएफ/पुलिस सलाह का पालन करें। आपातकाल: 112")*
+
+The engine outputs exactly four canonical actions (`action` string, `action_code` enum):
+
+| Action (`action`) | Code (`action_code`) | Hindi Localized (`lang=hi`) | Operational Trigger / Condition |
+|---|---|---|---|
+| **`LOW RISK – proceed with caution`** | `REC_LOW_RISK_CAUTION` | कम जोखिम – सावधानी बरतें | All corridor route segments are evaluated at `Low` risk at planned departure. *(Note: Low risk does not mean safe; landslides also occur in dry weather).* |
+| **`CAUTION`** | `REC_CAUTION` | सावधानी बरतें | Moderate landslide hazard (`Moderate`, rank 1) modeled along the route, OR a non-blocking traffic restriction (`one_way` / `restricted`) is active. |
+| **`DELAY`** | `REC_DELAY` | यात्रा में विलंब करें | **Elevated risk (`High` or `Very High`, rank $\ge 2$) is detected at the planned departure time, BUT a lower-risk departure window (`best_rank < base_rank`, e.g. drops to Moderate or Low) exists within the 48-hour forward forecast search.** |
+| **`AVOID`** | `REC_AVOID` | यात्रा से बचें | An active official road closure (`status == "closed"`) is in effect along the route, OR severe landslide hazard (`High` / `Very High`) persists across all 48 hours of the forecast horizon with no lower-risk window. |
+
+### ⏱️ Exactly When `DELAY` is Returned
+`DELAY` is returned **if and only if**:
+1. At the traveler's planned departure timestamp (`depart_time`), the route encounters elevated landslide hazard (`High` or `Very High`, risk rank $\ge 2$).
+2. The 48-hour forward hourly forecast simulation discovers at least one future departure time where the route's maximum hazard rank is **strictly lower** than the base departure (`best_rank < base_rank`, such as after a rainstorm clears or a localized cloudburst peak subsides).
+3. The response payload returns `hours_delay` (number of hours to wait) and `best_depart_time` (recommended departure timestamp) along with up to 3 alternate ranked departure windows in `best_departure_options`.
 
 ---
 
@@ -216,7 +244,7 @@ Here are the most important endpoints you can try right now via `curl` or in you
 Our test suite provides strong validation against regressions across API contracts, guardrails, and physics calculations:
 
 ```bash
-# Run all 125 automated tests
+# Run all 130 automated tests
 python -m pytest
 ```
 
@@ -224,26 +252,27 @@ Output:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.14.6, pytest-9.0.3
-collected 125 items
+collected 130 items
 
-tests/contract/test_contract.py ..................                       [ 14%]
-tests/contract/test_golden_schema.py .........                           [ 21%]
-tests/test_alert_delivery_task6.py ......                                [ 26%]
-tests/test_backtest_task2.py ......                                      [ 31%]
-tests/test_closures_and_flywheel_task5.py .......                        [ 36%]
-tests/test_consequence_task4.py ......                                   [ 41%]
-tests/test_freshness_f2.py .......                                       [ 47%]
-tests/test_localization_and_voice_task7.py .......                       [ 52%]
-tests/test_model_info_f3.py ........                                     [ 59%]
-tests/test_offline_pack_task8.py .......                                 [ 64%]
-tests/test_production_f5.py ......                                       [ 69%]
-tests/test_risk_resilience.py ........                                   [ 76%]
+tests/contract/test_contract.py ..................                       [ 13%]
+tests/contract/test_golden_schema.py .........                           [ 20%]
+tests/test_alert_delivery_task6.py ......                                [ 25%]
+tests/test_backtest_task2.py ......                                      [ 30%]
+tests/test_closures_and_flywheel_task5.py .......                        [ 35%]
+tests/test_consequence_task4.py ......                                   [ 40%]
+tests/test_freshness_f2.py .......                                       [ 45%]
+tests/test_localization_and_voice_task7.py .......                       [ 50%]
+tests/test_model_info_f3.py ........                                     [ 56%]
+tests/test_offline_pack_task8.py .......                                 [ 62%]
+tests/test_production_f5.py ......                                       [ 66%]
+tests/test_risk_resilience.py ........                                   [ 73%]
+tests/test_route_geometry.py .....                                       [ 76%]
 tests/test_security_f1.py .............                                  [ 86%]
-tests/test_trip_planner_task3.py ....                                    [ 89%]
+tests/test_trip_planner_task3.py ....                                    [ 90%]
 tests/test_validation_audit_f4.py ......                                 [ 94%]
 tests/test_weather_upgrade_task1.py .......                              [100%]
 
-======================== 125 tests passing ========================
+======================== 130 tests passing ========================
 ```
 
 ---

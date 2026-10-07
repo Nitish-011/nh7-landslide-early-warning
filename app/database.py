@@ -58,7 +58,8 @@ def create_tables(conn: sqlite3.Connection):
             phone_or_email TEXT NOT NULL,
             segment_id TEXT NOT NULL,
             channel TEXT NOT NULL,
-            consent BOOLEAN NOT NULL DEFAULT 1,
+            consent BOOLEAN NOT NULL DEFAULT 0,
+            token TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             FOREIGN KEY (segment_id) REFERENCES segments(id)
         )
@@ -144,6 +145,16 @@ def create_tables(conn: sqlite3.Connection):
     sub_cols = [row[1] for row in cursor.fetchall()]
     if "consent" not in sub_cols:
         cursor.execute("ALTER TABLE subscriptions ADD COLUMN consent BOOLEAN NOT NULL DEFAULT 1")
+    if "token" not in sub_cols:
+        cursor.execute("ALTER TABLE subscriptions ADD COLUMN token TEXT DEFAULT ''")
+    
+    # Backfill missing tokens for existing subscriptions if any
+    cursor.execute("SELECT id FROM subscriptions WHERE token IS NULL OR token = ''")
+    empty_token_rows = cursor.fetchall()
+    if empty_token_rows:
+        import secrets
+        for r in empty_token_rows:
+            cursor.execute("UPDATE subscriptions SET token = ? WHERE id = ?", (f"tok_{secrets.token_urlsafe(16)}", r["id"]))
 
     cursor.execute("PRAGMA table_info(field_reports)")
     fr_cols = [row[1] for row in cursor.fetchall()]

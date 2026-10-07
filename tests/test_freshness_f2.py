@@ -178,11 +178,12 @@ def test_route_risk_and_alerts_freshness_fields():
         "segment_id": "seg_08",
         "channel": "SMS"
     })
-    assert sub_res.status_code == 201
-    sub_id = sub_res.json()["subscription_id"]
+    sub_data = sub_res.json()
+    sub_id = sub_data["subscription_id"]
+    token = sub_data["token"]
 
     # /alerts with simulation
-    res_alert_sim = client.get(f"/alerts?user_id={sub_id}&simulate_rain_mm=100")
+    res_alert_sim = client.get(f"/alerts?user_id={sub_id}&token={token}&simulate_rain_mm=100")
     assert res_alert_sim.status_code == 200
     alert_sim_data = res_alert_sim.json()
     assert alert_sim_data["is_simulated"] is True

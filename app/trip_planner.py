@@ -265,7 +265,7 @@ def evaluate_trip_plan(
     best_offset = best_candidate["hours_offset"] if best_candidate else 0
     best_time_str = best_candidate["depart_time"] if best_candidate else depart_ist_str
 
-    # 3. Determine top-level action: GO | CAUTION | DELAY | AVOID
+    # 3. Determine top-level action: LOW RISK – proceed with caution | CAUTION | DELAY | AVOID
     if base_rank >= 2:  # High or Very High
         if best_rank < base_rank:
             action = "DELAY"
@@ -293,9 +293,9 @@ def evaluate_trip_plan(
             action_code = "REC_CAUTION"
             reason = "Moderate landslide risk along route. Drive cautiously near steep cuts and water crossings."
     else:  # Low
-        action = "GO"
-        action_code = "REC_GO"
-        reason = "Conditions are favorable across all route segments at your planned departure time."
+        action = "LOW RISK – proceed with caution"
+        action_code = "REC_LOW_RISK_CAUTION"
+        reason = "Low risk modeled across route segments at planned departure. Proceed with caution. Low risk does not mean safe; landslides also occur in dry weather."
 
     recommendation = {
         "action": action,

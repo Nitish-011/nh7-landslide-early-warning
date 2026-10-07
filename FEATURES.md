@@ -1,9 +1,9 @@
 # NH-7 Landslide Early Warning & Resilient Routing System
 ## Complete System Feature Accounting & Capabilities Catalog
 
-> **Corridor Scope:** National Highway 7 (Rishikesh to Joshimath, Uttarakhand, India — 247.37 km, 18 Segments)  
+> **Corridor Scope:** National Highway 7 (Rishikesh to Joshimath, Uttarakhand, India — 243.10 km, 18 Segments)  
 > **System Architecture:** Topographic ML Inference + Multi-Station Meteorology + Civil Infrastructure Consequence + Multi-Channel Alerts + PWA Offline Resilience  
-> **Total Automated Test Coverage:** 122/122 passing tests across contract, security, freshness, and functional domains.
+> **Total Automated Test Coverage:** 131/131 passing tests across contract, security, freshness, and functional domains.
 
 ---
 

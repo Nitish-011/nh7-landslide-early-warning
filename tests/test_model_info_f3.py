@@ -127,9 +127,11 @@ def test_risk_index_on_alerts():
     }
     sub_res = client.post("/subscribe", json=sub_payload)
     assert sub_res.status_code == 201
-    user_id = sub_res.json()["subscription_id"]
+    sub_data = sub_res.json()
+    user_id = sub_data["subscription_id"]
+    token = sub_data["token"]
 
-    resp = client.get(f"/alerts?user_id={user_id}")
+    resp = client.get(f"/alerts?user_id={user_id}&token={token}")
     assert resp.status_code == 200
     data = resp.json()
     for item in data["alerts"]:

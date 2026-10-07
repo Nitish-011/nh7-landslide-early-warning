@@ -283,8 +283,8 @@ def test_subscribe_phone_normalization_and_email():
 
 
 def test_subscribe_consent_flag_default_and_explicit():
-    """Consent defaults to True if omitted; persists False if explicitly set."""
-    # Omitted consent -> default True
+    """Consent defaults to False (0) when omitted (no default consent=1); persists True (1) when explicitly provided."""
+    # Omitted consent -> default False (0)
     res_default = client.post("/subscribe", json={
         "name": "Default Consent User",
         "phone_or_email": "user1@example.com",
@@ -296,9 +296,24 @@ def test_subscribe_consent_flag_default_and_explicit():
 
     with get_db() as db:
         row = db.execute("SELECT consent FROM subscriptions WHERE id = ?", (sub_id_default,)).fetchone()
+        assert row["consent"] == 0
+
+    # Explicit consent = True -> 1
+    res_consent = client.post("/subscribe", json={
+        "name": "Consenting User",
+        "phone_or_email": "user_yes@example.com",
+        "segment_id": "seg_02",
+        "channel": "Email",
+        "consent": True
+    })
+    assert res_consent.status_code == 201
+    sub_id_consent = res_consent.json()["subscription_id"]
+
+    with get_db() as db:
+        row = db.execute("SELECT consent FROM subscriptions WHERE id = ?", (sub_id_consent,)).fetchone()
         assert row["consent"] == 1
 
-    # Explicit consent = False
+    # Explicit consent = False -> 0
     res_no_consent = client.post("/subscribe", json={
         "name": "No Consent User",
         "phone_or_email": "user2@example.com",
@@ -314,12 +329,148 @@ def test_subscribe_consent_flag_default_and_explicit():
         assert row["consent"] == 0
 
 
+def test_phone_normalization_e164():
+    """Verify phone numbers with hyphens, spaces, or 10-digit formats are normalized to E.164 (+91)."""
+    # 1. 10 digits without country code -> +919811223344
+    res1 = client.post("/subscribe", json={
+        "name": "Ten Digit User",
+        "phone_or_email": "9811223344",
+        "segment_id": "seg_01",
+        "channel": "SMS",
+        "consent": True
+    })
+    assert res1.status_code == 201
+    sub_id1 = res1.json()["subscription_id"]
+
+    # 2. Hyphenated and spaced number -> +919811223344
+    res2 = client.post("/subscribe", json={
+        "name": "Hyphenated User",
+        "phone_or_email": "+91-9811 223 344",
+        "segment_id": "seg_02",
+        "channel": "SMS",
+        "consent": True
+    })
+    assert res2.status_code == 201
+    sub_id2 = res2.json()["subscription_id"]
+
+    # 3. 11 digits with leading 0 -> +919811223344
+    res3 = client.post("/subscribe", json={
+        "name": "Zero Prefix User",
+        "phone_or_email": "09811223344",
+        "segment_id": "seg_03",
+        "channel": "SMS",
+        "consent": True
+    })
+    assert res3.status_code == 201
+    sub_id3 = res3.json()["subscription_id"]
+
+    with get_db() as db:
+        for sid in (sub_id1, sub_id2, sub_id3):
+            row = db.execute("SELECT phone_or_email FROM subscriptions WHERE id = ?", (sid,)).fetchone()
+            assert row["phone_or_email"] == "+919811223344"
+
+
 def test_contact_masking_helper():
     """Verify phone and email masking helper produces expected masked values."""
-    assert subs_mod.mask_contact("+919876543210") == "+91******3210"
+    assert subs_mod.mask_contact("+919876543210") == "+91*****3210"
     assert subs_mod.mask_contact("alice@nh7corridor.in") == "a***e@nh7corridor.in"
     assert subs_mod.mask_contact("a@b.com") == "a*@b.com"
     assert subs_mod.mask_contact("123") == "123"
+
+
+def test_production_refuses_default_or_missing_admin_key(monkeypatch):
+    """Refuse to start when ENV=production and ADMIN_API_KEY is empty or default admin-dev-secret-key-nh7."""
+    from app.main import lifespan
+    import asyncio
+
+    # Test default key
+    monkeypatch.setattr(config, "ENV", "production")
+    monkeypatch.setattr(config, "ADMIN_API_KEY", "admin-dev-secret-key-nh7")
+    with pytest.raises(RuntimeError, match="ADMIN_API_KEY cannot be default"):
+        asyncio.run(lifespan(app).__aenter__())
+
+    # Test empty key
+    monkeypatch.setattr(config, "ADMIN_API_KEY", "")
+    with pytest.raises(RuntimeError, match="ADMIN_API_KEY must be set"):
+        asyncio.run(lifespan(app).__aenter__())
+
+
+def test_alerts_requires_token():
+    """Unauthenticated calls to /alerts return 401; valid token is accepted."""
+    sub_res = client.post("/subscribe", json={
+        "name": "Sec Test",
+        "phone_or_email": "+919876543210",
+        "segment_id": "seg_01",
+        "channel": "SMS"
+    })
+    assert sub_res.status_code == 201
+    sub_data = sub_res.json()
+    sub_id = sub_data["subscription_id"]
+    token = sub_data["token"]
+    assert token.startswith("tok_")
+
+    # Missing token -> 401
+    res_no_tok = client.get(f"/alerts?user_id={sub_id}")
+    assert res_no_tok.status_code == 401
+
+    # Invalid token -> 401
+    res_bad_tok = client.get(f"/alerts?user_id={sub_id}&token=invalid_tok")
+    assert res_bad_tok.status_code == 401
+
+    # Valid token via query param -> 200
+    res_ok_query = client.get(f"/alerts?user_id={sub_id}&token={token}")
+    assert res_ok_query.status_code == 200
+
+    # Valid token via header -> 200
+    res_ok_hdr = client.get(f"/alerts?user_id={sub_id}", headers={"X-Subscription-Token": token})
+    assert res_ok_hdr.status_code == 200
+
+    # Token alone without user_id -> 200
+    res_token_only = client.get(f"/alerts?token={token}")
+    assert res_token_only.status_code == 200
+    assert res_token_only.json()["user_id"] == sub_id
+
+
+def test_privacy_responses_no_ip_or_unmasked_phone():
+    """Confirm /field-reports, /alerts and /subscribe never return reporter_ip or full phone numbers."""
+    phone = "+919876543210"
+    sub_res = client.post("/subscribe", json={
+        "name": "Privacy Tester",
+        "phone_or_email": phone,
+        "segment_id": "seg_02",
+        "channel": "SMS"
+    })
+    assert sub_res.status_code == 201
+    sub_json = sub_res.json()
+    raw_sub_str = sub_res.text
+    # Full phone must NOT appear in response body
+    assert phone not in raw_sub_str
+    assert sub_json["subscription"]["phone_or_email"] == "+91*****3210"
+
+    token = sub_json["token"]
+    alerts_res = client.get(f"/alerts?token={token}")
+    assert alerts_res.status_code == 200
+    raw_alert_str = alerts_res.text
+    assert phone not in raw_alert_str
+    assert "reporter_ip" not in raw_alert_str
+
+    # Field report check
+    rep_res = client.post(
+        "/field-report",
+        json={
+            "lat": 30.12,
+            "lng": 78.32,
+            "reporter_name": "Field Tester",
+            "description": "Test no ip leak"
+        },
+        headers={"x-forwarded-for": "203.0.113.195"}
+    )
+    assert rep_res.status_code == 201
+    rep_list_res = client.get("/field-reports")
+    assert rep_list_res.status_code == 200
+    raw_reports_str = rep_list_res.text
+    assert "reporter_ip" not in raw_reports_str
+    assert "203.0.113.195" not in raw_reports_str
 
 
 # ---------------------------------------------------------------------------

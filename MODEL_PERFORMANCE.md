@@ -49,14 +49,14 @@ A crucial distinction in data science and geospatial modeling is the difference 
 | • Training Data: Evaluated in 6 spatial cross-validation    | • Training Data: Retrained on ALL 1,236 points across all   |
 |   folds. When evaluating Block k, the model was trained      |   6 blocks so the model benefits from the complete          |
 |   ONLY on the other 5 blocks (2.0 km buffer excluded).      |   available geographical survey data along NH-7.            |
-| • seg_08 Score: OOF p90 = 0.600 (Rank #7, 64.7th pctile).   | • seg_08 Score: Refit p90 = 0.285 (Rank #17, 5.9th pctile). |
+| • seg_08 Score: OOF p90 = 0.600 (Rank #7, 64.7th pctile).   | • seg_08 Score: Refit p90 = 0.283 (Rank #15, 17.6th pctile). |
 +-------------------------------------------------------------+-------------------------------------------------------------+
 ```
 
 ### Why does Sirobagarh (`seg_08`) score differently between the two?
 - In Uttarakhand highway history and folklore, Sirobagarh (`seg_08` to `seg_09`) is notorious as a chronic debris choke point.
 - However, in the peer-reviewed Mey et al. (2024) single-season post-monsoon 2022 inventory, `seg_08` registered only **one single road-blocking slide** ($0.11\text{ slides/km}$, ranking #17 of 18).
-- In the **final refit model** (trained on all 1,236 points), the decision trees directly observe that `seg_08` had only 1 slide in 2022 alongside lower river valley elevations at Srinagar, scoring its terrain percentile at $0.0588$ ($5.9\%$).
+- In the **final refit model** (trained on all 1,236 points), with the road-following centerline aligned through the Alaknanda gorge at Srinagar, `seg_08` scores its terrain percentile at $0.1765$ ($17.6\%$, rank #15).
 - In contrast, in **out-of-fold validation**, when Block 3 (containing `seg_08`) was held out, the model trained on other steep gorge blocks predicted a higher potential susceptibility ($p_{90} = 0.600$, rank #7, $64.7\%$).
 - **Conclusion:** Both artifacts are scientifically valid and represent their respective intended purposes: `validation_report.md` measures held-out generalization, while `segment_static_scores.json` represents the fully refitted production model.
 
@@ -68,28 +68,28 @@ A crucial distinction in data science and geospatial modeling is the difference 
 The primary ground-truth dataset was surveyed following the intense 2022 monsoon season along NH-7 (*Mey et al., 2024*):
 - **Total Field-Mapped Slide Scars:** 309 discrete mass movements intersecting the roadway.
 - **Highway Chainage Span:** km 9.07 (near Shivpuri) to km 242.66 (near Helang).
-- **Centerline Proximity:** Min 0.0 m, Median 5.4 m, Max 22.5 m (confirming high spatial fidelity to road-cut slopes).
-- **Segment Distribution:** 17 of 18 segments contain recorded historical slides. `seg_04` (Kaudiyala to Devprayag) contains the highest density (96 scars, 2.95 slides/km). `seg_15` (Chamoli to Birahi) recorded 0 scars during this survey period.
+- **Centerline Proximity:** Min 0.0 m, Median 5.37 m, Max 20.24 m (confirming high spatial fidelity to road-cut slopes).
+- **Segment Distribution:** 17 of 18 segments contain recorded historical slides. `seg_04` (Kaudiyala to Devprayag) contains the highest density (96 scars, 3.02 slides/km). `seg_15` (Chamoli to Birahi) recorded 0 scars during this survey period.
 
 ```
 Landslide Scars per Highway Kilometer (Mey et al., 2024)
 ====================================================================
-seg_04 (Kaudiyala to Devprayag)     [2.95 slides/km] ████████████████████ 96
-seg_05 (Devprayag to Teen Dhara)    [2.95 slides/km] ████████████████████ 44
-seg_02 (Shivpuri to Byasi)          [2.93 slides/km] ███████████████████▍ 20
-seg_03 (Byasi to Kaudiyala)         [2.60 slides/km] █████████████████▌   36
-seg_01 (Rishikesh to Shivpuri)      [1.32 slides/km] █████████            23
-seg_17 (Pipalkoti to Helang)        [1.12 slides/km] ███████▌             32
+seg_04 (Kaudiyala to Devprayag)     [3.02 slides/km] ████████████████████ 96
+seg_05 (Devprayag to Teen Dhara)    [2.99 slides/km] ████████████████████ 44
+seg_02 (Shivpuri to Byasi)          [2.97 slides/km] ███████████████████▋ 20
+seg_03 (Byasi to Kaudiyala)         [2.62 slides/km] █████████████████▍   36
+seg_01 (Rishikesh to Shivpuri)      [1.35 slides/km] █████████            23
+seg_17 (Pipalkoti to Helang)        [1.14 slides/km] ███████▋             32
 seg_07 (Kirtinagar to Srinagar)     [0.81 slides/km] █████▍               4
-seg_09 (Sirobagarh to Rudraprayag)  [0.72 slides/km] ████▉                17
-seg_14 (Nandprayag to Chamoli)      [0.69 slides/km] ████▋                9
-seg_12 (Karnaprayag to Langasu)     [0.66 slides/km] ████▍                4
-seg_16 (Birahi to Pipalkoti)        [0.59 slides/km] ████                 4
-seg_06 (Teen Dhara to Kirtinagar)   [0.56 slides/km] ███▋                 7
-seg_18 (Helang to Joshimath)        [0.47 slides/km] ███▏                 3
-seg_11 (Gauchar to Karnaprayag)     [0.31 slides/km] ██                   3
+seg_09 (Sirobagarh to Rudraprayag)  [0.73 slides/km] ████▉                17
+seg_14 (Nandprayag to Chamoli)      [0.70 slides/km] ████▋                9
+seg_12 (Karnaprayag to Langasu)     [0.67 slides/km] ████▍                4
+seg_16 (Birahi to Pipalkoti)        [0.60 slides/km] ████                 4
+seg_06 (Teen Dhara to Kirtinagar)   [0.57 slides/km] ███▋                 7
+seg_18 (Helang to Joshimath)        [0.49 slides/km] ███▎                 3
+seg_11 (Gauchar to Karnaprayag)     [0.32 slides/km] ██                   3
 seg_10 (Rudraprayag to Gauchar)     [0.18 slides/km] █▎                   4
-seg_13 (Langasu to Nandprayag)      [0.15 slides/km] █                    2
+seg_13 (Langasu to Nandprayag)      [0.16 slides/km] █                    2
 seg_08 (Srinagar to Sirobagarh)     [0.11 slides/km] ▋                    1
 seg_15 (Chamoli to Birahi)          [0.00 slides/km]                      0
 ```

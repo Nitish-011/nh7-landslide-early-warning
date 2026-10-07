@@ -94,8 +94,10 @@ def test_golden_alerts_schema():
         "segment_id": "seg_01",
         "channel": "SMS"
     })
-    sub_id = sub_res.json()["subscription_id"]
-    res = client.get(f"/alerts?user_id={sub_id}").json()
+    sub_data = sub_res.json()
+    sub_id = sub_data["subscription_id"]
+    token = sub_data["token"]
+    res = client.get(f"/alerts?user_id={sub_id}&token={token}").json()
     assert_schema_compatible(res, golden, path="alerts")
 
 

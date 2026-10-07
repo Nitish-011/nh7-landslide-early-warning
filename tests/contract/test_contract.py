@@ -132,6 +132,7 @@ def test_subscribe_contract():
     data = resp.json()
 
     assert isinstance(data["subscription_id"], int)
+    assert isinstance(data["token"], str)
     assert isinstance(data["status"], str)
     assert isinstance(data["message"], str)
     sub = data["subscription"]
@@ -154,9 +155,11 @@ def test_alerts_contract(sim_rain):
         "channel": "SMS"
     }
     sub_res = client.post("/subscribe", json=sub_payload)
-    sub_id = sub_res.json()["subscription_id"]
+    sub_data = sub_res.json()
+    sub_id = sub_data["subscription_id"]
+    token = sub_data["token"]
 
-    base_url = f"/alerts?user_id={sub_id}"
+    base_url = f"/alerts?user_id={sub_id}&token={token}"
     url = base_url if sim_rain is None else f"{base_url}&simulate_rain_mm={sim_rain}"
     resp = client.get(url)
     assert resp.status_code == 200

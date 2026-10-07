@@ -31,20 +31,32 @@ RISK_LEVEL_NAMES_HI: Dict[str, str] = {
     "Very High": "अत्यधिक",  # NEEDS NATIVE REVIEW
 }
 
-# --- 2. Recommendation Action Codes ---
+# --- 2. Recommendation Action Codes & Disclaimers ---
+
+DISCLAIMER_EN = (
+    "Decision-support prototype, not an official warning. Low risk does not mean safe. "
+    "Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112"
+)
+
+DISCLAIMER_HI = (
+    "निर्णय-समर्थन प्रोटोटाइप, आधिकारिक चेतावनी नहीं। कम जोखिम का अर्थ सुरक्षित नहीं है। "  # NEEDS NATIVE REVIEW
+    "सूखे मौसम में भी भूस्खलन हो सकता है। बीआरओ/एसडीआरएफ/पुलिस सलाह का पालन करें। आपातकाल: 112"  # NEEDS NATIVE REVIEW
+)
 
 ACTION_CODES_EN: Dict[str, str] = {
-    "GO": "GO",
+    "LOW RISK – proceed with caution": "LOW RISK – proceed with caution",
     "CAUTION": "CAUTION",
     "DELAY": "DELAY",
     "AVOID": "AVOID",
+    "GO": "LOW RISK – proceed with caution",
 }
 
 ACTION_CODES_HI: Dict[str, str] = {
-    "GO": "यात्रा जारी रखें",  # NEEDS NATIVE REVIEW
+    "LOW RISK – proceed with caution": "कम जोखिम – सावधानी बरतें",  # NEEDS NATIVE REVIEW
     "CAUTION": "सावधानी बरतें",  # NEEDS NATIVE REVIEW
     "DELAY": "यात्रा में विलंब करें",  # NEEDS NATIVE REVIEW
     "AVOID": "यात्रा से बचें",  # NEEDS NATIVE REVIEW
+    "GO": "कम जोखिम – सावधानी बरतें",  # NEEDS NATIVE REVIEW
 }
 
 # --- 3. Highway Segment Transliterations (Phonetic Devanagari, Not Machine-Translated) ---
@@ -209,7 +221,7 @@ ROUTE_ADVISORIES_EN = {
     "Very High": "CRITICAL WARNING for {date}: High susceptibility to slope failure and active shooting stones along route. Check BRO updates.",
     "High": "ELEVATED RISK for {date}: Moderate to severe landslide vulnerability detected along certain passes. Ensure daytime transit.",
     "Moderate": "MODERATE ADVISORY for {date}: Highway is generally passable. Drive cautiously near water crossings and culverts.",
-    "Low": "NORMAL CONDITIONS for {date}: Favorable road conditions anticipated across the corridor.",
+    "Low": "LOW RISK CONDITIONS for {date}: Low landslide hazard modeled across the corridor. Proceed with caution. Low risk does not mean safe.",
     "forecast_prefix": "FORECAST NOTICE for {date}: Target travel date is beyond the 48-hour rainfall forecast window. Risk scores reflect static terrain susceptibility only. ",
 }
 
@@ -218,7 +230,7 @@ ROUTE_ADVISORIES_HI = {
     "Very High": "गंभीर चेतावनी ({date}): मार्ग पर तीव्र ढलान विफलता और गिरते पत्थरों का अत्यधिक खतरा। बीआरओ (BRO) की सूचनाएं जांचें।",  # NEEDS NATIVE REVIEW
     "High": "उच्च जोखिम चेतावनी ({date}): मार्ग पर भूस्खलन का महत्वपूर्ण जोखिम। केवल दिन के समय यात्रा करें और सतर्क रहें।",  # NEEDS NATIVE REVIEW
     "Moderate": "मध्यम सलाह ({date}): राष्ट्रीय राजमार्ग सामान्यतः खुला है। जलभराव और मोड़ों पर सावधानी से वाहन चलाएं।",  # NEEDS NATIVE REVIEW
-    "Low": "सामान्य स्थिति ({date}): संपूर्ण मार्ग पर अनुकूल और सुरक्षित सड़क स्थिति का अनुमान है।",  # NEEDS NATIVE REVIEW
+    "Low": "कम जोखिम स्थिति ({date}): संपूर्ण मार्ग पर कम भूस्खलन जोखिम आंका गया। सावधानी बरतें। कम जोखिम का अर्थ सुरक्षित नहीं है।",  # NEEDS NATIVE REVIEW
     "forecast_prefix": "पूर्वानुमान सूचना ({date}): यात्रा की तिथि 48 घंटे के मौसम पूर्वानुमान से आगे है। जोखिम केवल भूभाग की स्थिरता पर आधारित है। ",  # NEEDS NATIVE REVIEW
 }
 
@@ -309,30 +321,27 @@ def build_segment_voice_script(
     if lang == "hi":
         seg_hi = SEGMENT_TRANSLITERATIONS_HI.get(segment_id, transliterate_town(segment_name, "hi"))
         lvl_hi = RISK_LEVEL_NAMES_HI.get(risk_level, risk_level)
-        driver_hi = localize_main_driver(main_driver, "hi")
-        driver_text = f" मुख्य कारण: {driver_hi}।" if driver_hi else ""  # NEEDS NATIVE REVIEW
 
         if risk_level in ("Very High", "High"):
-            adv = "सक्रिय भूस्खलन खतरा। यात्रा से बचें और सतर्क रहें।"  # NEEDS NATIVE REVIEW
+            adv = "सक्रिय भूस्खलन खतरा। यात्रा से बचें।"  # NEEDS NATIVE REVIEW
         elif risk_level == "Moderate":
-            adv = "सावधानी से वाहन चलाएं। गिरते पत्थरों पर नजर रखें।"  # NEEDS NATIVE REVIEW
+            adv = "सावधानी से वाहन चलाएं।"  # NEEDS NATIVE REVIEW
         else:
-            adv = "मार्ग अनुकूल है। सुरक्षित यात्रा करें।"  # NEEDS NATIVE REVIEW
+            adv = "कम जोखिम आंका गया। सावधानी बरतें।"  # NEEDS NATIVE REVIEW
 
-        script = f"एनएच-7 बुलेटिन। क्षेत्र: {seg_hi}। जोखिम स्तर: {lvl_hi}।{driver_text} {adv}"  # NEEDS NATIVE REVIEW
+        script = f"एनएच-7 बुलेटिन। {seg_hi}। जोखिम: {lvl_hi}। {adv} {DISCLAIMER_HI}"  # NEEDS NATIVE REVIEW
         return script[:300].strip()
 
     # English:
     lvl_en = risk_level.upper()
-    driver_text = f" Main driver: {main_driver}." if main_driver else ""
     if risk_level in ("Very High", "High"):
-        adv = "Active rockfall hazard. Avoid non-essential travel."
+        adv = "Active rockfall hazard. Avoid travel."
     elif risk_level == "Moderate":
-        adv = "Drive cautiously and watch for loose stones."
+        adv = "Drive cautiously near steep cuts."
     else:
-        adv = "Road conditions are favorable. Safe travels."
+        adv = "Low risk modeled. Proceed with caution."
 
-    script = f"NH-7 highway bulletin. Sector: {segment_name}. Risk level is {lvl_en}.{driver_text} {adv}"
+    script = f"NH-7 bulletin. {segment_name}. Risk: {lvl_en}. {adv} {DISCLAIMER_EN}"
     return script[:300].strip()
 
 
@@ -351,23 +360,22 @@ def build_route_voice_script(
         to_hi = transliterate_town(to_name, "hi")
         action_hi = ACTION_CODES_HI.get(action, action)
         lvl_hi = RISK_LEVEL_NAMES_HI.get(max_risk_level, max_risk_level)
-        max_seg_hi = transliterate_town(max_seg_name, "hi")
 
         if closed:
-            script = f"एनएच-7 यात्रा {from_hi} से {to_hi}। चेतावनी: मार्ग पर आधिकारिक रुकावट है। कृपया इस क्षेत्र में यात्रा न करें। आपातकालीन नंबर 1070।"  # NEEDS NATIVE REVIEW
+            script = f"एनएच-7 {from_hi} से {to_hi}। मार्ग बंद है। यात्रा से बचें। {DISCLAIMER_HI}"  # NEEDS NATIVE REVIEW
         else:
             script = (  # NEEDS NATIVE REVIEW
-                f"एनएच-7 यात्रा {from_hi} से {to_hi}। यात्रा सलाह: {action_hi}। "
-                f"अधिकतम जोखिम क्षेत्र {max_seg_hi} है जहाँ जोखिम {lvl_hi} है। सुरक्षित वाहन चलाएं।"
+                f"एनएच-7 {from_hi} से {to_hi}। सलाह: {action_hi}। "
+                f"अधिकतम जोखिम: {lvl_hi}। {DISCLAIMER_HI}"
             )
         return script[:300].strip()
 
     # English:
     if closed:
-        script = f"NH-7 journey from {from_name} to {to_name}. Critical warning: Road closure active along route. Avoid travel. Emergency helpline 1070."
+        script = f"NH-7 {from_name} to {to_name}. Road closure active. Avoid travel. {DISCLAIMER_EN}"
     else:
         script = (
-            f"NH-7 trip from {from_name} to {to_name}. Recommendation is {action}. "
-            f"Maximum hazard sector is {max_seg_name} with {max_risk_level} risk. Drive carefully."
+            f"NH-7 {from_name} to {to_name}. Action: {action}. "
+            f"Max risk: {max_risk_level}. {DISCLAIMER_EN}"
         )
     return script[:300].strip()

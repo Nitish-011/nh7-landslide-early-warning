@@ -38,9 +38,13 @@ async def lifespan(app: FastAPI):
     and cleans up on shutdown.
     """
     logger.info("Starting up NH-7 Landslide Risk Backend...")
-    if config.ENV == "production" and not config.ADMIN_API_KEY:
-        logger.critical("FATAL: ADMIN_API_KEY must be set when ENV=production!")
-        raise RuntimeError("FATAL STARTUP CONFIGURATION ERROR: ADMIN_API_KEY must be set in production mode!")
+    if config.ENV == "production":
+        if not config.ADMIN_API_KEY:
+            logger.critical("FATAL: ADMIN_API_KEY must be set when ENV=production!")
+            raise RuntimeError("FATAL STARTUP CONFIGURATION ERROR: ADMIN_API_KEY must be set in production mode!")
+        if config.ADMIN_API_KEY == "admin-dev-secret-key-nh7":
+            logger.critical("FATAL: ADMIN_API_KEY cannot be default 'admin-dev-secret-key-nh7' in production mode!")
+            raise RuntimeError("FATAL STARTUP CONFIGURATION ERROR: ADMIN_API_KEY cannot be default 'admin-dev-secret-key-nh7' in production mode!")
     init_db()
     if config.ENABLE_SCHEDULER:
         start_scheduler()

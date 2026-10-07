@@ -48,7 +48,7 @@ def test_i18n_module_string_tables_and_native_review_comments():
     assert i18n.RISK_LEVEL_NAMES_HI["Low"] == "कम"
 
     # 2. Recommendation actions
-    assert i18n.ACTION_CODES_HI["GO"] == "यात्रा जारी रखें"
+    assert i18n.ACTION_CODES_HI["LOW RISK – proceed with caution"] == "कम जोखिम – सावधानी बरतें"
     assert i18n.ACTION_CODES_HI["CAUTION"] == "सावधानी बरतें"
     assert i18n.ACTION_CODES_HI["DELAY"] == "यात्रा में विलंब करें"
     assert i18n.ACTION_CODES_HI["AVOID"] == "यात्रा से बचें"
@@ -153,10 +153,12 @@ def test_alerts_localization():
         "channel": "SMS"
     })
     assert sub_res.status_code == 201
-    user_id = sub_res.json()["subscription_id"]
+    sub_data = sub_res.json()
+    user_id = sub_data["subscription_id"]
+    token = sub_data["token"]
 
     # 1. Fetch alerts in English with simulated heavy rainfall
-    res_en = client.get(f"/alerts?user_id={user_id}&simulate_rain_mm=80&lang=en")
+    res_en = client.get(f"/alerts?user_id={user_id}&token={token}&simulate_rain_mm=80&lang=en")
     assert res_en.status_code == 200
     d_en = res_en.json()
     assert "seg_08" in d_en["subscribed_segment"]
@@ -166,7 +168,7 @@ def test_alerts_localization():
         assert "ALERT" in a_en["message"] or "ADVISORY" in a_en["message"]
 
     # 2. Fetch alerts in Hindi
-    res_hi = client.get(f"/alerts?user_id={user_id}&simulate_rain_mm=80&lang=hi")
+    res_hi = client.get(f"/alerts?user_id={user_id}&token={token}&simulate_rain_mm=80&lang=hi")
     assert res_hi.status_code == 200
     d_hi = res_hi.json()
     assert "श्रीनगर से सिरोबगड़" in d_hi["subscribed_segment"]

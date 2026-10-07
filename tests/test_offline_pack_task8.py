@@ -20,6 +20,11 @@ def test_offline_pack_schema_and_segments():
     assert "generated_at" in data
     assert "corridor" in data
     assert data["total_segments"] == 18
+    assert "disclaimer" in data
+    assert "disclaimer_en" in data
+    assert "disclaimer_hi" in data
+    assert "Decision-support prototype" in data["disclaimer_en"]
+    assert "निर्णय-समर्थन प्रोटोटाइप" in data["disclaimer_hi"]
     assert "emergency_contacts" in data
     assert "segments" in data
     assert len(data["segments"]) == 18
@@ -146,7 +151,49 @@ def test_service_worker_and_manifest():
     assert res_sw.status_code == 200
     sw_text = res_sw.text
     assert "/offline-pack" in sw_text
+    assert "/risk-map" in sw_text
+    assert "/static/vendor/leaflet/leaflet.css" in sw_text
+    assert "/static/vendor/leaflet/leaflet.js" in sw_text
     # Explicit tile exclusion rule
     assert "isMapTileRequest" in sw_text
     assert "tile.openstreetmap.org" in sw_text
     assert "Do not cache map tiles" in sw_text or "never store in cache" in sw_text
+
+
+def test_offline_pack_etag_ignores_generated_at_timestamp():
+    """
+    Confirm the /offline-pack ETag calculation ignores the generated_at timestamp.
+    Even when the timestamp updates or time passes, identical segment risk states
+    produce identical ETags so HTTP 304 Not Modified responses reliably happen.
+    """
+    import hashlib
+    import json
+
+    res1 = client.get("/offline-pack")
+    assert res1.status_code == 200
+    etag1 = res1.headers.get("etag")
+    data1 = res1.json()
+    assert etag1 is not None
+
+    # Immediate conditional request returns 304 with 0-byte content
+    res_304 = client.get("/offline-pack", headers={"If-None-Match": etag1})
+    assert res_304.status_code == 304
+    assert len(res_304.content) == 0
+
+    # Ensure generated_at field exists in payload, but the hash in ETag is deterministic
+    assert "generated_at" in data1
+    assert data1["version"] in etag1
+
+    # Verify core payload hashing without generated_at
+    core_payload = {
+        "corridor": data1["corridor"],
+        "total_segments": data1["total_segments"],
+        "disclaimer": data1["disclaimer"],
+        "disclaimer_en": data1["disclaimer_en"],
+        "disclaimer_hi": data1["disclaimer_hi"],
+        "emergency_contacts": data1["emergency_contacts"],
+        "segments": data1["segments"],
+    }
+    expected_hash = hashlib.sha256(json.dumps(core_payload, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+    assert data1["version"] == expected_hash
+

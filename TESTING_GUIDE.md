@@ -240,13 +240,15 @@ Allows drivers, pilgrims, and local residents to subscribe to automatic warnings
 
 #### Test via cURL:
 ```powershell
-# 1. Register subscription
+# 1. Register subscription (returns a secret subscription token)
 curl -X POST "http://127.0.0.1:8000/subscribe" `
   -H "Content-Type: application/json" `
   -d '{"name":"Patrol Officer Singh","phone_or_email":"+91-9811223344","segment_id":"seg_08","channel":"SMS"}'
 
-# 2. Check alerts for Subscription ID 1 (with simulated downpour)
-curl -X GET "http://127.0.0.1:8000/alerts?user_id=1&simulate_rain_mm=80"
+# 2. Check alerts for Subscription ID 1 (requires token returned by /subscribe)
+curl -X GET "http://127.0.0.1:8000/alerts?user_id=1&token=tok_YOUR_TOKEN_HERE&simulate_rain_mm=80"
+# Or authenticate via header:
+# curl -X GET "http://127.0.0.1:8000/alerts?user_id=1&simulate_rain_mm=80" -H "X-Subscription-Token: tok_YOUR_TOKEN_HERE"
 ```
 
 ---
@@ -276,12 +278,19 @@ curl -X POST "http://127.0.0.1:8000/field-report" `
   -H "Content-Type: application/json" `
   -d '{"lat":30.2390,"lng":78.8540,"description":"Fresh rockfall blocking both lanes.","reporter_name":"BRO Highway Unit 3"}'
 
-# 2. Admin validates report #1
+# 2. Admin validates report #1 (requires X-Admin-Key header)
 curl -X POST "http://127.0.0.1:8000/admin/validate-report" `
   -H "Content-Type: application/json" `
+  -H "X-Admin-Key: admin-dev-secret-key-nh7" `
   -d '{"report_id":1,"decision":"Validated","notes":"Verified by patrol squad on site."}'
 
-# 3. List all field reports
+# 3. Post official road closure (requires X-Admin-Key header)
+curl -X POST "http://127.0.0.1:8000/admin/closure" `
+  -H "Content-Type: application/json" `
+  -H "X-Admin-Key: admin-dev-secret-key-nh7" `
+  -d '{"segment_id":"seg_08","status":"closed","reason":"Active boulder clearance","source":"BRO Project Shivalik"}'
+
+# 4. List all field reports
 curl -X GET "http://127.0.0.1:8000/field-reports"
 ```
 

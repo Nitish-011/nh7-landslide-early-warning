@@ -31,7 +31,7 @@ Welcome, Antigravity Agent! This document defines the workspace context and engi
 # Start backend server
 python run.py
 
-# Run complete 122 automated test suite
+# Run complete 130 automated test suite
 python -m pytest
 
 # Run pre-flight demo verification script

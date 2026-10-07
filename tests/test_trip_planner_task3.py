@@ -228,7 +228,7 @@ def test_rain_peak_at_eta_changes_recommendation(monkeypatch):
         data_dry = resp_dry.json()
         rec_dry = data_dry["recommendation"]
 
-        # In dry conditions, action switches from DELAY to GO!
-        assert rec_dry["action"] == "GO"
-        assert rec_dry["action_code"] == "REC_GO"
+        # In dry conditions, action switches from DELAY to LOW RISK – proceed with caution!
+        assert rec_dry["action"] == "LOW RISK – proceed with caution"
+        assert rec_dry["action_code"] == "REC_LOW_RISK_CAUTION"
         assert rec_dry["params"]["current_max_risk"] == "Low"

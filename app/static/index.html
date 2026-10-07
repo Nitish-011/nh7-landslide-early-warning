@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet CSS (Vendored locally for offline resilience) -->
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" />
   <link rel="manifest" href="/manifest.json" />
 
   <style>
@@ -508,6 +508,11 @@
       ⚡ Offline Mode: Operating from cached offline pack. Last updated: <span id="offline-last-updated">-</span>
     </div>
 
+    <!-- Map Tiles Unavailable Offline Note -->
+    <div id="map-offline-note" style="display:none; position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:1000; background:rgba(15,23,42,0.92); border:1px solid #f59e0b; color:#fbbf24; padding:8px 18px; border-radius:8px; font-size:0.75rem; font-weight:600; box-shadow:0 4px 14px rgba(0,0,0,0.6); pointer-events:none; backdrop-filter:blur(4px);">
+      🗺️ Map tiles unavailable offline &mdash; displaying vector corridor geometry on plain canvas
+    </div>
+
     <!-- Floating Map HUD -->
     <div class="map-top-bar">
       <div class="map-stat">
@@ -537,7 +542,11 @@
         <h1>⛰️ NH-7 Risk API Workbench</h1>
         <p>Interactive verification testbench for models, guardrails & endpoints</p>
       </div>
-      <div class="header-actions">
+      <div class="header-actions" style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; background:rgba(15,23,42,0.85); border:1px solid var(--border); border-radius:6px; padding:3px 8px;" title="Admin Key for Closures & Report Verification (kept in sessionStorage)">
+          <span style="font-size:0.75rem; margin-right:5px;">🔑</span>
+          <input type="password" id="admin-key-input" placeholder="Admin Key" style="background:transparent; border:none; color:var(--text-main); font-family:var(--font-mono); font-size:0.72rem; width:110px; outline:none;" oninput="saveAdminKeyToSession(this.value)" />
+        </div>
         <button id="btn-toggle-lang" class="lang-toggle-btn" onclick="toggleLanguage()">
           <span id="lang-flag">🇬🇧</span> <span id="lang-label">EN</span>
         </button>
@@ -546,6 +555,14 @@
 
     <!-- Freshness / Replay Banner -->
     <div id="freshness-banner"></div>
+
+    <!-- Persistent Safety Disclaimer -->
+    <div id="persistent-safety-disclaimer" style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); border-left:4px solid #ef4444; border-radius:6px; padding:8px 12px; margin:0 16px 10px 16px; font-size:0.72rem; line-height:1.45; color:#fca5a5;">
+      <div style="font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:2px; color:#f87171;">
+        <span>⚠️ SAFETY &amp; LEGAL DISCLAIMER / कानूनी अस्वीकरण</span>
+      </div>
+      <span id="disclaimer-text">Decision-support prototype, not an official warning. Low risk does not mean safe. Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112</span>
+    </div>
 
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
@@ -716,7 +733,7 @@
           <div id="route-recommendation-box" style="display:none; margin-top:8px; padding:10px; background:rgba(15,23,42,0.9); border:1px solid #4338ca; border-radius:6px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <strong style="color:#a5b4fc; font-size:0.75rem;">🧭 TIME-AWARE RECOMMENDATION</strong>
-              <span id="route-action-badge" class="popup-badge">GO</span>
+              <span id="route-action-badge" class="popup-badge">LOW RISK – proceed with caution</span>
             </div>
             <div id="route-rec-reason" style="color:#f8fafc; font-size:0.75rem; margin-bottom:6px;"></div>
             <div id="route-rec-options" style="font-size:0.72rem; color:#94a3b8; line-height:1.5;"></div>
@@ -943,16 +960,16 @@
             <div>
               <label for="sub-channel">Alert Channel</label>
               <select id="sub-channel">
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="SMS">SMS</option>
-                <option value="Email">Email</option>
-                <option value="telegram">Telegram</option>
+                <option value="SMS" selected>SMS (Twilio)</option>
+                <option value="Telegram">Telegram</option>
+                <option value="WhatsApp" disabled>WhatsApp (Coming Soon)</option>
+                <option value="Email" disabled>Email (Coming Soon)</option>
               </select>
             </div>
             <div class="form-col-full">
-              <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                <input type="checkbox" id="sub-consent" checked style="width:auto;" />
-                <span>I consent to automated safety alerts</span>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="checkbox" id="sub-consent" style="width:auto;" />
+                <span>I explicitly consent to emergency alerts & geohazard notifications</span>
               </label>
             </div>
           </div>
@@ -965,9 +982,13 @@
             <span class="endpoint-pill">GET /alerts?user_id=...</span>
           </div>
           <div class="form-grid">
-            <div class="form-col-full">
+            <div>
               <label for="alert-sub-id">Subscription ID</label>
               <input type="number" id="alert-sub-id" value="1" />
+            </div>
+            <div>
+              <label for="alert-sub-token">Subscription Token (from /subscribe)</label>
+              <input type="text" id="alert-sub-token" placeholder="tok_..." style="font-family:var(--font-mono); font-size:0.75rem;" />
             </div>
           </div>
           <button id="btn-fetch-alerts" class="btn-primary" onclick="checkSubAlerts()">Fetch Active Alerts</button>
@@ -1096,6 +1117,33 @@
       <!-- TAB 9: OFFLINE PWA & VOICE                 -->
       <!-- ========================================== -->
       <div id="tab-offline" class="tab-pane">
+        <!-- Service Worker Engine & Security Context Status -->
+        <div class="card" style="margin-bottom: 12px; border-color: rgba(56, 189, 248, 0.35);">
+          <div class="card-title">
+            <span>Service Worker & Offline PWA Engine</span>
+            <span id="sw-status-pill" class="pill pill-unknown">Checking...</span>
+          </div>
+          <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
+            Enables full dashboard and vector polyline operation in mountain dead zones using precached shell, vendored Leaflet, and background data stores.
+          </p>
+
+          <div id="sw-secure-warning" style="display:none; margin-bottom:10px; padding:10px; border-radius:6px; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#fca5a5; font-size:0.75rem; line-height:1.45;">
+            ⚠️ <strong>Offline mode needs localhost or HTTPS</strong>: Service Workers cannot register over unencrypted LAN IP connections (e.g. <code>http://&lt;LAN-IP&gt;:8000</code>). When testing on a smartphone, use a tunnel (e.g. cloudflared or ngrok) or browse on <code>http://localhost:8000</code>.
+          </div>
+
+          <div style="font-size: 0.74rem; line-height: 1.6; background: rgba(15,23,42,0.6); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+            <div><strong>Secure Context:</strong> <span id="sw-secure-context" style="font-family:var(--font-mono);">-</span></div>
+            <div><strong>Registration State:</strong> <span id="sw-reg-state" style="font-family:var(--font-mono);">-</span></div>
+            <div><strong>Active Controller:</strong> <span id="sw-controller" style="font-family:var(--font-mono);">-</span></div>
+            <div><strong>Precached Stores:</strong> <span id="sw-cache-summary" style="font-family:var(--font-mono); color:var(--accent);">Vendored Leaflet, App Shell, /offline-pack, /risk-map</span></div>
+          </div>
+
+          <div class="btn-row" style="margin-top: 10px;">
+            <button class="btn-sm" onclick="checkServiceWorkerStatus(true)">🔄 Re-check SW Status</button>
+            <button class="btn-sm" onclick="precacheOfflineAssetsManual()">📦 Sync Offline Caches</button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title">
             <span>Offline Pack & Mobile Resilience</span>
@@ -1119,6 +1167,12 @@
             <div><strong>ETag Header:</strong> <span id="op-etag" style="font-family:var(--font-mono); color:#10b981;">-</span></div>
             <div style="margin-top:8px; font-weight:700; color:var(--text-main);">Emergency Helplines:</div>
             <div id="op-contacts" style="margin-top:4px;"></div>
+            <div style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);">
+              <div style="font-weight:700; color:#f87171;">⚠️ Pack Disclaimer (EN):</div>
+              <div id="op-disclaimer-en" style="color:#fca5a5; font-size:0.70rem; margin-top:2px;">-</div>
+              <div style="font-weight:700; color:#f87171; margin-top:4px;">⚠️ अस्वीकरण (HI):</div>
+              <div id="op-disclaimer-hi" style="color:#fca5a5; font-size:0.70rem; margin-top:2px;">-</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1143,8 +1197,8 @@
 
   </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet JS (Vendored locally for offline resilience) -->
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
 
   <script>
     // --- Global Application State ---
@@ -1185,13 +1239,38 @@
 
     // Initialize Map and UI
     window.addEventListener("DOMContentLoaded", () => {
+      initAdminKeySession();
+      initSubscriptionToken();
       initMap();
       populateDropdowns();
       setDefaultDates();
+      registerServiceWorker();
+      checkServiceWorkerStatus();
+      setupNetworkStatusListeners();
       loadCorridorRiskMap();
       loadRoadClosures();
       checkHealthTelemetry();
     });
+
+    function initAdminKeySession() {
+      const stored = sessionStorage.getItem("nh7_admin_api_key") || "";
+      const inp = document.getElementById("admin-key-input");
+      if (inp && stored) inp.value = stored;
+    }
+
+    function saveAdminKeyToSession(val) {
+      if (val && val.trim()) {
+        sessionStorage.setItem("nh7_admin_api_key", val.trim());
+      } else {
+        sessionStorage.removeItem("nh7_admin_api_key");
+      }
+    }
+
+    function initSubscriptionToken() {
+      const stored = localStorage.getItem("nh7_subscription_token") || "";
+      const inp = document.getElementById("alert-sub-token");
+      if (inp && stored) inp.value = stored;
+    }
 
     function initMap() {
       map = L.map("map", { zoomControl: false }).setView([30.27, 78.95], 9);
@@ -1213,6 +1292,16 @@
       });
 
       esriTopo.addTo(map);
+
+      // Listen for tile errors when offline to cleanly switch to plain canvas
+      const handleTileError = () => {
+        if (!navigator.onLine || simulatedOffline) {
+          setOfflineMapTiles(true);
+        }
+      };
+      esriTopo.on("tileerror", handleTileError);
+      esriSat.on("tileerror", handleTileError);
+      osm.on("tileerror", handleTileError);
 
       L.control.layers({
         "⛰️ Mountain Topo": esriTopo,
@@ -1287,12 +1376,15 @@
     function toggleLanguage() {
       currentLanguage = (currentLanguage === "en") ? "hi" : "en";
       const btn = document.getElementById("btn-toggle-lang");
+      const discEl = document.getElementById("disclaimer-text");
       if (currentLanguage === "hi") {
         document.getElementById("lang-flag").textContent = "🇮🇳";
         document.getElementById("lang-label").textContent = "हिंदी";
+        if (discEl) discEl.textContent = "निर्णय-समर्थन प्रोटोटाइप, आधिकारिक चेतावनी नहीं। कम जोखिम का अर्थ सुरक्षित नहीं है। सूखे मौसम में भी भूस्खलन हो सकता है। बीआरओ/एसडीआरएफ/पुलिस सलाह का पालन करें। आपातकाल: 112";
       } else {
         document.getElementById("lang-flag").textContent = "🇬🇧";
         document.getElementById("lang-label").textContent = "EN";
+        if (discEl) discEl.textContent = "Decision-support prototype, not an official warning. Low risk does not mean safe. Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112";
       }
       // Re-fetch corridor with active language
       loadCorridorRiskMap();
@@ -1313,6 +1405,13 @@
 
       try {
         const headers = { ...extraHeaders };
+        // Automatically inject Admin Key from sessionStorage for /admin/* endpoints if not explicitly provided
+        if (url.startsWith("/admin/") && !headers["X-Admin-Key"] && !headers["X-API-Key"]) {
+          const storedAdminKey = sessionStorage.getItem("nh7_admin_api_key");
+          if (storedAdminKey) {
+            headers["X-Admin-Key"] = storedAdminKey;
+          }
+        }
         if (body && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
           headers["Content-Type"] = "application/json";
         }
@@ -1413,12 +1512,69 @@
       }
 
       const res = await apiCall("GET", url);
-      if (!res.ok) return;
+      if (res.ok && res.data && res.data.segments) {
+        corridorData = res.data;
+        try {
+          localStorage.setItem("nh7_last_risk_map", JSON.stringify(corridorData));
+          if (corridorData.timestamp) {
+            localStorage.setItem("nh7_last_updated", corridorData.timestamp);
+          }
+        } catch (e) {}
 
-      corridorData = res.data;
-      updateFreshnessBanner(corridorData);
-      renderCorridorOnMap(corridorData.segments);
-      updateHUD(corridorData);
+        updateFreshnessBanner(corridorData);
+        renderCorridorOnMap(corridorData.segments);
+        updateHUD(corridorData);
+
+        if (!navigator.onLine || simulatedOffline) {
+          updateOfflineUI(true, corridorData.timestamp);
+        } else {
+          updateOfflineUI(false);
+        }
+        return;
+      }
+
+      // Offline Fallback: check localStorage or fetch cached /offline-pack
+      console.warn("[RiskMap] Live request unfulfilled, attempting offline fallback cache...");
+      let fallbackData = null;
+      const cached = localStorage.getItem("nh7_last_risk_map");
+      if (cached) {
+        try { fallbackData = JSON.parse(cached); } catch (e) {}
+      }
+
+      if (!fallbackData) {
+        try {
+          const opRes = await fetch("/offline-pack");
+          if (opRes.ok) {
+            const opData = await opRes.json();
+            fallbackData = {
+              corridor: opData.corridor,
+              timestamp: opData.generated_at,
+              total_segments: opData.total_segments,
+              segments: (opData.segments || []).map(s => ({
+                id: s.id,
+                name: s.name,
+                risk_level: s.current_risk_level || s.risk_level,
+                risk_index: 0.5,
+                subpoints: s.simplified_polyline || [],
+                terrain_level: s.terrain_risk_level,
+                terrain_percentile: 0.5,
+                rain_mm_3d: 0.0,
+                advisory: (currentLanguage === "hi") ? s.advisory_hi : s.advisory_en,
+                nearest_hospital: s.nearest_hospital
+              }))
+            };
+          }
+        } catch (e) {}
+      }
+
+      if (fallbackData && fallbackData.segments) {
+        corridorData = fallbackData;
+        renderCorridorOnMap(corridorData.segments);
+        updateHUD(corridorData);
+        updateOfflineUI(true, fallbackData.timestamp || localStorage.getItem("nh7_last_updated"));
+      } else {
+        updateOfflineUI(true);
+      }
     }
 
     function renderCorridorOnMap(segments) {
@@ -1426,18 +1582,24 @@
       segmentPolylines = [];
 
       segments.forEach(seg => {
+        let rawPoints = (Array.isArray(seg.subpoints) && seg.subpoints.length > 0)
+          ? seg.subpoints
+          : (Array.isArray(seg.simplified_polyline) && seg.simplified_polyline.length > 0)
+            ? seg.simplified_polyline
+            : [];
+
         let latlngs = [];
-        if (Array.isArray(seg.subpoints) && seg.subpoints.length > 0) {
-          latlngs = seg.subpoints.map(pt => {
+        if (rawPoints.length > 0) {
+          latlngs = rawPoints.map(pt => {
             if (Array.isArray(pt)) return [pt[0], pt[1]];
             if (pt && typeof pt === "object" && "lat" in pt) return [pt.lat, pt.lng];
             return pt;
           }).filter(pt => Array.isArray(pt) && !isNaN(pt[0]) && !isNaN(pt[1]));
         }
-        if (latlngs.length === 0 && seg.start_lat && seg.start_lng && seg.end_lat && seg.end_lng) {
-          latlngs = [[seg.start_lat, seg.start_lng], [seg.end_lat, seg.end_lng]];
+        if (latlngs.length === 0) {
+          console.warn(`Segment ${seg.id} missing subpoints; skipping polyline to avoid straight-line shortcut across topography.`);
+          return;
         }
-        if (latlngs.length === 0) return;
 
         let polyColor = getRiskColor(seg.risk_level);
         let polyWeight = 6;
@@ -1457,7 +1619,8 @@
           weight: polyWeight,
           opacity: 0.9,
           lineJoin: "round",
-          dashArray: polyDash
+          dashArray: polyDash,
+          smoothFactor: 0
         }).addTo(map);
 
         const riskIdx = (seg.risk_index !== undefined && seg.risk_index !== null) ? seg.risk_index : seg.risk_score;
@@ -1707,9 +1870,9 @@
         recBox.style.display = "block";
         const actBadge = document.getElementById("route-action-badge");
         actBadge.textContent = d.recommendation.action;
-        if (d.recommendation.action === "GO") actBadge.style.background = "#10b981";
-        else if (d.recommendation.action === "CAUTION") actBadge.style.background = "#f59e0b";
-        else if (d.recommendation.action === "DELAY") actBadge.style.background = "#ea580c";
+        if (d.recommendation.action === "LOW RISK – proceed with caution" || d.recommendation.action_code === "REC_LOW_RISK_CAUTION" || (d.recommendation.action && d.recommendation.action.includes("कम जोखिम")) || d.recommendation.action === "GO") actBadge.style.background = "#10b981";
+        else if (d.recommendation.action === "CAUTION" || d.recommendation.action_code === "REC_CAUTION" || (d.recommendation.action && d.recommendation.action.includes("सावधानी"))) actBadge.style.background = "#f59e0b";
+        else if (d.recommendation.action === "DELAY" || d.recommendation.action_code === "REC_DELAY" || (d.recommendation.action && d.recommendation.action.includes("विलंब"))) actBadge.style.background = "#ea580c";
         else actBadge.style.background = "#ef4444";
         actBadge.style.color = "#fff";
 
@@ -1718,7 +1881,7 @@
           .map(opt => `<li><strong>${opt.summary}</strong></li>`)
           .join("");
         document.getElementById("route-rec-options").innerHTML = optsList 
-          ? `<div style="margin-top:6px; font-weight:600; color:#cbd5e1;">Safest Departure Windows (48h search):</div><ul style="padding-left:18px; margin-top:2px;">${optsList}</ul>` 
+          ? `<div style="margin-top:6px; font-weight:600; color:#cbd5e1;">Lowest-Risk Departure Windows (48h search):</div><ul style="padding-left:18px; margin-top:2px;">${optsList}</ul>` 
           : "";
       } else {
         recBox.style.display = "none";
@@ -1793,6 +1956,8 @@
         alert(`Road closure logged for ${segId}. Map and routing updated!`);
         loadRoadClosures();
         loadCorridorRiskMap();
+      } else if (res.status === 401) {
+        alert("Road closure failed (HTTP 401 Unauthorized).\nPlease enter your Admin API Key in the 🔑 field at the top header (stored in sessionStorage).");
       }
     }
 
@@ -1802,6 +1967,8 @@
         alert("Road closure cleared. Sector reopened!");
         loadRoadClosures();
         loadCorridorRiskMap();
+      } else if (res.status === 401) {
+        alert("Delete closure failed (HTTP 401 Unauthorized).\nPlease enter your Admin API Key in the 🔑 field at the top header (stored in sessionStorage).");
       }
     }
 
@@ -1943,6 +2110,8 @@
       if (res.ok) {
         fetchFieldReports();
         loadCorridorRiskMap();
+      } else if (res.status === 401) {
+        alert("Report validation failed (HTTP 401 Unauthorized).\nPlease enter your Admin API Key in the 🔑 field at the top header (stored in sessionStorage).");
       }
     }
 
@@ -1985,6 +2154,10 @@
       const segId = document.getElementById("sub-segment-select").value;
       const channel = document.getElementById("sub-channel").value;
       const consent = document.getElementById("sub-consent").checked;
+      if (!consent) {
+        alert("Explicit consent is required to register for emergency alerts.\nPlease check the consent box to proceed.");
+        return;
+      }
 
       const payload = {
         name,
@@ -1997,13 +2170,24 @@
       const res = await apiCall("POST", "/subscribe", payload);
       if (res.ok && res.data.subscription_id) {
         document.getElementById("alert-sub-id").value = res.data.subscription_id;
-        alert(`Subscription created successfully! ID: ${res.data.subscription_id}`);
+        if (res.data.token) {
+          localStorage.setItem("nh7_subscription_token", res.data.token);
+          const tokEl = document.getElementById("alert-sub-token");
+          if (tokEl) tokEl.value = res.data.token;
+        }
+        alert(`Subscription created successfully!\nID: ${res.data.subscription_id}\nToken: ${res.data.token}\n(Saved to device for alerts query)`);
       }
     }
 
     async function checkSubAlerts() {
       const subId = document.getElementById("alert-sub-id").value;
+      const tokEl = document.getElementById("alert-sub-token");
+      const token = (tokEl ? tokEl.value.trim() : "") || localStorage.getItem("nh7_subscription_token") || "";
+
       let url = `/alerts?user_id=${subId}&lang=${currentLanguage}`;
+      if (token) {
+        url += `&token=${encodeURIComponent(token)}`;
+      }
       if (activeSimulationRain !== null) url += `&simulate_rain_mm=${activeSimulationRain}`;
 
       const res = await apiCall("GET", url);
@@ -2026,6 +2210,9 @@
             </div>
           `).join("");
         }
+      } else if (res.status === 401) {
+        container.style.display = "block";
+        container.innerHTML = `<div style="color:#ef4444; padding:8px; background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:6px;">🔒 <strong>Authentication Required (401):</strong> Access to alerts requires a valid subscription token returned when you register via POST /subscribe.</div>`;
       }
     }
 
@@ -2115,7 +2302,7 @@
         status: "closed",
         reason: "Auth probe",
         source: "Probe"
-      }, { "X-API-Key": "invalid-probe-key" });
+      }, { "X-Admin-Key": "invalid-probe-key", "X-API-Key": "invalid-probe-key" });
 
       if (res.status === 401 || res.status === 403) {
         card.className = "guardrail-card pass";
@@ -2284,17 +2471,184 @@
     }
 
     let simulatedOffline = false;
-    function simulateOfflineMode() {
-      simulatedOffline = !simulatedOffline;
+
+    function setOfflineMapTiles(isOffline) {
+      const note = document.getElementById("map-offline-note");
+      if (note) note.style.display = isOffline ? "block" : "none";
+      if (map) {
+        const tilePane = map.getPane("tilePane");
+        if (tilePane) {
+          tilePane.style.opacity = isOffline ? "0" : "1";
+          tilePane.style.visibility = isOffline ? "hidden" : "visible";
+        }
+      }
+    }
+
+    function updateOfflineUI(isOffline, customTime = null) {
       const banner = document.getElementById("offline-banner");
       const timeSpan = document.getElementById("offline-last-updated");
-      if (simulatedOffline) {
-        banner.style.display = "block";
-        const lastUpdated = localStorage.getItem("nh7_last_updated") || new Date().toISOString();
-        timeSpan.textContent = `${lastUpdated} (Simulated Offline)`;
+      if (isOffline) {
+        if (banner) banner.style.display = "block";
+        setOfflineMapTiles(true);
+        let rawTime = customTime || localStorage.getItem("nh7_last_updated") || new Date().toISOString();
+        let displayTime = rawTime;
+        try {
+          const d = new Date(rawTime);
+          if (!isNaN(d.getTime())) {
+            displayTime = d.toLocaleString();
+          }
+        } catch (e) {}
+        if (timeSpan) {
+          timeSpan.textContent = simulatedOffline ? `${displayTime} (Simulated Offline)` : displayTime;
+        }
       } else {
-        banner.style.display = "none";
+        if (banner && !simulatedOffline) banner.style.display = "none";
+        if (!simulatedOffline) setOfflineMapTiles(false);
       }
+    }
+
+    function simulateOfflineMode() {
+      simulatedOffline = !simulatedOffline;
+      const btn = document.getElementById("btn-toggle-offline-sim");
+      if (btn) {
+        btn.innerHTML = simulatedOffline
+          ? "<span>⚡ Disable Offline Sim</span>"
+          : "<span>🔌 Toggle Offline Simulation</span>";
+      }
+      updateOfflineUI(simulatedOffline);
+      if (simulatedOffline && (!corridorData || !segmentPolylines.length)) {
+        loadCorridorRiskMap();
+      }
+    }
+
+    function registerServiceWorker() {
+      if (!window.isSecureContext) {
+        console.warn("[PWA] Insecure context: Service Workers require HTTPS or localhost");
+        updateSWStatusUI();
+        return;
+      }
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" })
+          .then(reg => {
+            console.log("[PWA] Service Worker registered with scope:", reg.scope);
+            updateSWStatusUI();
+          })
+          .catch(err => {
+            console.warn("[PWA] Service Worker registration failed:", err);
+            updateSWStatusUI();
+          });
+      } else {
+        updateSWStatusUI();
+      }
+    }
+
+    async function checkServiceWorkerStatus(userTriggered = false) {
+      await updateSWStatusUI();
+      if (userTriggered) {
+        alert("Service Worker status refreshed!");
+      }
+    }
+
+    async function updateSWStatusUI() {
+      const pill = document.getElementById("sw-status-pill");
+      const warn = document.getElementById("sw-secure-warning");
+      const ctxEl = document.getElementById("sw-secure-context");
+      const regEl = document.getElementById("sw-reg-state");
+      const ctrlEl = document.getElementById("sw-controller");
+      const cacheEl = document.getElementById("sw-cache-summary");
+
+      const isSecure = Boolean(window.isSecureContext);
+      if (ctxEl) {
+        ctxEl.innerHTML = isSecure 
+          ? `<span style="color:#10b981;">✓ Secure (${window.location.protocol}//${window.location.host})</span>`
+          : `<span style="color:#ef4444;">✗ Insecure Context (${window.location.protocol}//${window.location.host})</span>`;
+      }
+
+      if (!isSecure) {
+        if (pill) {
+          pill.textContent = "Insecure Context";
+          pill.className = "pill pill-5xx";
+        }
+        if (warn) {
+          warn.style.display = "block";
+          warn.innerHTML = `⚠️ <strong>Offline mode needs localhost or HTTPS</strong>: Service Workers cannot register over unencrypted LAN IP connections (e.g. <code>${window.location.origin}</code>). When testing on a smartphone, use a tunnel (e.g. cloudflared or ngrok) or browse on <code>http://localhost:8000</code>.`;
+        }
+        if (regEl) regEl.textContent = "Offline mode needs localhost or HTTPS";
+        if (ctrlEl) ctrlEl.textContent = "Disabled (Insecure Context)";
+        return;
+      }
+
+      if (warn) warn.style.display = "none";
+
+      if (!("serviceWorker" in navigator)) {
+        if (pill) {
+          pill.textContent = "Unsupported";
+          pill.className = "pill pill-4xx";
+        }
+        if (regEl) regEl.textContent = "Not supported in this browser";
+        if (ctrlEl) ctrlEl.textContent = "N/A";
+        return;
+      }
+
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          const state = reg.active ? "Active" : (reg.installing ? "Installing" : "Waiting");
+          if (pill) {
+            pill.textContent = navigator.serviceWorker.controller ? "Active & Controlling" : `Registered (${state})`;
+            pill.className = navigator.serviceWorker.controller ? "pill pill-2xx" : "pill pill-3xx";
+          }
+          if (regEl) regEl.innerHTML = `<span style="color:#10b981;">${state}</span> (Scope: <code>${reg.scope}</code>)`;
+          if (ctrlEl) ctrlEl.textContent = navigator.serviceWorker.controller ? "Controlling Page" : "Registered (will control on reload)";
+        } else {
+          if (pill) {
+            pill.textContent = "Not Registered";
+            pill.className = "pill pill-4xx";
+          }
+          if (regEl) regEl.textContent = "No registration found";
+          if (ctrlEl) ctrlEl.textContent = "None";
+        }
+
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          if (cacheEl) {
+            cacheEl.textContent = keys.length > 0 
+              ? `${keys.join(", ")} (Precached Leaflet, Shell, /offline-pack, /risk-map)` 
+              : "Caches empty or initializing...";
+          }
+        }
+      } catch (err) {
+        if (pill) {
+          pill.textContent = "Status Error";
+          pill.className = "pill pill-5xx";
+        }
+        if (regEl) regEl.textContent = err.message;
+      }
+    }
+
+    async function precacheOfflineAssetsManual() {
+      try {
+        const resPack = await fetch("/offline-pack");
+        const resRisk = await fetch("/risk-map");
+        alert(`Offline sync complete! Precached /offline-pack (${resPack.status}) and /risk-map (${resRisk.status}).`);
+        updateSWStatusUI();
+      } catch (err) {
+        alert("Precache sync failed: " + err.message);
+      }
+    }
+
+    function setupNetworkStatusListeners() {
+      window.addEventListener("offline", () => {
+        console.log("[Network] Browser went offline");
+        updateOfflineUI(true);
+      });
+      window.addEventListener("online", () => {
+        console.log("[Network] Browser back online");
+        if (!simulatedOffline) {
+          updateOfflineUI(false);
+          loadCorridorRiskMap();
+        }
+      });
     }
 
     async function fetchOfflinePackUI() {
@@ -2330,6 +2684,11 @@
           row.innerHTML = `<span>${c.name}</span>${numDisplay}`;
           contactsEl.appendChild(row);
         });
+
+        const opDiscEn = document.getElementById("op-disclaimer-en");
+        const opDiscHi = document.getElementById("op-disclaimer-hi");
+        if (opDiscEn) opDiscEn.textContent = data.disclaimer_en || data.disclaimer || "-";
+        if (opDiscHi) opDiscHi.textContent = data.disclaimer_hi || "-";
 
         detailsEl.style.display = "block";
 

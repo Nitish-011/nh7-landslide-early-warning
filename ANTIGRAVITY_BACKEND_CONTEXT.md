@@ -308,6 +308,26 @@ The backend implements a **4-tier fault-tolerant weather ingestion pipeline** wi
 ```
 > **Subpoint Methodology Disclosure:** Subpoints along polyline segments are visualization vertices. `subpoint_risk_scores` (also exposed as `visualized_subpoint_risk`) are deterministic spatial interpolations calculated directly from the segment's calibrated Random Forest terrain percentile, live rainfall, and dry-weather cap, enabling smooth client-side polyline gradient rendering.
 
+#### Recommendation Object & Action Enum (`recommendation`)
+When evaluating a route with `depart_time`, the `recommendation` payload provides a time-aware decision based on hourly storm simulations over a 48-hour forward horizon.
+
+> **⚠️ Persistent Disclaimer Requirement:**  
+> All client interfaces (Web UI, Mobile, SMS reply, Voice alert) MUST display or state:  
+> `"Decision-support prototype, not an official warning. Low risk does not mean safe. Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112"`  
+> *(Hindi: "निर्णय-समर्थन प्रोटोटाइप, आधिकारिक चेतावनी नहीं। कम जोखिम का अर्थ सुरक्षित नहीं है। सूखे मौसम में भी भूस्खलन हो सकता है। बीआरओ/एसडीआरएफ/पुलिस सलाह का पालन करें। आपातकाल: 112")*
+
+The engine outputs four canonical actions:
+1. **`LOW RISK – proceed with caution`** (`action_code: "REC_LOW_RISK_CAUTION"`):
+   - Returned when all segments across the route are evaluated as `Low` risk at the planned departure time.
+   - Note: Nothing says `GO` or `safe`; Low risk modeled does not guarantee safety.
+2. **`CAUTION`** (`action_code: "REC_CAUTION"`):
+   - Returned when moderate landslide risk (`Moderate`, rank 1) is detected along the route, OR when a non-blocking traffic restriction (`one_way` / `restricted`) is active.
+3. **`DELAY`** (`action_code: "REC_DELAY"`):
+   - **Trigger Condition:** Returned when elevated landslide hazard (`High` or `Very High`, rank $\ge 2$) is modeled along the route at the traveler's planned departure time, **AND** a future departure time within the 48-hour forward forecast search achieves a strictly lower maximum route risk (`best_rank < base_rank`, e.g. dropping to Moderate or Low risk).
+   - **Response Payload:** Contains `hours_delay` (hours to wait), `best_depart_time` (recommended departure timestamp), and up to 3 alternate departure options in `best_departure_options`.
+4. **`AVOID`** (`action_code: "REC_AVOID"`):
+   - Returned when an active official road closure (`status == "closed"`) is in effect along the planned route, OR severe risk (`High` / `Very High`) persists across all 48 hours of the forecast search with no viable lower-risk window.
+
 ---
 
 ### 4. `POST /subscribe` — Register for Real-Time SMS/Push Alerts

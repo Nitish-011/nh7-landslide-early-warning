@@ -173,6 +173,72 @@ def test_twilio_sms_webhook_commands():
     assert len(match.group(1)) <= 320
 
 
+def test_sms_webhook_case_insensitivity_and_variations():
+    """Verify webhook parses case-insensitively and accepts SEG8, SEG08, seg_08, seg 8, segment 8, and town names."""
+    variations = [
+        "SEG8",
+        "seg08",
+        "seg_08",
+        "seg 08",
+        "segment 8",
+        "NH7 seg8",
+        "srinagar",
+        "Sirobagarh",
+    ]
+    for q in variations:
+        resp = client.post("/webhook/sms", data={"Body": q, "From": "+919876543210"})
+        assert resp.status_code == 200, f"Query '{q}' failed with status {resp.status_code}"
+        assert "<Message>" in resp.text
+        assert "seg_08" in resp.text or "Srinagar" in resp.text or "Sirobagarh" in resp.text, (
+            f"Query '{q}' failed to resolve seg_08; response was: {resp.text}"
+        )
+
+    # Test town name for Joshimath (seg_18)
+    resp_jm = client.post("/webhook/sms", data={"Body": "Joshimath", "From": "+919876543210"})
+    assert resp_jm.status_code == 200
+    assert "seg_18" in resp_jm.text or "Joshimath" in resp_jm.text
+
+
+def test_sms_webhook_hindi_ucs2_length_check():
+    """Verify Hindi SMS replies trigger UCS-2 encoding and fit within single 70-character SMS segment."""
+    import re
+    queries = [
+        "SEG08 HI",
+        "NH7 SEG8 HI",
+        "श्रीनगर",
+        "HELP HI",
+    ]
+    for q in queries:
+        resp = client.post("/webhook/sms", data={"Body": q, "From": "+919876543210"})
+        assert resp.status_code == 200
+        assert resp.headers.get("X-SMS-Encoding") == "UCS-2"
+        # Verify single-segment UCS-2 limit (70 chars)
+        segments = int(resp.headers.get("X-SMS-Segments", "0"))
+        char_count = int(resp.headers.get("X-SMS-Char-Count", "0"))
+        assert segments == 1, f"Query '{q}' produced {segments} segments (expected 1 for UCS-2 <= 70 chars)"
+        assert char_count <= 70, f"Query '{q}' has {char_count} chars, exceeds UCS-2 70-char segment limit"
+
+        match = re.search(r"<Message>(.*?)</Message>", resp.text)
+        assert match is not None
+        import html
+        body_text = html.unescape(match.group(1))
+        assert len(body_text) <= 70, f"Query '{q}' message body '{body_text}' exceeds 70 chars ({len(body_text)} chars)"
+
+
+def test_subscribe_telegram_channel():
+    """Verify Telegram is a selectable, fully valid subscription channel."""
+    resp = client.post("/subscribe", json={
+        "name": "Telegram Ranger",
+        "phone_or_email": "987654321",
+        "segment_id": "seg_08",
+        "channel": "Telegram",
+        "consent": True
+    })
+    assert resp.status_code == 201
+    sub_data = resp.json()
+    assert sub_data["subscription"]["channel"] == "Telegram"
+
+
 def test_twilio_signature_validation(monkeypatch):
     """Verify X-Twilio-Signature verification rejects invalid signature and accepts valid signature."""
     auth_token = "secret_twilio_token_123"

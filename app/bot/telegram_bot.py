@@ -201,7 +201,7 @@ def handle_telegram_command(chat_id: int | str, text: str) -> str:
         elif max_level in ("High", "Very High"):
             rec = "CAUTION / DELAY - Severe slope failure risk detected."
         else:
-            rec = "GO - Favorable highway conditions."
+            rec = "LOW RISK – proceed with caution. Low risk does not mean safe."
 
         if lang == "hi":
             return (

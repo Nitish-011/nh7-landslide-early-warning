@@ -261,8 +261,8 @@ class TripRecommendation(BaseModel):
             }
         }
     }
-    action: str  # GO, CAUTION, DELAY, AVOID
-    action_code: str  # REC_GO, REC_CAUTION, REC_DELAY, REC_AVOID
+    action: str  # LOW RISK – proceed with caution, CAUTION, DELAY, AVOID
+    action_code: str  # REC_LOW_RISK_CAUTION, REC_CAUTION, REC_DELAY, REC_AVOID
     reason: str
     params: Dict[str, Any] = {}
     best_departure_options: List[DepartureOption] = []
@@ -419,8 +419,8 @@ class SubscribeRequest(BaseModel):
     name: str = Field(..., min_length=2, description="Full name of subscriber")
     phone_or_email: str = Field(..., min_length=5, description="Mobile number with country code or email address")
     segment_id: str = Field(..., description="ID of NH-7 segment to monitor (e.g., seg_08)")
-    channel: Literal["SMS", "WhatsApp", "Email"] = Field(..., description="Alert channel")
-    consent: Optional[bool] = Field(default=True, description="Consent for emergency alerts and data processing")
+    channel: Literal["SMS", "Telegram", "WhatsApp", "Email", "telegram"] = Field(..., description="Alert channel")
+    consent: Optional[bool] = Field(default=False, description="Explicit consent for emergency alerts and data processing")
 
 class SubscriptionDetail(BaseModel):
     id: int
@@ -429,7 +429,8 @@ class SubscriptionDetail(BaseModel):
     segment_id: str
     segment_name: str
     channel: str
-    consent: Optional[bool] = True
+    consent: Optional[bool] = False
+    token: Optional[str] = Field(None, description="Random authorization token required to access /alerts")
     created_at: str
 
 class SubscribeResponse(BaseModel):
@@ -437,12 +438,14 @@ class SubscribeResponse(BaseModel):
         "json_schema_extra": {
             "example": {
                 "subscription_id": 42,
+                "token": "tok_xK8m9Pq2L7w4Z1v0",
                 "status": "Active",
                 "message": "Subscription created successfully for sector seg_08 (Srinagar to Sirobagarh).",
                 "subscription": {
                     "id": 42,
+                    "token": "tok_xK8m9Pq2L7w4Z1v0",
                     "name": "Ramesh Negi",
-                    "phone_or_email": "+91-9876543210",
+                    "phone_or_email": "+91*****3210",
                     "segment_id": "seg_08",
                     "segment_name": "Srinagar to Sirobagarh",
                     "channel": "SMS",
@@ -453,6 +456,7 @@ class SubscribeResponse(BaseModel):
         }
     }
     subscription_id: int
+    token: str = Field(..., description="Random authorization token required to access /alerts")
     status: str = "Active"
     message: str
     subscription: SubscriptionDetail
@@ -906,6 +910,18 @@ class OfflinePackResponse(BaseModel):
     generated_at: str
     corridor: str = "NH-7 Uttarakhand (Rishikesh - Karnaprayag - Joshimath)"
     total_segments: int
+    disclaimer: str = (
+        "Decision-support prototype, not an official warning. Low risk does not mean safe. "
+        "Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112"
+    )
+    disclaimer_en: str = (
+        "Decision-support prototype, not an official warning. Low risk does not mean safe. "
+        "Landslides also occur in dry weather. Follow BRO/SDRF/police advisories. Emergency: 112"
+    )
+    disclaimer_hi: str = (
+        "निर्णय-समर्थन प्रोटोटाइप, आधिकारिक चेतावनी नहीं। कम जोखिम का अर्थ सुरक्षित नहीं है। "
+        "सूखे मौसम में भी भूस्खलन हो सकता है। बीआरओ/एसडीआरएफ/पुलिस सलाह का पालन करें। आपातकाल: 112"
+    )
     emergency_contacts: List[OfflineEmergencyContact]
     segments: List[OfflineSegmentItem]
 

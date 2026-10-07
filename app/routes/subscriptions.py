@@ -1,7 +1,8 @@
 import re
+import secrets
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 from app.database import get_db
 from app.models import (
     SubscribeRequest,
@@ -15,16 +16,18 @@ from app.limiter import limiter
 
 router = APIRouter(tags=["Subscriptions & Alerts"])
 
-def validate_and_normalize_contact(contact: str) -> Tuple[bool, str, str]:
+def validate_and_normalize_contact(contact: str, channel: str = "SMS") -> Tuple[bool, str, str]:
     """
-    Validates E.164 phone or email.
-    If phone is 10 digits without country code, defaults to +91.
+    Validates E.164 phone, email, or telegram chat identifier.
+    Strips spaces and hyphens. If phone is 10 digits without country code, defaults to +91.
+    Normalizes phone numbers to standard E.164 (e.g. +919876543210).
     Returns (is_valid, normalized_contact, masked_contact).
     """
     contact = contact.strip()
+    ch = channel.lower().strip() if channel else "sms"
 
     # Check email
-    if "@" in contact:
+    if "@" in contact and ch not in ("telegram",):
         email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
         if re.match(email_pattern, contact):
             parts = contact.split("@")
@@ -36,13 +39,29 @@ def validate_and_normalize_contact(contact: str) -> Tuple[bool, str, str]:
             return True, contact, f"{masked_user}@{domain}"
         return False, contact, contact
 
-    # Check phone (E.164 or Indian 10 digits)
-    clean_phone = re.sub(r"[\s\-\(\)]", "", contact)
-    if re.match(r"^[6-9]\d{9}$", clean_phone):
+    # If Telegram channel, support numeric chat_id or telegram @username
+    if ch == "telegram":
+        if re.match(r"^-?\d{5,16}$", contact):
+            masked = contact[:2] + "*****" + contact[-2:] if len(contact) >= 6 else "*****"
+            return True, contact, masked
+        if re.match(r"^@[a-zA-Z0-9_]{3,32}$", contact):
+            masked = contact[:2] + "***" + contact[-1:] if len(contact) >= 4 else "@***"
+            return True, contact, masked
+
+    # Check phone (E.164 or Indian 10 digits): strip spaces, hyphens, parentheses, dots
+    clean_phone = re.sub(r"[\s\-\(\)\.]", "", contact)
+
+    # 1. 10 digits (e.g. 9876543210 or 9811223344) -> default to +91
+    if len(clean_phone) == 10 and clean_phone.isdigit():
         clean_phone = f"+91{clean_phone}"
-    elif clean_phone.startswith("0") and len(clean_phone) == 11 and re.match(r"^0[6-9]\d{9}$", clean_phone):
+    # 2. 11 digits starting with 0 (e.g. 09876543210) -> replace 0 with +91
+    elif len(clean_phone) == 11 and clean_phone.startswith("0") and clean_phone[1:].isdigit():
         clean_phone = f"+91{clean_phone[1:]}"
-    elif not clean_phone.startswith("+") and clean_phone.isdigit() and len(clean_phone) >= 10:
+    # 3. 12 digits starting with 91 without plus (e.g. 919876543210) -> prepend +
+    elif len(clean_phone) == 12 and clean_phone.startswith("91") and clean_phone.isdigit():
+        clean_phone = f"+{clean_phone}"
+    # 4. Digits without plus between 7 and 15 digits -> prepend +
+    elif not clean_phone.startswith("+") and clean_phone.isdigit() and 7 <= len(clean_phone) <= 15:
         clean_phone = f"+{clean_phone}"
 
     # E.164 pattern: + followed by 7 to 15 digits
@@ -51,9 +70,9 @@ def validate_and_normalize_contact(contact: str) -> Tuple[bool, str, str]:
         if len(clean_phone) >= 7:
             prefix = clean_phone[:3]
             suffix = clean_phone[-4:]
-            masked = f"{prefix}******{suffix}"
+            masked = f"{prefix}*****{suffix}"
         else:
-            masked = clean_phone[:2] + "****" + clean_phone[-2:]
+            masked = clean_phone[:2] + "*****" + clean_phone[-2:]
         return True, clean_phone, masked
 
     return False, contact, contact
@@ -88,14 +107,14 @@ def create_subscription(request: Request, req: SubscribeRequest):
     Validates E.164 phone or email, masks contact in logs, stores consent,
     and returns the newly created numeric subscription_id.
     """
-    is_valid, normalized_contact, masked_contact = validate_and_normalize_contact(req.phone_or_email)
+    is_valid, normalized_contact, masked_contact = validate_and_normalize_contact(req.phone_or_email, req.channel)
     if not is_valid:
         raise HTTPException(
             status_code=422,
             detail="Invalid contact: must be a valid E.164 phone number (e.g. +919876543210) or a valid email address."
         )
 
-    consent_bool = True if req.consent is not False else False
+    consent_bool = bool(req.consent)
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -110,15 +129,17 @@ def create_subscription(request: Request, req: SubscribeRequest):
             )
 
         now_str = datetime.now(timezone.utc).isoformat()
+        token = f"tok_{secrets.token_urlsafe(16)}"
         cursor.execute("""
-            INSERT INTO subscriptions (name, phone_or_email, segment_id, channel, consent, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO subscriptions (name, phone_or_email, segment_id, channel, consent, token, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             req.name.strip(),
             normalized_contact,
             req.segment_id,
             req.channel,
             1 if consent_bool else 0,
+            token,
             now_str
         ))
         sub_id = cursor.lastrowid
@@ -128,12 +149,14 @@ def create_subscription(request: Request, req: SubscribeRequest):
 
     return SubscribeResponse(
         subscription_id=sub_id,
+        token=token,
         status="Active",
         message=f"Successfully subscribed to alerts for '{segment['name']}' via {req.channel}.",
         subscription=SubscriptionDetail(
             id=sub_id,
+            token=token,
             name=req.name.strip(),
-            phone_or_email=normalized_contact,
+            phone_or_email=masked_contact,
             segment_id=req.segment_id,
             segment_name=segment["name"],
             channel=req.channel,
@@ -146,15 +169,17 @@ def create_subscription(request: Request, req: SubscribeRequest):
 @limiter.limit("120/minute")
 def get_alerts(
     request: Request,
-    user_id: int = Query(..., description="Numeric subscription_id returned by /subscribe"),
+    token: Optional[str] = Query(None, description="Random authorization token returned by /subscribe"),
+    user_id: Optional[int] = Query(None, description="Numeric subscription_id returned by /subscribe"),
     simulate_rain_mm: Optional[float] = Query(None, description="Simulate rainfall in mm for demo testing"),
-    lang: Optional[str] = Query("en", description="Language code: 'en' or 'hi' (default 'en')")
+    lang: Optional[str] = Query("en", description="Language code: 'en' or 'hi' (default 'en')"),
+    x_sub_token: Optional[str] = Header(None, alias="X-Subscription-Token")
 ):
     """
     Returns active alerts for a user's subscription.
-    Looks up the user's subscribed segment and generates active warnings
-    using the unified live ML + rainfall risk assessment service.
-    When lang=hi, translates risk severity, segment name, and advisory message.
+    Requires the random authorization token generated during /subscribe
+    (passed via query param 'token' or 'X-Subscription-Token' header)
+    to prevent sequential user_id enumeration and unauthorized access.
     """
     if lang is not None and lang not in ("en", "hi"):
         raise HTTPException(
@@ -167,24 +192,50 @@ def get_alerts(
             detail="simulate_rain_mm must be a positive number between 0.0 and 1000.0 mm."
         )
 
+    auth_token = (token or x_sub_token or "").strip()
+    if not auth_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Access denied: /alerts requires a valid subscription token returned by POST /subscribe. Pass via query param 'token' or 'X-Subscription-Token' header."
+        )
+
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # Fetch subscription joined with segment
-        cursor.execute("""
-            SELECT s.id, s.name, s.phone_or_email, s.channel, s.segment_id,
-                   seg.name as segment_name, seg.risk_level, seg.risk_score
-            FROM subscriptions s
-            JOIN segments seg ON s.segment_id = seg.id
-            WHERE s.id = ?
-        """, (user_id,))
-        sub = cursor.fetchone()
-
-        if not sub:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Subscription ID '{user_id}' not found. Please register via POST /subscribe first."
-            )
+        # Verify subscription using token (and optional user_id)
+        if user_id is not None:
+            cursor.execute("""
+                SELECT s.id, s.name, s.phone_or_email, s.channel, s.segment_id, s.token,
+                       seg.name as segment_name, seg.risk_level, seg.risk_score
+                FROM subscriptions s
+                JOIN segments seg ON s.segment_id = seg.id
+                WHERE s.id = ?
+            """, (user_id,))
+            sub = cursor.fetchone()
+            if not sub:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Subscription ID '{user_id}' not found."
+                )
+            if not sub["token"] or not secrets.compare_digest(sub["token"], auth_token):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid subscription token for this subscription ID."
+                )
+        else:
+            cursor.execute("""
+                SELECT s.id, s.name, s.phone_or_email, s.channel, s.segment_id, s.token,
+                       seg.name as segment_name, seg.risk_level, seg.risk_score
+                FROM subscriptions s
+                JOIN segments seg ON s.segment_id = seg.id
+                WHERE s.token = ?
+            """, (auth_token,))
+            sub = cursor.fetchone()
+            if not sub:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid subscription token."
+                )
 
     # Use unified risk service with fallback
     risk_level = sub["risk_level"]
