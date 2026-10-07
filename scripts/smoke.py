@@ -13,11 +13,15 @@ import urllib.error
 
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
-def run_request(method, path, body=None):
+def run_request(method, path, body=None, headers=None):
     url = f"{BASE_URL}{path}"
-    headers = {"Content-Type": "application/json"} if body else {}
+    req_headers = {"Content-Type": "application/json"} if body else {}
+    if path.startswith("/admin/"):
+        req_headers["X-Admin-Key"] = os.getenv("ADMIN_API_KEY", "admin-dev-secret-key-nh7")
+    if headers:
+        req_headers.update(headers)
     data = json.dumps(body).encode("utf-8") if body else None
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
 
     t0 = time.perf_counter()
     try:
@@ -62,9 +66,10 @@ def main():
             "name": "Smoke Test Driver",
             "phone_or_email": "+91-9876500000",
             "segment_id": "seg_01",
-            "channel": "SMS"
+            "channel": "SMS",
+            "consent": 1
         }),
-        ("GET", "/alerts?user_id=1", None),
+        ("GET", "/alerts?user_id={user_id}&token={token}", None),
         ("POST", "/field-report", {
             "lat": round(30.14 + ((int(time.time()) % 10) * 0.001), 4),
             "lng": round(78.36 + ((int(time.time()) % 10) * 0.001), 4),
@@ -79,7 +84,7 @@ def main():
         ("GET", "/closures", None),
         ("GET", "/risk-map?lang=hi", None),
         ("GET", "/route-risk?from_segment=seg_01&to_segment=seg_05&date=2026-10-06&lang=hi", None),
-        ("GET", "/alerts?user_id=1&lang=hi", None),
+        ("GET", "/alerts?user_id={user_id}&token={token}&lang=hi", None),
         ("GET", "/voice-alert?segment_id=seg_01&lang=hi", None),
         ("GET", "/offline-pack", None),
         ("GET", "/manifest.json", None),
@@ -88,14 +93,20 @@ def main():
 
     all_passed = True
     created_report_id = None
+    sub_user_id = 1
+    sub_token = ""
 
-    for method, path, body in endpoints:
+    for method, path_tmpl, body in endpoints:
+        path = path_tmpl.format(user_id=sub_user_id, token=sub_token) if "{" in path_tmpl else path_tmpl
         res = run_request(method, path, body)
         latency = f"{res['latency_ms']:.1f}ms"
 
         if res["ok"]:
             print(f"[PASS] {method:4s} {path:<60} {latency:>8} (HTTP {res['status']})")
-            if path == "/field-report" and res["data"] and "report_id" in res["data"]:
+            if path == "/subscribe" and res["data"]:
+                sub_user_id = res["data"].get("subscription_id", 1)
+                sub_token = res["data"].get("token", "")
+            elif path == "/field-report" and res["data"] and "report_id" in res["data"]:
                 created_report_id = res["data"]["report_id"]
         else:
             all_passed = False
